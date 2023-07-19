@@ -12,8 +12,8 @@ import {
   Badge,
   Flex,
 } from "@tremor/react";
-import { InsightMetric } from "../common/types";
-import { serializeDimensionSliceKey } from "../common/utils";
+import { InsightMetric } from "../../common/types";
+import { serializeDimensionSliceKey } from "../../common/utils";
 import { ReactNode } from "react";
 
 type Props = {
