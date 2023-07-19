@@ -4,7 +4,7 @@ import pandas as pd
 from itertools import combinations
 
 # columns_of_interest = ['category', 'product_brand', 'age_group', 'user_state', 'user_gender']
-columns_of_interest = ['age_group', 'user_state', 'user_gender']
+columns_of_interest = ['age_group', 'user_state', 'category']
 @dataclass
 class Dimension:
     name: str = None
@@ -28,7 +28,7 @@ class PeriodValue:
 class DimensionSliceInfo:
     key: DimensionSliceKey = None
     serialized_key: str = None
-    top_driving_dimension_slice_keys: List[DimensionSliceKey] = None
+    top_driving_dimension_slice_keys: List[str] = None
     last_period_value: PeriodValue = None
     current_period_value: PeriodValue = None
     impact_score: float = None
@@ -38,7 +38,7 @@ class Metrics:
     name: str = None
     last_period_value: PeriodValue = None
     current_period_value: PeriodValue = None
-    top_driving_dimension_slice_keys: List[DimensionSliceKey] = None
+    top_driving_dimension_slice_keys: List[str] = None
     dimensions: Dict[str, Dimension] = None
     slice_info: Dict[str, DimensionSliceInfo] = None
 
@@ -116,7 +116,7 @@ class MetricsController(object):
     def getTopDrivingDimensionSliceKeys(self,
                                         parentSlice: DimensionSliceKey,
                                         slice_info_dict: Dict[DimensionSliceKey, DimensionSliceInfo],
-                                        topN = 5) -> List[DimensionSliceKey]:
+                                        topN = 5) -> List[str]:
         """
         Only calculate first level child impact
         """
@@ -132,7 +132,7 @@ class MetricsController(object):
 
         slice_info = [slice_info_dict[key] for key in childSliceKey if key in slice_info_dict]
         slice_info.sort(key=lambda slice: slice.impact_score, reverse=True)
-        print(slice_info[:topN])
+        return list(map(lambda slice: slice.serialized_key, slice_info[:topN]))
 
     def buildMetrics(self, metricsName: str) -> Metrics:
         metrics = Metrics()
@@ -145,15 +145,41 @@ class MetricsController(object):
             ret = toDimensionSliceInfo(dimension_slice, metricsName)
             all_dimension_slices.extend(ret)
 
-        metrics.slice_info = [{ dimension_slice.serialized_key: dimension_slice }
-                                  for dimension_slice in all_dimension_slices
-                             ]
-        slice_info_dict ={
+        slice_info_dict = {
             dimension_slice.key : dimension_slice
             for dimension_slice in all_dimension_slices
         }
 
-        print(self.getTopDrivingDimensionSliceKeys(DimensionSliceKey(()), slice_info_dict))
+        metrics.top_driving_dimension_slice_keys = self.getTopDrivingDimensionSliceKeys(
+            DimensionSliceKey(()),
+            slice_info_dict
+        )
+
+
+        def getTopDrivingDimensionSliceKeys(dimension_slice: DimensionSliceInfo):
+            dimension_slice.top_driving_dimension_slice_keys = self.getTopDrivingDimensionSliceKeys(
+                dimension_slice.key,
+                slice_info_dict
+            )
+            return dimension_slice
+
+        all_dimension_slices = map(
+            getTopDrivingDimensionSliceKeys,
+            all_dimension_slices
+        )
+
+        metrics.slice_info = [{ dimension_slice.serialized_key: dimension_slice }
+                                  for dimension_slice in all_dimension_slices
+                             ]
+
+        metrics.last_period_value = PeriodValue(
+            1,
+            self.agg[f'{metricsName}_last_year'].sum()
+        )
+        metrics.current_period_value = PeriodValue(
+            1,
+            self.agg[metricsName].sum()
+        )
 
         return metrics
 
@@ -161,4 +187,7 @@ class MetricsController(object):
         return self.slices
 
     def getMetrics(self) -> dict:
-        return asdict(self.buildMetrics('revenue'))
+        revenue = asdict(self.buildMetrics('revenue'))
+        unique_user = asdict(self.buildMetrics('unique_user'))
+        unique_order = asdict(self.buildMetrics('unique_order'))
+        return { 'revenue': revenue, 'unique_user': unique_user, 'unique_order': unique_order }
