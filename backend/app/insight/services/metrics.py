@@ -3,8 +3,6 @@ from typing import List, Dict
 import pandas as pd
 from itertools import combinations
 
-# columns_of_interest = ['category', 'product_brand', 'age_group', 'user_state', 'user_gender']
-columns_of_interest = ['age_group', 'user_state', 'category']
 @dataclass
 class Dimension:
     name: str = None
@@ -42,18 +40,7 @@ class Metrics:
     dimensions: Dict[str, Dimension] = None
     slice_info: Dict[str, DimensionSliceInfo] = None
 
-agg_method = {
-    'price': 'sum',
-    'user_id': 'nunique',
-    'order_id': 'nunique'
-}
-metrics_name = {
-    'price': 'revenue',
-    'user_id': 'unique_user',
-    'order_id': 'unique_order'
-}
-
-def analyze(df, columns):
+def analyze(df, columns: List[str], agg_method: Dict[str, str], metrics_name: Dict[str, str]):
     all_columns = ['year'] + columns
 
     agg = df.groupby(all_columns).agg(agg_method)
@@ -90,26 +77,28 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name) -> Dict[frozenset, Dime
 
 
 class MetricsController(object):
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self,
+                 data: pd.DataFrame,
+                 columns_of_interest: List[str],
+                 agg_method: Dict[str, str],
+                 metrics_name: Dict[str, str]):
         self.df = data
 
-        self.df['created_at'] = pd.to_datetime(self.df['created_at'])
-        self.df['year'] = self.df['created_at'].dt.year
-        self.df['age_group'] = (self.df['user_age'] / 10).astype(int) * 10
-        self.agg = analyze(self.df, columns_of_interest)
+        self.columns_of_interest = columns_of_interest
+        self.agg = analyze(self.df, self.columns_of_interest, agg_method, metrics_name)
 
         self.slices = []
         self.slice()
 
     def slice(self):
-        for i in range(1, len(columns_of_interest) + 1):
-            for columns in combinations(columns_of_interest, i):
+        for i in range(1, len(self.columns_of_interest) + 1):
+            for columns in combinations(self.columns_of_interest, i):
                 dimension_slice = analyze(self.df, list(columns))
                 self.slices.append(dimension_slice)
 
     def getDimensions(self) -> Dict[str, Dimension]:
         dimensions = {}
-        for column in columns_of_interest:
+        for column in self.columns_of_interest:
             dimensions[column] = Dimension(name=column, values=self.df[column].unique().tolist())
         return dimensions
 
@@ -121,7 +110,7 @@ class MetricsController(object):
         Only calculate first level child impact
         """
         parentDimension = [slice.dimension for slice in parentSlice.dimension_value_pairs]
-        childDimensions = [dimension for dimension in columns_of_interest if dimension not in parentDimension]
+        childDimensions = [dimension for dimension in self.columns_of_interest if dimension not in parentDimension]
         childSliceKey = [
             DimensionSliceKey(tuple(
                 parentSlice.dimension_value_pairs + (DimensionValuePair(dimension, value),)
