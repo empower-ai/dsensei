@@ -44,10 +44,12 @@ export interface DimensionSliceInfo {
   baselineValue: {
     sliceSize: number;
     sliceCount: number;
+    sliceValue: number;
   };
   comparisonValue: {
     sliceSize: number;
     sliceCount: number;
+    sliceValue: number;
   };
   impact: number;
 }

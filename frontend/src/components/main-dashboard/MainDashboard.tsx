@@ -49,16 +49,17 @@ export default function MainDashboard() {
       return <Badge color="gray">N/A</Badge>;
     }
 
-    const change = `${(((num2 - num1) / num1) * 100).toFixed(2)}%`;
+    const change = num2 - num1;
+    const changePct = `${(((num2 - num1) / num1) * 100).toFixed(2)}%`;
     let deltaType: "unchanged" | "decrease" | "increase", content;
     if (num1 === num2) {
       content = "0";
       deltaType = "unchanged";
     } else if (num1 > num2) {
-      content = `${change}`;
+      content = `${change} (${changePct})`;
       deltaType = "decrease";
     } else {
-      content = `+${change}`;
+      content = `+${change} (+${changePct})`;
       deltaType = "increase";
     }
 
@@ -75,36 +76,6 @@ export default function MainDashboard() {
       <Text>Metric: {analyzingMetrics.name}</Text>
 
       <Grid numItems={4} className="gap-6 mt-6">
-        <Card>
-          <div className="h-[100%] grid">
-            <div>
-              <Title>Comparison Period</Title>
-              <Text>Apr 1, 2022 to Apr 30, 2022</Text>
-              <Text>1000 total rows</Text>
-            </div>
-            <div className="self-center text-center justify-self-center content-center">
-              <Flex className="self-center text-center justify-self-center content-center">
-                <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
-                <Metric>{analyzingMetrics.comparisonValue}</Metric>
-              </Flex>
-            </div>
-            <div className="self-end content-center">
-              <Text>
-                <Bold>Related Metrics</Bold>
-              </Text>
-              <List>
-                {relatedMetrics.map((metric) => (
-                  <ListItem>
-                    <Flex justifyContent="end" className="space-x-2.5">
-                      <Text>{metric.name}:</Text>
-                      <Title>{metric.comparisonValue}</Title>
-                    </Flex>
-                  </ListItem>
-                ))}
-              </List>
-            </div>
-          </div>
-        </Card>
         <Card>
           <div className="h-[100%] grid">
             <div>
@@ -138,6 +109,36 @@ export default function MainDashboard() {
                         metric.comparisonValue,
                         metric.baselineValue
                       )}
+                    </Flex>
+                  </ListItem>
+                ))}
+              </List>
+            </div>
+          </div>
+        </Card>
+        <Card>
+          <div className="h-[100%] grid">
+            <div>
+              <Title>Comparison Period</Title>
+              <Text>Apr 1, 2022 to Apr 30, 2022</Text>
+              <Text>1000 total rows</Text>
+            </div>
+            <div className="self-center text-center justify-self-center content-center">
+              <Flex className="self-center text-center justify-self-center content-center">
+                <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
+                <Metric>{analyzingMetrics.comparisonValue}</Metric>
+              </Flex>
+            </div>
+            <div className="self-end content-center">
+              <Text>
+                <Bold>Related Metrics</Bold>
+              </Text>
+              <List>
+                {relatedMetrics.map((metric) => (
+                  <ListItem>
+                    <Flex justifyContent="end" className="space-x-2.5">
+                      <Text>{metric.name}:</Text>
+                      <Title>{metric.comparisonValue}</Title>
                     </Flex>
                   </ListItem>
                 ))}

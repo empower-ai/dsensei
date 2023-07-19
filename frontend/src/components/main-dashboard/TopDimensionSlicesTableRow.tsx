@@ -35,11 +35,11 @@ function getChangePercentage(num1: number, num2: number): ReactNode {
 
 function getImpact(impact: number): ReactNode {
   if (impact > 0) {
-    return <BadgeDelta deltaType="increase" />;
+    return <BadgeDelta deltaType="increase">{impact}</BadgeDelta>;
   } else if (impact === 0) {
-    return <BadgeDelta deltaType="unchanged" />;
+    return <BadgeDelta deltaType="unchanged">{impact}</BadgeDelta>;
   } else {
-    return <BadgeDelta deltaType="decrease" />;
+    return <BadgeDelta deltaType="decrease">{impact}</BadgeDelta>;
   }
 }
 
@@ -122,8 +122,11 @@ export default function TopDimensionSlicesTableRow({
         </TableCell>
         <TableCell>
           <Flex className="justify-start items-center">
+            <Text className="mr-3">
+              {dimensionSlice.baselineValue.sliceValue} vs{" "}
+              {dimensionSlice.comparisonValue.sliceCount}
+            </Text>
             {getImpact(dimensionSlice?.impact ?? 0)}
-            <p className="px-2">{dimensionSlice?.impact}</p>
           </Flex>
         </TableCell>
       </TableRow>

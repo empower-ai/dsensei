@@ -66,10 +66,12 @@ export const dummyRevenueMetric = {
         baselineValue: {
           sliceSize: 33.2,
           sliceCount: 3042,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 20.2,
           sliceCount: 2942,
+          sliceValue: 123,
         },
         impact: 1000,
       },
@@ -87,10 +89,12 @@ export const dummyRevenueMetric = {
         baselineValue: {
           sliceSize: 11.2,
           sliceCount: 2042,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 14.2,
           sliceCount: 2142,
+          sliceValue: 153,
         },
         impact: 400,
       },
@@ -108,10 +112,12 @@ export const dummyRevenueMetric = {
         baselineValue: {
           sliceSize: 24.2,
           sliceCount: 2242,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 20.2,
           sliceCount: 2122,
+          sliceValue: 123,
         },
         impact: -300,
       },
@@ -187,10 +193,12 @@ export const dummyOrdersMetric = {
         baselineValue: {
           sliceSize: 33.2,
           sliceCount: 3042,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 20.2,
           sliceCount: 2942,
+          sliceValue: 123,
         },
         impact: 1000,
       },
@@ -208,10 +216,12 @@ export const dummyOrdersMetric = {
         baselineValue: {
           sliceSize: 11.2,
           sliceCount: 2042,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 14.2,
           sliceCount: 2142,
+          sliceValue: 123,
         },
         impact: 400,
       },
@@ -229,10 +239,12 @@ export const dummyOrdersMetric = {
         baselineValue: {
           sliceSize: 24.2,
           sliceCount: 2242,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 20.2,
           sliceCount: 2122,
+          sliceValue: 123,
         },
         impact: -300,
       },
@@ -308,10 +320,12 @@ export const dummyBuyersMetric = {
         baselineValue: {
           sliceSize: 33.2,
           sliceCount: 3042,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 20.2,
           sliceCount: 2942,
+          sliceValue: 123,
         },
         impact: 1000,
       },
@@ -329,10 +343,12 @@ export const dummyBuyersMetric = {
         baselineValue: {
           sliceSize: 11.2,
           sliceCount: 2042,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 14.2,
           sliceCount: 2142,
+          sliceValue: 123,
         },
         impact: 400,
       },
@@ -350,10 +366,12 @@ export const dummyBuyersMetric = {
         baselineValue: {
           sliceSize: 24.2,
           sliceCount: 2242,
+          sliceValue: 123,
         },
         comparisonValue: {
           sliceSize: 20.2,
           sliceCount: 2122,
+          sliceValue: 123,
         },
         impact: -300,
       },
