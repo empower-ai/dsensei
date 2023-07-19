@@ -1,4 +1,3 @@
-import { ChevronDoubleRightIcon } from "@heroicons/react/outline";
 import {
   Card,
   Table,
@@ -6,22 +5,18 @@ import {
   TableRow,
   TableHeaderCell,
   TableBody,
-  TableCell,
-  Text,
-  BadgeDelta,
-  Badge,
-  Flex,
 } from "@tremor/react";
 import { InsightMetric } from "../../common/types";
 import { serializeDimensionSliceKey } from "../../common/utils";
-import { ReactNode } from "react";
-import TopDimensionSlicesTableRow from "./TopDimentionSlicesTableRow";
+import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
+import { RowStatus } from "../../store/comparisonInsight";
 
 type Props = {
   metric: InsightMetric;
+  rowStatus: { [key: string]: RowStatus };
 };
 
-export default function TopDimensionSlicesTable({ metric }: Props) {
+export default function TopDimensionSlicesTable({ metric, rowStatus }: Props) {
   return (
     <Card>
       <Table>
@@ -34,14 +29,17 @@ export default function TopDimensionSlicesTable({ metric }: Props) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {metric.topDriverSliceKeys.flatMap((key) => {
+          {metric.topDriverSliceKeys.map((key) => {
             const dimensionSlice = metric.dimensionSliceInfo.get(
               serializeDimensionSliceKey(key)
             )!;
 
-            return [
-              <TopDimensionSlicesTableRow dimensionSlice={dimensionSlice} />,
-            ];
+            return (
+              <TopDimensionSlicesTableRow
+                rowStatus={rowStatus[serializeDimensionSliceKey(key)]!}
+                dimensionSlice={dimensionSlice}
+              />
+            );
           })}
         </TableBody>
       </Table>

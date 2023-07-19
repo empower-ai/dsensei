@@ -14,17 +14,16 @@ import {
   Badge,
 } from "@tremor/react";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
-import { InsightMetric } from "../../common/types";
 import { ReactNode } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 
 // const dataFormatter = (number: number) =>
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
 
 export default function MainDashboard() {
-  const metric = useSelector(
-    (state: RootState) => state.comparisonInsight.analyzingMetrics
+  const { analyzingMetrics: metric, tableRowStatus } = useSelector(
+    (state: RootState) => state.comparisonInsight
   );
 
   const chartData = (
@@ -122,7 +121,10 @@ export default function MainDashboard() {
         <TabPanels>
           <TabPanel>
             <div className="mt-6">
-              <TopDimensionSlicesTable metric={metric} />
+              <TopDimensionSlicesTable
+                rowStatus={tableRowStatus}
+                metric={metric}
+              />
             </div>
           </TabPanel>
           <TabPanel>
