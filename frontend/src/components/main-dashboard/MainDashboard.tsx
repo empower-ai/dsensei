@@ -12,6 +12,10 @@ import {
   LineChart,
   BadgeDelta,
   Badge,
+  Flex,
+  List,
+  ListItem,
+  Bold,
 } from "@tremor/react";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { ReactNode } from "react";
@@ -22,20 +26,22 @@ import { RootState } from "../../store";
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
 
 export default function MainDashboard() {
-  const { analyzingMetrics: metric, tableRowStatus } = useSelector(
+  const { analyzingMetrics, relatedMetrics, tableRowStatus } = useSelector(
     (state: RootState) => state.comparisonInsight
   );
-
-  const chartData = (
-    metric.baselineValueByDate.map((baselineValue) => ({
-      date: baselineValue.date.toDateString(),
-      Baseline: baselineValue.value,
-    })) as any[]
-  ).concat(
-    metric.comparisonValueByDate.map((comparisonValue) => ({
-      date: comparisonValue.date.toDateString(),
-      Comparison: comparisonValue.value,
-    }))
+  const allMetrics = [analyzingMetrics, ...relatedMetrics];
+  const chartData = allMetrics.map((metric) =>
+    (
+      metric.baselineValueByDate.map((baselineValue) => ({
+        date: baselineValue.date.toDateString(),
+        Baseline: baselineValue.value,
+      })) as any[]
+    ).concat(
+      metric.comparisonValueByDate.map((comparisonValue) => ({
+        date: comparisonValue.date.toDateString(),
+        Comparison: comparisonValue.value,
+      }))
+    )
   );
 
   function getChangePercentageBadge(num1: number, num2: number): ReactNode {
@@ -49,67 +55,119 @@ export default function MainDashboard() {
       content = "0";
       deltaType = "unchanged";
     } else if (num1 > num2) {
-      content = `-${change}`;
+      content = `${change}`;
       deltaType = "decrease";
     } else {
       content = `+${change}`;
       deltaType = "increase";
     }
 
-    return <BadgeDelta deltaType={deltaType}>{content}</BadgeDelta>;
+    return (
+      <BadgeDelta size="xs" deltaType={deltaType}>
+        {content}
+      </BadgeDelta>
+    );
   }
 
   return (
     <main className="px-12 py-12">
       <Title>Result</Title>
-      <Text>Metric: {metric.name}</Text>
+      <Text>Metric: {analyzingMetrics.name}</Text>
 
       <Grid numItems={4} className="gap-6 mt-6">
         <Card>
           <div className="h-[100%] grid">
             <div>
-              <Title>Baseline Period</Title>
+              <Title>Comparison Period</Title>
               <Text>Apr 1, 2022 to Apr 30, 2022</Text>
+              <Text>1000 total rows</Text>
             </div>
             <div className="self-center text-center justify-self-center content-center">
-              <Metric>{metric.baselineValue}</Metric>
-              <div>
-                <Text>1000 total rows</Text>
-              </div>
+              <Flex className="self-center text-center justify-self-center content-center">
+                <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
+                <Metric>{analyzingMetrics.comparisonValue}</Metric>
+              </Flex>
             </div>
-            <div></div>
+            <div className="self-end content-center">
+              <Text>
+                <Bold>Related Metrics</Bold>
+              </Text>
+              <List>
+                {relatedMetrics.map((metric) => (
+                  <ListItem>
+                    <Flex justifyContent="end" className="space-x-2.5">
+                      <Text>{metric.name}:</Text>
+                      <Title>{metric.comparisonValue}</Title>
+                    </Flex>
+                  </ListItem>
+                ))}
+              </List>
+            </div>
           </div>
         </Card>
         <Card>
           <div className="h-[100%] grid">
             <div>
-              <Title>Comparison Period</Title>
+              <Title>Baseline Period</Title>
               <Text>Apr 1, 2022 to Apr 30, 2022</Text>
+              <Text>1000 total rows</Text>
             </div>
             <div className="self-center text-center justify-self-center content-center">
-              <Metric className="flex">
-                <p className="px-2">{metric.comparisonValue}</p>
+              <Flex className="self-center text-center justify-self-center content-center">
+                <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
+                <Metric className="flex">
+                  <p className="px-2">{analyzingMetrics.baselineValue}</p>
+                </Metric>
                 {getChangePercentageBadge(
-                  metric.baselineValue,
-                  metric.comparisonValue
+                  analyzingMetrics.comparisonValue,
+                  analyzingMetrics.baselineValue
                 )}
-              </Metric>
-              <div>
-                <Text>1000 total rows</Text>
-              </div>
+              </Flex>
             </div>
-            <div></div>
+            <div className="self-end content-center">
+              <Text>
+                <Bold>Related Metrics</Bold>
+              </Text>
+              <List>
+                {relatedMetrics.map((metric) => (
+                  <ListItem>
+                    <Flex justifyContent="end" className="space-x-2.5">
+                      <Text>{metric.name}:</Text>
+                      <Title>{metric.baselineValue}</Title>
+                      {getChangePercentageBadge(
+                        metric.comparisonValue,
+                        metric.baselineValue
+                      )}
+                    </Flex>
+                  </ListItem>
+                ))}
+              </List>
+            </div>
           </div>
         </Card>
         <Card className="col-span-2">
-          <LineChart
-            className="mt-6"
-            data={chartData}
-            index="date"
-            categories={["Baseline", "Comparison"]}
-            colors={["emerald", "gray"]}
-            yAxisWidth={40}
-          />
+          <Title>Charts</Title>
+          <TabGroup>
+            <TabList>
+              {allMetrics.map((metric) => (
+                <Tab key={metric.name}>{metric.name}</Tab>
+              ))}
+            </TabList>
+            <TabPanels>
+              {chartData.map((data) => (
+                <TabPanel>
+                  <LineChart
+                    className="mt-6"
+                    data={data}
+                    index="date"
+                    categories={["Baseline", "Comparison"]}
+                    colors={["emerald", "gray"]}
+                    yAxisWidth={40}
+                  />
+                </TabPanel>
+              ))}
+            </TabPanels>
+          </TabGroup>
         </Card>
       </Grid>
 
@@ -123,7 +181,7 @@ export default function MainDashboard() {
             <div className="mt-6">
               <TopDimensionSlicesTable
                 rowStatus={tableRowStatus}
-                metric={metric}
+                metric={analyzingMetrics}
               />
             </div>
           </TabPanel>
