@@ -26,7 +26,7 @@ class PeriodValue:
 class DimensionSliceInfo:
     key: DimensionSliceKey = None
     serialized_key: str = None
-    top_driving_dimension_slice_keys: List[str] = None
+    top_driver_slice_keys: List[str] = None
     last_period_value: PeriodValue = None
     current_period_value: PeriodValue = None
     impact_score: float = None
@@ -34,9 +34,13 @@ class DimensionSliceInfo:
 @dataclass
 class Metrics:
     name: str = None
-    last_period_value: PeriodValue = None
-    current_period_value: PeriodValue = None
-    top_driving_dimension_slice_keys: List[str] = None
+    baseline_value: float = None
+    comparison_value: float = None
+    baseline_value_by_date: Dict[str, float] = None
+    comparison_value_by_date: Dict[str, float] = None
+    baseline_date_range: List[str] = None
+    comparison_date_range: List[str] = None
+    top_driver_slice_keys: List[str] = None
     dimensions: Dict[str, Dimension] = None
     slice_info: Dict[str, DimensionSliceInfo] = None
 
@@ -139,14 +143,14 @@ class MetricsController(object):
             for dimension_slice in all_dimension_slices
         }
 
-        metrics.top_driving_dimension_slice_keys = self.getTopDrivingDimensionSliceKeys(
+        metrics.top_driver_slice_keys = self.getTopDrivingDimensionSliceKeys(
             DimensionSliceKey(()),
             slice_info_dict
         )
 
 
         def getTopDrivingDimensionSliceKeys(dimension_slice: DimensionSliceInfo):
-            dimension_slice.top_driving_dimension_slice_keys = self.getTopDrivingDimensionSliceKeys(
+            dimension_slice.top_driver_slice_keys = self.getTopDrivingDimensionSliceKeys(
                 dimension_slice.key,
                 slice_info_dict
             )
@@ -161,14 +165,12 @@ class MetricsController(object):
                                   for dimension_slice in all_dimension_slices
                              ]
 
-        metrics.last_period_value = PeriodValue(
-            1,
-            self.agg[f'{metricsName}_last_year'].sum()
-        )
-        metrics.current_period_value = PeriodValue(
-            1,
-            self.agg[metricsName].sum()
-        )
+        metrics.baseline_value_by_date = self.aggs[f'{metricsName}_last_year'].sum()
+        metrics.comparison_value_by_date = self.aggs[metricsName].sum()
+        metrics.baseline_date_range = ['2021-01-01', '2021-12-31']
+        metrics.comparison_date_range = ['2022-01-01', '2022-12-31']
+
+
 
         return metrics
 
