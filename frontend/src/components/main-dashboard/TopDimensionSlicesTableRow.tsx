@@ -72,7 +72,16 @@ export default function TopDimensionSlicesTableRow({
     <>
       <TableRow key={Md5.hashStr(serializedKey)}>
         <TableCell className="flex items-center">
-          <p className={`ml-${(rowStatus.key.length - 1) * 4}`}></p>
+          <p
+            style={{
+              width: `${
+                (rowStatus.key.length - 1) * 12 +
+                (dimensionSlice.topDrivingDimensionSliceKeys.length > 0
+                  ? 0
+                  : 12)
+              }px`,
+            }}
+          ></p>
           {dimensionSlice.topDrivingDimensionSliceKeys.length > 0 && (
             <p
               className="w-3 cursor-pointer"
