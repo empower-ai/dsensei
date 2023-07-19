@@ -109,7 +109,6 @@ export default function MainDashboard() {
             index="date"
             categories={["Baseline", "Comparison"]}
             colors={["emerald", "gray"]}
-            // valueFormatter={dataFormatter}
             yAxisWidth={40}
           />
         </Card>

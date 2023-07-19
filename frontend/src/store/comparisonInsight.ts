@@ -84,6 +84,48 @@ const initialState: ComparisonInsightState = {
           impact: 1000,
         },
       ],
+      [
+        "device:ios",
+        {
+          key: [
+            {
+              dimension: "device",
+              value: "ios",
+            },
+          ],
+          topDrivingDimensionSliceKeys: [],
+          baselineValue: {
+            sliceSize: 11.2,
+            sliceCount: 2042,
+          },
+          comparisonValue: {
+            sliceSize: 14.2,
+            sliceCount: 2142,
+          },
+          impact: 400,
+        },
+      ],
+      [
+        "brand:nike",
+        {
+          key: [
+            {
+              dimension: "brand",
+              value: "nike",
+            },
+          ],
+          topDrivingDimensionSliceKeys: [],
+          baselineValue: {
+            sliceSize: 24.2,
+            sliceCount: 2242,
+          },
+          comparisonValue: {
+            sliceSize: 20.2,
+            sliceCount: 2122,
+          },
+          impact: -300,
+        },
+      ],
     ]),
   },
   relatedMetrics: [],
