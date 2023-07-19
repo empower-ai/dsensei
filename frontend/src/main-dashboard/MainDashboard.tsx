@@ -10,7 +10,6 @@ import {
   TabPanels,
   Metric,
   LineChart,
-  Flex,
   BadgeDelta,
   Badge,
 } from "@tremor/react";
@@ -137,7 +136,7 @@ export default function MainDashboard() {
   return (
     <main className="px-12 py-12">
       <Title>Result</Title>
-      {/* <Text>Insight</Text> */}
+      <Text>Metric: {metric.name}</Text>
 
       <Grid numItems={4} className="gap-6 mt-6">
         <Card>

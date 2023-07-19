@@ -1,5 +1,4 @@
 import "./App.css";
-import { Card, Flex, Metric, ProgressBar, Text } from "@tremor/react";
 import MainDashboard from "./main-dashboard/MainDashboard";
 
 // export default () => ;
