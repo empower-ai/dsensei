@@ -99,7 +99,7 @@ export default function TopDimensionSlicesTableRow({
           ></p>
           {dimensionSlice.topDrivingDimensionSliceKeys.length > 0 && (
             <span
-              className="w-3 cursor-pointer"
+              className="w-4 cursor-pointer"
               onClick={() => {
                 dispatch(toggleRow(rowStatus.key));
               }}

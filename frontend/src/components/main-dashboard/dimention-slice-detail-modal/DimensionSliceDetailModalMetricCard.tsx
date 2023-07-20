@@ -41,7 +41,7 @@ export function DimensionSliceDetailModalMetricCard({
         </Flex>
         {relatedSliceInfo.length === 0 ? (
           <Flex justifyContent="center">
-            <Subtitle>No slices with significant impact</Subtitle>
+            <Subtitle>No slice with significant impact</Subtitle>
           </Flex>
         ) : (
           <Grid numItems={2}>
