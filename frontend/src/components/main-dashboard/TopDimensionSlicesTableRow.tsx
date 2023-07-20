@@ -111,7 +111,7 @@ export default function TopDimensionSlicesTableRow({
               )}
             </span>
           )}
-          <p className="px-2 cursor">
+          <p className="px-2 cursor flex items-center">
             {formatDimensionSliceKeyForRendering(
               dimensionSlice.key,
               parentDimensionSliceKey

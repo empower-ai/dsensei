@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { DimensionSliceKey } from "./types";
+import { Badge, Bold, Text } from "@tremor/react";
 
 export function sortDimension(
   dimension1: {
@@ -41,8 +42,16 @@ export function formatDimensionSliceKeyForRendering(
       )
       .sort(sortDimension),
   ]
-    .map((k) => `${k.dimension}:${k.value}`)
-    .join(" AND ");
+    .map((k) => (
+      <span className="border-2 bg-gray-100 text-black p-1">
+        {k.dimension} = {k.value}
+      </span>
+    ))
+    .flatMap((element, index, array) =>
+      array.length - 1 !== index
+        ? [element, <Text className="px-1">AND</Text>]
+        : [element]
+    );
 }
 
 export function getRegexMatchPatternForDimensionSliceKey(

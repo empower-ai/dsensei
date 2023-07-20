@@ -1,6 +1,5 @@
 import {
   Bold,
-  Card,
   DeltaBar,
   Divider,
   Flex,
@@ -14,6 +13,7 @@ import {
 import { RootState } from "../../../store";
 import { useSelector } from "react-redux";
 import {
+  formatDimensionSliceKeyForRendering,
   getRegexMatchPatternForDimensionSliceKey,
   serializeDimensionSliceKey,
 } from "../../../common/utils";
@@ -50,7 +50,7 @@ export function DimensionSliceDetailModal() {
           </button>
         </Flex>
         <Flex>
-          <p>{serializeDimensionSliceKey(selectedSliceKey)}</p>
+          <p>{formatDimensionSliceKeyForRendering(selectedSliceKey)}</p>
         </Flex>
         <Divider />
         <Flex justifyContent="start">
@@ -60,7 +60,10 @@ export function DimensionSliceDetailModal() {
               Showing the slices with noticeable impact under dimension(s):
               <span className="mx-1" />
               <Bold>
-                {selectedSliceKey.map((subKey) => subKey.dimension).join(", ")}
+                {selectedSliceKey
+                  .map((subKey) => subKey.dimension)
+                  .sort()
+                  .join(", ")}
               </Bold>
             </Subtitle>
             {/* <Text className="mt-3">Select Additional Filters:</Text>
@@ -80,7 +83,7 @@ export function DimensionSliceDetailModal() {
               </ListItem>
               {relatedSliceInfo.map((sliceInfo) => (
                 <ListItem className="my-3 justify-center">
-                  {serializeDimensionSliceKey(sliceInfo?.key!)}
+                  {formatDimensionSliceKeyForRendering(sliceInfo?.key!)}
                 </ListItem>
               ))}
             </List>
