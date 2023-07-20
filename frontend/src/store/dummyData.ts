@@ -77,6 +77,42 @@ export const dummyRevenueMetric = {
       },
     ],
     [
+      "country:China",
+      {
+        key: [
+          {
+            dimension: "country",
+            value: "China",
+          },
+        ],
+        topDrivingDimensionSliceKeys: [
+          [
+            {
+              dimension: "device",
+              value: "ios",
+            },
+          ],
+          [
+            {
+              dimension: "brand",
+              value: "nike",
+            },
+          ],
+        ],
+        baselineValue: {
+          sliceSize: 33.2,
+          sliceCount: 3042,
+          sliceValue: 123,
+        },
+        comparisonValue: {
+          sliceSize: 20.2,
+          sliceCount: 2942,
+          sliceValue: 123,
+        },
+        impact: 32,
+      },
+    ],
+    [
       "device:ios",
       {
         key: [

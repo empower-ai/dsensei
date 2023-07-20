@@ -22,6 +22,7 @@ export type RowStatus = {
 export interface ComparisonInsightState {
   analyzingMetrics: InsightMetric;
   relatedMetrics: InsightMetric[];
+  selectedSliceKey?: DimensionSliceKey;
   tableRowStatus: {
     [key: string]: RowStatus;
   };
@@ -68,6 +69,12 @@ const initialState: ComparisonInsightState = {
   analyzingMetrics: dummyRevenueMetric,
   relatedMetrics: [dummyBuyersMetric, dummyOrdersMetric],
   tableRowStatus: buildRowStatusMap(dummyRevenueMetric),
+  selectedSliceKey: [
+    {
+      dimension: "country",
+      value: "USA",
+    },
+  ],
 };
 
 export const comparisonMetricsSlice = createSlice({
@@ -93,9 +100,13 @@ export const comparisonMetricsSlice = createSlice({
         rowStatus.isExpanded = !rowStatus.isExpanded;
       }
     },
+    selectSliceForDetail: (state, action: PayloadAction<DimensionSliceKey>) => {
+      state.selectedSliceKey = action.payload;
+    },
   },
 });
 
-export const { toggleRow } = comparisonMetricsSlice.actions;
+export const { toggleRow, selectSliceForDetail } =
+  comparisonMetricsSlice.actions;
 
 export default comparisonMetricsSlice.reducer;

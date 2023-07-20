@@ -6,14 +6,19 @@ import {
   TableRow,
   Text,
 } from "@tremor/react";
-import { DimensionSliceInfo } from "../../common/types";
+import { DimensionSliceInfo, DimensionSliceKey } from "../../common/types";
 import {
   ChevronDoubleDownIcon,
   ChevronDoubleRightIcon,
-} from "@heroicons/react/outline";
+  DocumentMagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
 import { serializeDimensionSliceKey } from "../../common/utils";
 import { ReactNode } from "react";
-import { RowStatus, toggleRow } from "../../store/comparisonInsight";
+import {
+  RowStatus,
+  selectSliceForDetail,
+  toggleRow,
+} from "../../store/comparisonInsight";
 import { Md5 } from "ts-md5";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
@@ -68,6 +73,11 @@ export default function TopDimensionSlicesTableRow({
     });
   }
 
+  function toggleSliceDetailModal(key: DimensionSliceKey) {
+    dispatch(selectSliceForDetail(key));
+    (window as any).slice_detail.showModal();
+  }
+
   return (
     <>
       <TableRow key={Md5.hashStr(serializedKey)}>
@@ -83,7 +93,7 @@ export default function TopDimensionSlicesTableRow({
             }}
           ></p>
           {dimensionSlice.topDrivingDimensionSliceKeys.length > 0 && (
-            <p
+            <span
               className="w-3 cursor-pointer"
               onClick={() => {
                 dispatch(toggleRow(rowStatus.key));
@@ -94,9 +104,20 @@ export default function TopDimensionSlicesTableRow({
               ) : (
                 <ChevronDoubleRightIcon />
               )}
-            </p>
+            </span>
           )}
-          <p className="px-2">{serializedKey}</p>
+          <p
+            className="px-2 cursor"
+            onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
+          >
+            {serializedKey}
+          </p>
+          <span
+            onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
+            className="w-6 cursor-pointer"
+          >
+            <DocumentMagnifyingGlassIcon />
+          </span>
         </TableCell>
         <TableCell>
           <Text>

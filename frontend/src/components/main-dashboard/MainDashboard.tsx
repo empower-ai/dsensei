@@ -21,6 +21,7 @@ import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
+import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSlicesDetailModal";
 
 // const dataFormatter = (number: number) =>
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
@@ -74,7 +75,6 @@ export default function MainDashboard() {
     <main className="px-12 py-12">
       <Title>Result</Title>
       <Text>Metric: {analyzingMetrics.name}</Text>
-
       <Grid numItems={4} className="gap-6 mt-6">
         <Card>
           <div className="h-[100%] grid">
@@ -171,7 +171,6 @@ export default function MainDashboard() {
           </TabGroup>
         </Card>
       </Grid>
-
       <TabGroup className="mt-6">
         <TabList>
           <Tab>Top Dimension Slices</Tab>
@@ -195,6 +194,7 @@ export default function MainDashboard() {
           </TabPanel>
         </TabPanels>
       </TabGroup>
+      <DimensionSliceDetailModal />
     </main>
   );
 }
