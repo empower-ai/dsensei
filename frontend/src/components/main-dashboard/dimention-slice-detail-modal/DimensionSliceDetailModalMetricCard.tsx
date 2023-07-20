@@ -12,6 +12,7 @@ import {
 import {
   formatDimensionSliceKeyForRendering,
   getRegexMatchPatternForDimensionSliceKey,
+  serializeDimensionSliceKey,
 } from "../../../common/utils";
 import { DimensionSliceKey, InsightMetric } from "../../../common/types";
 
@@ -51,11 +52,12 @@ export function DimensionSliceDetailModalMetricCard({
                   <Subtitle>Slice</Subtitle>
                 </ListItem>
                 {relatedSliceInfo.map((sliceInfo) => (
-                  <ListItem className="my-3 justify-center">
+                  <ListItem className="h-[50px] justify-center">
                     {formatDimensionSliceKeyForRendering(
                       sliceInfo?.key!,
                       undefined,
-                      false
+                      serializeDimensionSliceKey(sliceInfo?.key) ===
+                        serializeDimensionSliceKey(selectedSliceKey)
                     )}
                   </ListItem>
                 ))}
@@ -68,7 +70,7 @@ export function DimensionSliceDetailModalMetricCard({
                 </ListItem>
                 {relatedSliceInfo.map((sliceInfo) => {
                   return (
-                    <ListItem className="my-3">
+                    <ListItem className="h-[50px]">
                       <Flex
                         justifyContent="end"
                         alignItems="center"
