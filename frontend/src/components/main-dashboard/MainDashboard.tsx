@@ -18,28 +18,49 @@ import {
   Bold,
 } from "@tremor/react";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
-import { ReactNode } from "react";
-import { useSelector } from "react-redux";
+import { ReactNode, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
+import {
+  setLoadingStatus,
+  updateMetrics
+} from "../../store/comparisonInsight";
 
 // const dataFormatter = (number: number) =>
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
 
 export default function MainDashboard() {
-  const { analyzingMetrics, relatedMetrics, tableRowStatus } = useSelector(
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(setLoadingStatus(true));
+    fetch("http://127.0.0.1:5000/a", {mode: 'cors'}).then((res) => {
+      res.json().then((json) => {
+        dispatch(updateMetrics(json));
+      }
+    );
+    });
+  }, []);
+
+  const { analyzingMetrics, relatedMetrics, tableRowStatus, isLoading } = useSelector(
     (state: RootState) => state.comparisonInsight
   );
+
+  if (isLoading) {
+    return <></>
+  }
+
   const allMetrics = [analyzingMetrics, ...relatedMetrics];
   const chartData = allMetrics.map((metric) =>
     (
       metric.baselineValueByDate.map((baselineValue) => ({
-        date: baselineValue.date.toDateString(),
+        date: baselineValue.date,
         Baseline: baselineValue.value,
       })) as any[]
     ).concat(
       metric.comparisonValueByDate.map((comparisonValue) => ({
-        date: comparisonValue.date.toDateString(),
+        date: comparisonValue.date,
         Comparison: comparisonValue.value,
       }))
     )

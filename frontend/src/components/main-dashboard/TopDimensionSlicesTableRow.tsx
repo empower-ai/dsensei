@@ -66,19 +66,19 @@ export default function TopDimensionSlicesTableRow({
 
   function renderSubSlices() {
     return dimensionSlice.topDrivingDimensionSliceKeys.map((subKey) => {
-      const serializedSubKey = serializeDimensionSliceKey(subKey);
+      // const serializedSubKey = serializeDimensionSliceKey(subKey);
 
       return (
         <TopDimensionSlicesTableRow
-          rowStatus={rowStatus.children[serializedSubKey]!}
-          dimensionSlice={allDimensionSliceInfo.get(serializedSubKey)!}
+          rowStatus={rowStatus.children[subKey]!}
+          dimensionSlice={allDimensionSliceInfo[subKey]!}
           parentDimensionSliceKey={dimensionSlice.key}
         />
       );
     });
   }
 
-  function toggleSliceDetailModal(key: DimensionSliceKey) {
+  function toggleSliceDetailModal(key: string) {
     dispatch(selectSliceForDetail(key));
     (window as any).slice_detail.showModal();
   }
@@ -118,7 +118,7 @@ export default function TopDimensionSlicesTableRow({
             )}
           </p>
           <span
-            onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
+            onClick={() => toggleSliceDetailModal(dimensionSlice.serializedKey)}
             className="w-6 cursor-pointer"
           >
             <DocumentMagnifyingGlassIcon />

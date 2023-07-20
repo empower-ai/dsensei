@@ -27,9 +27,9 @@ export function DimensionSliceDetailModalMetricCard({
   const matchingRegex =
     getRegexMatchPatternForDimensionSliceKey(selectedSliceKey);
 
-  const relatedSliceInfo = Array.from(metric.dimensionSliceInfo.keys())
+  const relatedSliceInfo = Object.keys(metric.dimensionSliceInfo)
     .filter((key) => key.match(matchingRegex))
-    .map((key) => metric.dimensionSliceInfo.get(key)!);
+    .map((key) => metric.dimensionSliceInfo[key]!);
 
   const maxImpact = Math.max(
     ...relatedSliceInfo.map((info) => Math.abs(info.impact))

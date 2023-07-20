@@ -5,14 +5,14 @@ import {
   InsightMetric,
 } from "../common/types";
 import { serializeDimensionSliceKey } from "../common/utils";
-import {
-  dummyBuyersMetric,
-  dummyOrdersMetric,
-  dummyRevenueMetric,
-} from "./dummyData";
+// import {
+//   dummyBuyersMetric,
+//   dummyOrdersMetric,
+//   dummyRevenueMetric,
+// } from "./dummyData";
 
 export type RowStatus = {
-  key: DimensionSliceKey[];
+  key: string[];
   isExpanded: boolean;
   children: {
     [key: string]: RowStatus;
@@ -22,10 +22,11 @@ export type RowStatus = {
 export interface ComparisonInsightState {
   analyzingMetrics: InsightMetric;
   relatedMetrics: InsightMetric[];
-  selectedSliceKey?: DimensionSliceKey;
+  selectedSliceKey?: string;
   tableRowStatus: {
     [key: string]: RowStatus;
   };
+  isLoading: boolean;
 }
 
 function buildRowStatusMap(metric: InsightMetric): {
@@ -40,16 +41,14 @@ function buildRowStatusMap(metric: InsightMetric): {
 }
 
 function buildRowStatusForDimensionSlice(
-  key: DimensionSliceKey,
-  dimensionSliceInfoMap: Map<string, DimensionSliceInfo>,
-  parentKeys: DimensionSliceKey[]
+  key: string,
+  dimensionSliceInfoMap: {[key: string]: DimensionSliceInfo},
+  parentKeys: string[]
 ): [string, RowStatus] {
-  const serializedKey = serializeDimensionSliceKey(key);
-
-  const dimensionSliceInfo = dimensionSliceInfoMap.get(serializedKey);
+  const dimensionSliceInfo = dimensionSliceInfoMap[key];
 
   return [
-    serializeDimensionSliceKey(key),
+    key,
     {
       key: [...parentKeys, key],
       isExpanded: false,
@@ -64,36 +63,52 @@ function buildRowStatusForDimensionSlice(
     },
   ];
 }
-console.log(buildRowStatusMap(dummyRevenueMetric));
+// console.log(buildRowStatusMap(dummyRevenueMetric));
 
 const initialState: ComparisonInsightState = {
-  analyzingMetrics: dummyRevenueMetric,
-  relatedMetrics: [dummyBuyersMetric, dummyOrdersMetric],
-  tableRowStatus: buildRowStatusMap(dummyRevenueMetric),
-  selectedSliceKey: [
-    {
-      dimension: "country",
-      value: "USA",
-    },
-  ],
+  analyzingMetrics: {} as InsightMetric,
+  relatedMetrics: [],
+  tableRowStatus: {} ,
+  selectedSliceKey: '',
+  isLoading: true,
 };
 
 export const comparisonMetricsSlice = createSlice({
   name: "comparison-insight",
   initialState,
   reducers: {
-    toggleRow: (state, action: PayloadAction<DimensionSliceKey[]>) => {
+    setLoadingStatus: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
+    },
+    updateMetrics: (state, action: PayloadAction<{ revenue: object, unique_user: object, unique_order: object}>) => {
+      const revenueMetric = action.payload["revenue"] as InsightMetric;
+      const buyersMetric = action.payload["unique_user"] as InsightMetric;
+      const ordersMetric = action.payload["unique_order"] as InsightMetric;
+
+      if (!revenueMetric || !buyersMetric || !ordersMetric) {
+        console.log('skip, invalid metrics');
+        return;
+      }
+
+      state.analyzingMetrics = revenueMetric;
+      state.relatedMetrics = [buyersMetric, ordersMetric];
+      state.tableRowStatus = buildRowStatusMap(revenueMetric);
+      state.selectedSliceKey = "F";
+      state.isLoading = false;
+    },
+
+    toggleRow: (state, action: PayloadAction<string[]>) => {
       let rowStatus: RowStatus | undefined;
       let initialized = false;
       action.payload.forEach((key) => {
         if (!rowStatus) {
           if (!initialized) {
-            rowStatus = state.tableRowStatus[serializeDimensionSliceKey(key)];
+            rowStatus = state.tableRowStatus[key];
           } else {
             rowStatus = undefined;
           }
         } else {
-          rowStatus = rowStatus.children[serializeDimensionSliceKey(key)];
+          rowStatus = rowStatus.children[key];
         }
       });
 
@@ -101,13 +116,13 @@ export const comparisonMetricsSlice = createSlice({
         rowStatus.isExpanded = !rowStatus.isExpanded;
       }
     },
-    selectSliceForDetail: (state, action: PayloadAction<DimensionSliceKey>) => {
+    selectSliceForDetail: (state, action: PayloadAction<string>) => {
       state.selectedSliceKey = action.payload;
     },
   },
 });
 
-export const { toggleRow, selectSliceForDetail } =
+export const { toggleRow, selectSliceForDetail, updateMetrics, setLoadingStatus } =
   comparisonMetricsSlice.actions;
 
 export default comparisonMetricsSlice.reducer;

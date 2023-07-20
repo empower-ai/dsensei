@@ -30,13 +30,11 @@ export default function TopDimensionSlicesTable({ metric, rowStatus }: Props) {
         </TableHead>
         <TableBody>
           {metric.topDriverSliceKeys.map((key) => {
-            const dimensionSlice = metric.dimensionSliceInfo.get(
-              serializeDimensionSliceKey(key)
-            )!;
+            const dimensionSlice = metric.dimensionSliceInfo[key]!;
 
             return (
               <TopDimensionSlicesTableRow
-                rowStatus={rowStatus[serializeDimensionSliceKey(key)]!}
+                rowStatus={rowStatus[key]!}
                 dimensionSlice={dimensionSlice}
               />
             );

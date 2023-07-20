@@ -2,7 +2,8 @@ from dataclasses import dataclass, asdict
 from typing import List, Dict
 import pandas as pd
 from itertools import combinations
-
+import json
+import numpy as np
 @dataclass
 class Dimension:
     name: str = None
@@ -13,36 +14,36 @@ class DimensionValuePair:
     dimension: str = None
     value: str = None
 
-@dataclass(frozen=True)
-class DimensionSliceKey:
-    dimension_value_pairs: tuple[DimensionValuePair]
+# @dataclass(frozen=True)
+# class DimensionSliceKey:
+#     dimension_value_pairs: tuple[DimensionValuePair]
 
 @dataclass
 class PeriodValue:
-    slice_size: float = None
-    slice_count: int = None
+    sliceSize: float = None
+    sliceCount: int = None
 
 @dataclass
 class DimensionSliceInfo:
-    key: DimensionSliceKey = None
-    serialized_key: str = None
-    top_driver_slice_keys: List[str] = None
-    last_period_value: PeriodValue = None
-    current_period_value: PeriodValue = None
-    impact_score: float = None
+    key: tuple[DimensionValuePair] = None
+    serializedKey: str = None
+    topDrivingDimensionSliceKeys: List[str] = None
+    baselineValue: PeriodValue = None
+    comparisonValue: PeriodValue = None
+    impact: float = None
 
 @dataclass
 class Metrics:
     name: str = None
-    baseline_value: float = None
-    comparison_value: float = None
-    baseline_value_by_date: Dict[str, float] = None
-    comparison_value_by_date: Dict[str, float] = None
-    baseline_date_range: List[str] = None
-    comparison_date_range: List[str] = None
-    top_driver_slice_keys: List[str] = None
+    baselineValue: float = None
+    comparisonValue: float = None
+    baselineValueByDate: Dict[str, float] = None
+    comparisonValueByDate: Dict[str, float] = None
+    baselineDateRange: List[str] = None
+    comparisonDateRange: List[str] = None
+    topDriverSliceKeys: List[str] = None
     dimensions: Dict[str, Dimension] = None
-    slice_info: Dict[str, DimensionSliceInfo] = None
+    dimensionSliceInfo: Dict[str, DimensionSliceInfo] = None
 
 def analyze(df, columns: List[str], agg_method: Dict[str, str], metrics_name: Dict[str, str]):
     all_columns = ['year'] + columns
@@ -63,7 +64,7 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name) -> Dict[frozenset, Dime
     def mapToObj(index, row):
         index = index if (isinstance(index, list) or isinstance(index, tuple)) else [index]
 
-        key = DimensionSliceKey(tuple([DimensionValuePair(dimensions[i], index[i]) for i in range(len(dimensions))]))
+        key = tuple([DimensionValuePair(dimensions[i], index[i]) for i in range(len(dimensions))])
         serializedKey = '_'.join([str(v) for v in index])
         currentPeriodValue = PeriodValue(row[metrics_name], row[metrics_name])
         lastPeriodValue = PeriodValue(row[f'{metrics_name}_last_year'], row[f'{metrics_name}_last_year'])
@@ -74,11 +75,21 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name) -> Dict[frozenset, Dime
             [],
             lastPeriodValue,
             currentPeriodValue,
-            currentPeriodValue.slice_count - lastPeriodValue.slice_count)
+            currentPeriodValue.sliceCount - lastPeriodValue.sliceCount)
         return sliceInfo
 
     return df.apply(lambda row: mapToObj(row.name, row), axis=1).tolist()
 
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
 
 class MetricsController(object):
     def __init__(self,
@@ -89,7 +100,9 @@ class MetricsController(object):
         self.df = data
 
         self.columns_of_interest = columns_of_interest
-        self.agg = analyze(self.df, self.columns_of_interest, agg_method, metrics_name)
+        self.agg_method = agg_method
+        self.metrics_name = metrics_name
+        self.aggs = analyze(self.df, self.columns_of_interest, agg_method, metrics_name)
 
         self.slices = []
         self.slice()
@@ -97,7 +110,7 @@ class MetricsController(object):
     def slice(self):
         for i in range(1, len(self.columns_of_interest) + 1):
             for columns in combinations(self.columns_of_interest, i):
-                dimension_slice = analyze(self.df, list(columns))
+                dimension_slice = analyze(self.df, list(columns), self.agg_method, self.metrics_name)
                 self.slices.append(dimension_slice)
 
     def getDimensions(self) -> Dict[str, Dimension]:
@@ -107,25 +120,25 @@ class MetricsController(object):
         return dimensions
 
     def getTopDrivingDimensionSliceKeys(self,
-                                        parentSlice: DimensionSliceKey,
-                                        slice_info_dict: Dict[DimensionSliceKey, DimensionSliceInfo],
-                                        topN = 5) -> List[str]:
+                                        parentSlice: tuple[DimensionValuePair],
+                                        slice_info_dict: Dict[tuple[DimensionValuePair], DimensionSliceInfo],
+                                        topN = 10) -> List[str]:
         """
         Only calculate first level child impact
         """
-        parentDimension = [slice.dimension for slice in parentSlice.dimension_value_pairs]
+        parentDimension = [slice.dimension for slice in parentSlice]
         childDimensions = [dimension for dimension in self.columns_of_interest if dimension not in parentDimension]
         childSliceKey = [
-            DimensionSliceKey(tuple(
-                parentSlice.dimension_value_pairs + (DimensionValuePair(dimension, value),)
-            ))
+            tuple(
+                parentSlice + (DimensionValuePair(dimension, value),)
+            )
             for dimension in childDimensions
             for value in self.getDimensions()[dimension].values
         ]
 
         slice_info = [slice_info_dict[key] for key in childSliceKey if key in slice_info_dict]
-        slice_info.sort(key=lambda slice: slice.impact_score, reverse=True)
-        return list(map(lambda slice: slice.serialized_key, slice_info[:topN]))
+        slice_info.sort(key=lambda slice: slice.impact, reverse=True)
+        return list(map(lambda slice: slice.serializedKey, slice_info[:topN]))
 
     def buildMetrics(self, metricsName: str) -> Metrics:
         metrics = Metrics()
@@ -143,14 +156,13 @@ class MetricsController(object):
             for dimension_slice in all_dimension_slices
         }
 
-        metrics.top_driver_slice_keys = self.getTopDrivingDimensionSliceKeys(
-            DimensionSliceKey(()),
+        metrics.topDriverSliceKeys = self.getTopDrivingDimensionSliceKeys(
+            (),
             slice_info_dict
         )
 
-
         def getTopDrivingDimensionSliceKeys(dimension_slice: DimensionSliceInfo):
-            dimension_slice.top_driver_slice_keys = self.getTopDrivingDimensionSliceKeys(
+            dimension_slice.topDrivingDimensionSliceKeys = self.getTopDrivingDimensionSliceKeys(
                 dimension_slice.key,
                 slice_info_dict
             )
@@ -161,24 +173,30 @@ class MetricsController(object):
             all_dimension_slices
         )
 
-        metrics.slice_info = [{ dimension_slice.serialized_key: dimension_slice }
+        metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices
-                             ]
-
-        metrics.baseline_value_by_date = self.aggs[f'{metricsName}_last_year'].sum()
-        metrics.comparison_value_by_date = self.aggs[metricsName].sum()
-        metrics.baseline_date_range = ['2021-01-01', '2021-12-31']
-        metrics.comparison_date_range = ['2022-01-01', '2022-12-31']
+        }
 
 
+        metrics.baselineValueByDate = [{
+            "date": "2022-01-01",
+            "value": self.aggs[f'{metricsName}_last_year'].sum()
+        }]
+        metrics.comparisonValueByDate = [{
+            "date": "2023-01-01",
+            "value": self.aggs[metricsName].sum()
+        }]
+        metrics.baselineDateRange = ['2021-01-01', '2021-12-31']
+        metrics.comparisonDateRange = ['2022-01-01', '2022-12-31']
 
         return metrics
 
     def getSlices(self):
         return self.slices
 
-    def getMetrics(self) -> dict:
+    def getMetrics(self) -> str:
         revenue = asdict(self.buildMetrics('revenue'))
         unique_user = asdict(self.buildMetrics('unique_user'))
         unique_order = asdict(self.buildMetrics('unique_order'))
-        return { 'revenue': revenue, 'unique_user': unique_user, 'unique_order': unique_order }
+        ret = { 'revenue': revenue, 'unique_user': unique_user, 'unique_order': unique_order }
+        return json.dumps(ret, cls=NpEncoder)

@@ -18,9 +18,13 @@ export interface InsightMetric {
   comparisonNumRows: number;
   baselineDateRange: DateRange;
   comparisonDateRange: DateRange;
-  topDriverSliceKeys: DimensionSliceKey[];
-  dimensions: Map<string, string[]>;
-  dimensionSliceInfo: Map<string, DimensionSliceInfo>;
+  topDriverSliceKeys: string[];
+  dimensions: {
+    [key: string]: string[];
+  }
+  dimensionSliceInfo: {
+    [key: string]: DimensionSliceInfo;
+  };
 }
 
 export interface Dimension {
@@ -40,7 +44,8 @@ export type DimensionSliceKey = {
 
 export interface DimensionSliceInfo {
   key: DimensionSliceKey;
-  topDrivingDimensionSliceKeys: DimensionSliceKey[];
+  serializedKey: string;
+  topDrivingDimensionSliceKeys: string[];
   baselineValue: {
     sliceSize: number;
     sliceCount: number;
