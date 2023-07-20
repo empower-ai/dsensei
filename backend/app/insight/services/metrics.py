@@ -1,9 +1,10 @@
 from dataclasses import dataclass, asdict
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import pandas as pd
 from itertools import combinations
 import json
 import numpy as np
+import datetime
 @dataclass
 class Dimension:
     name: str = None
@@ -48,21 +49,39 @@ class Metrics:
     dimensions: Dict[str, Dimension] = None
     dimensionSliceInfo: Dict[str, DimensionSliceInfo] = None
 
-def analyze(df, columns: List[str], agg_method: Dict[str, str], metrics_name: Dict[str, str]):
-    all_columns = ['year'] + columns
+def analyze(df,
+            baseline_period: Tuple[datetime.date, datetime.date],
+            comparison_period: Tuple[datetime.date, datetime.date],
+            columns: List[str],
+            agg_method: Dict[str, str],
+            metrics_name: Dict[str, str]):
+    # all_columns = ['year'] + columns
+    # print(columns);
+    baseline = df.loc[df['created_at'].between(
+        pd.to_datetime(baseline_period[0], utc=True),
+        pd.to_datetime(baseline_period[1], utc=True))
+    ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
+    comparison = df.loc[df['created_at'].between(
+        pd.to_datetime(comparison_period[0], utc=True),
+        pd.to_datetime(comparison_period[1], utc=True))
+    ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
 
-    agg = df.groupby(all_columns).agg(agg_method)
 
-    agg = agg.rename(columns = metrics_name)
-    this_year = agg.loc[2022].copy()
-    past_year = agg.loc[2021].copy()
+
+    # agg = df.groupby(columns).agg(agg_method)
+
+    # agg = agg.rename(columns = metrics_name)
+
+    # baseline = agg.loc[agg['created_at'].between(baseline_period[0], baseline_period[1])]
+    # comparison = agg.loc[agg['created_at'].between(comparison_period[0], comparison_period[1])]
+
     for metrics_key in metrics_name.values():
-        this_year[f'{metrics_key}_last_year'] = past_year[metrics_key]
+        comparison[f'{metrics_key}_last_period'] = baseline[metrics_key]
 
-    this_year['count_last_year'] = past_year['count']
-    this_year.fillna(0, inplace=True)
+    comparison['count_last_period'] = baseline['count']
+    comparison.fillna(0, inplace=True)
 
-    return this_year
+    return comparison
 
 def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, comparisonCount) -> Dict[frozenset, DimensionSliceInfo]:
     dimensions = [df.index.name] if df.index.name else list(df.index.names)
@@ -72,7 +91,7 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
         key = tuple([DimensionValuePair(dimensions[i], index[i]) for i in range(len(dimensions))])
         serializedKey = '_'.join([str(v) for v in index])
         currentPeriodValue = PeriodValue(row['count'], row['count'] / comparisonCount, row[metrics_name])
-        lastPeriodValue = PeriodValue(row[f'count_last_year'], row['count_last_year'] / baselineCount, row[f'{metrics_name}_last_year'])
+        lastPeriodValue = PeriodValue(row[f'count_last_period'], row['count_last_period'] / baselineCount, row[f'{metrics_name}_last_period'])
 
         sliceInfo = DimensionSliceInfo(
             key,
@@ -99,6 +118,8 @@ class NpEncoder(json.JSONEncoder):
 class MetricsController(object):
     def __init__(self,
                  data: pd.DataFrame,
+                 baseline_period: Tuple[datetime.date, datetime.date],
+                 comparison_period: Tuple[datetime.date, datetime.date],
                  columns_of_interest: List[str],
                  agg_method: Dict[str, str],
                  metrics_name: Dict[str, str]):
@@ -107,15 +128,15 @@ class MetricsController(object):
         self.columns_of_interest = columns_of_interest
         self.agg_method = agg_method
         self.metrics_name = metrics_name
-        self.aggs = analyze(self.df, self.columns_of_interest, agg_method, metrics_name)
+        self.aggs = analyze(self.df, baseline_period, comparison_period, self.columns_of_interest, agg_method, metrics_name)
 
         self.slices = []
-        self.slice()
+        self.slice(baseline_period, comparison_period)
 
-    def slice(self):
+    def slice(self, baseline_period, comparison_period):
         for i in range(1, len(self.columns_of_interest) + 1):
             for columns in combinations(self.columns_of_interest, i):
-                dimension_slice = analyze(self.df, list(columns), self.agg_method, self.metrics_name)
+                dimension_slice = analyze(self.df, baseline_period, comparison_period, list(columns), self.agg_method, self.metrics_name)
                 self.slices.append(dimension_slice)
 
     def getDimensions(self) -> Dict[str, Dimension]:
@@ -149,7 +170,7 @@ class MetricsController(object):
     def buildMetrics(self, metricsName: str) -> Metrics:
         metrics = Metrics()
         metrics.name = metricsName
-        metrics.baselineNumRows = self.aggs['count_last_year'].sum()
+        metrics.baselineNumRows = self.aggs['count_last_period'].sum()
         metrics.comparisonNumRows = self.aggs['count'].sum()
         metrics.dimensions = self.getDimensions()
 
@@ -184,12 +205,12 @@ class MetricsController(object):
         metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices
         }
-        metrics.baselineValue = self.aggs[f'{metricsName}_last_year'].sum()
+        metrics.baselineValue = self.aggs[f'{metricsName}_last_period'].sum()
         metrics.comparisonValue = self.aggs[metricsName].sum()
 
         metrics.baselineValueByDate = [{
             "date": "2022-01-01",
-            "value": self.aggs[f'{metricsName}_last_year'].sum()
+            "value": self.aggs[f'{metricsName}_last_period'].sum()
         }]
         metrics.comparisonValueByDate = [{
             "date": "2023-01-01",

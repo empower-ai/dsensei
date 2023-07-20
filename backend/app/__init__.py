@@ -7,14 +7,12 @@ from app.insight.datasource.csvSource import CsvSource
 from app.insight.services.metrics import MetricsController
 
 import pandas as pd
+from datetime import datetime
 
 app = Flask(__name__, static_url_path='')
 CORS(app)
-# app.config.from_object(Config)
-# app._static_folder = os.path.abspath("static/")
 
-
-columns_of_interest = ['age_group', 'user_gender']
+columns_of_interest = ['age_group', 'user_gender', 'category']
 csvSource = CsvSource('./data/data.csv')
 
 df = csvSource.load()
@@ -35,7 +33,14 @@ metrics_name = {
     'order_items_id': "count"
 }
 
-metrics = MetricsController(df, columns_of_interest, agg_method, metrics_name)
+metrics = MetricsController(
+   df,
+    (datetime.strptime('2021-01-01', "%Y-%m-%d").date(), datetime.strptime('2021-12-31', "%Y-%m-%d").date()),
+    (datetime.strptime('2022-01-01', "%Y-%m-%d").date(), datetime.strptime('2022-12-31', "%Y-%m-%d").date()),
+   columns_of_interest,
+   agg_method,
+   metrics_name,
+   )
 
 @app.after_request
 def after_request(response):
