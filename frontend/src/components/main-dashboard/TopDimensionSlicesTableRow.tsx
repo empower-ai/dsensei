@@ -12,7 +12,10 @@ import {
   ChevronDoubleRightIcon,
   DocumentMagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import { serializeDimensionSliceKey } from "../../common/utils";
+import {
+  formatDimensionSliceKeyForRendering,
+  serializeDimensionSliceKey,
+} from "../../common/utils";
 import { ReactNode } from "react";
 import {
   RowStatus,
@@ -26,6 +29,7 @@ import { RootState } from "../../store";
 type Props = {
   dimensionSlice: DimensionSliceInfo;
   rowStatus: RowStatus;
+  parentDimensionSliceKey?: DimensionSliceKey;
 };
 
 function getChangePercentage(num1: number, num2: number): ReactNode {
@@ -51,6 +55,7 @@ function getImpact(impact: number): ReactNode {
 export default function TopDimensionSlicesTableRow({
   rowStatus,
   dimensionSlice,
+  parentDimensionSliceKey,
 }: Props) {
   const allDimensionSliceInfo = useSelector(
     (state: RootState) =>
@@ -67,6 +72,7 @@ export default function TopDimensionSlicesTableRow({
         <TopDimensionSlicesTableRow
           rowStatus={rowStatus.children[serializedSubKey]!}
           dimensionSlice={allDimensionSliceInfo.get(serializedSubKey)!}
+          parentDimensionSliceKey={dimensionSlice.key}
         />
       );
     });
@@ -105,7 +111,12 @@ export default function TopDimensionSlicesTableRow({
               )}
             </span>
           )}
-          <p className="px-2 cursor">{serializedKey}</p>
+          <p className="px-2 cursor">
+            {formatDimensionSliceKeyForRendering(
+              dimensionSlice.key,
+              parentDimensionSliceKey
+            )}
+          </p>
           <span
             onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
             className="w-6 cursor-pointer"

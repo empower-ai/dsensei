@@ -36,7 +36,9 @@ export function DimensionSliceDetailModal() {
     .filter((key) => key.match(matchingRegex))
     .map((key) => analyzingMetrics.dimensionSliceInfo.get(key)!);
 
-  const maxImpact = Math.max(...relatedSliceInfo.map((info) => info.impact));
+  const maxImpact = Math.max(
+    ...relatedSliceInfo.map((info) => Math.abs(info.impact))
+  );
 
   return (
     <dialog id="slice_detail" className="modal">
@@ -102,7 +104,6 @@ export function DimensionSliceDetailModal() {
                       </Text>
                       <DeltaBar
                         value={(sliceInfo.impact / maxImpact) * 100}
-                        isIncreasePositive={sliceInfo.impact > 0}
                         className="w-[80%]"
                       />
                     </Flex>
