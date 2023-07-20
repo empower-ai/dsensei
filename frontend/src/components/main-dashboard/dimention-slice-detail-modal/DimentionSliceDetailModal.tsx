@@ -33,7 +33,10 @@ export function DimensionSliceDetailModal() {
   const allMetrics = [analyzingMetrics, ...relatedMetrics];
 
   if (!selectedSliceKey) {
-    return null;
+    return (
+      <dialog id="slice_detail" className="modal">
+      </dialog>
+    );
   }
 
   const sliceInfo = analyzingMetrics.dimensionSliceInfo[selectedSliceKey];

@@ -85,11 +85,15 @@ def analyze(df,
 
 def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, comparisonCount) -> Dict[frozenset, DimensionSliceInfo]:
     dimensions = [df.index.name] if df.index.name else list(df.index.names)
+    dimensions.sort()
     def mapToObj(index, row):
         index = index if (isinstance(index, list) or isinstance(index, tuple)) else [index]
 
         key = tuple([DimensionValuePair(dimensions[i], index[i]) for i in range(len(dimensions))])
         serializedKey = '_'.join([str(v) for v in index])
+
+        serializedKey = '|'.join([f'{dimensions[i]}:{index[i]}' for i in range(len(dimensions))])
+
         currentPeriodValue = PeriodValue(row['count'], row['count'] / comparisonCount, row[metrics_name])
         lastPeriodValue = PeriodValue(row[f'count_last_period'], row['count_last_period'] / baselineCount, row[f'{metrics_name}_last_period'])
 

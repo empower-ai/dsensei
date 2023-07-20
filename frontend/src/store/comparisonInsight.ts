@@ -69,7 +69,6 @@ const initialState: ComparisonInsightState = {
   analyzingMetrics: {} as InsightMetric,
   relatedMetrics: [],
   tableRowStatus: {} ,
-  selectedSliceKey: '',
   isLoading: true,
 };
 
@@ -93,7 +92,6 @@ export const comparisonMetricsSlice = createSlice({
       state.analyzingMetrics = revenueMetric;
       state.relatedMetrics = [buyersMetric, ordersMetric];
       state.tableRowStatus = buildRowStatusMap(revenueMetric);
-      state.selectedSliceKey = "F";
       state.isLoading = false;
     },
 
