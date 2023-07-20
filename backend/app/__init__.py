@@ -14,7 +14,7 @@ CORS(app)
 # app._static_folder = os.path.abspath("static/")
 
 
-columns_of_interest = ['age_group', 'user_gender', "category"]
+columns_of_interest = ['age_group', 'user_gender']
 csvSource = CsvSource('./data/data.csv')
 
 df = csvSource.load()
@@ -25,13 +25,14 @@ df['age_group'] = (df['user_age'] / 10).astype(int) * 10
 agg_method = {
     'price': 'sum',
     'user_id': 'nunique',
-    'order_id': 'nunique'
+    'order_id': 'nunique',
+    'order_items_id': 'count'
 }
-
 metrics_name = {
     'price': 'revenue',
     'user_id': 'unique_user',
-    'order_id': 'unique_order'
+    'order_id': 'unique_order',
+    'order_items_id': "count"
 }
 
 metrics = MetricsController(df, columns_of_interest, agg_method, metrics_name)

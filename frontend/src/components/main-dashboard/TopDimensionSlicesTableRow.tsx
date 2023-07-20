@@ -150,7 +150,7 @@ export default function TopDimensionSlicesTableRow({
           <Flex className="justify-start items-center">
             <Text className="mr-3">
               {dimensionSlice.baselineValue.sliceValue} vs{" "}
-              {dimensionSlice.comparisonValue.sliceCount}
+              {dimensionSlice.comparisonValue.sliceValue}
             </Text>
             {getImpact(dimensionSlice?.impact ?? 0)}
           </Flex>

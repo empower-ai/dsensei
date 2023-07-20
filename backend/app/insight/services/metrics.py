@@ -20,8 +20,8 @@ class DimensionValuePair:
 
 @dataclass
 class PeriodValue:
-    sliceSize: float = None
     sliceCount: int = None
+    sliceValue: float = None
 
 @dataclass
 class DimensionSliceInfo:
@@ -55,6 +55,8 @@ def analyze(df, columns: List[str], agg_method: Dict[str, str], metrics_name: Di
     past_year = agg.loc[2021].copy()
     for metrics_key in metrics_name.values():
         this_year[f'{metrics_key}_last_year'] = past_year[metrics_key]
+
+    this_year['count_last_year'] = past_year['count']
     this_year.fillna(0, inplace=True)
 
     return this_year
@@ -66,8 +68,8 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name) -> Dict[frozenset, Dime
 
         key = tuple([DimensionValuePair(dimensions[i], index[i]) for i in range(len(dimensions))])
         serializedKey = '_'.join([str(v) for v in index])
-        currentPeriodValue = PeriodValue(row[metrics_name], row[metrics_name])
-        lastPeriodValue = PeriodValue(row[f'{metrics_name}_last_year'], row[f'{metrics_name}_last_year'])
+        currentPeriodValue = PeriodValue(row['count'], row[metrics_name])
+        lastPeriodValue = PeriodValue(row[f'count_last_year'], row[f'{metrics_name}_last_year'])
 
         sliceInfo = DimensionSliceInfo(
             key,
@@ -75,7 +77,7 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name) -> Dict[frozenset, Dime
             [],
             lastPeriodValue,
             currentPeriodValue,
-            currentPeriodValue.sliceCount - lastPeriodValue.sliceCount)
+            currentPeriodValue.sliceValue - lastPeriodValue.sliceValue)
         return sliceInfo
 
     return df.apply(lambda row: mapToObj(row.name, row), axis=1).tolist()
