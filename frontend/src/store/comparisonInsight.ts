@@ -42,7 +42,7 @@ function buildRowStatusMap(metric: InsightMetric): {
 
 function buildRowStatusForDimensionSlice(
   key: string,
-  dimensionSliceInfoMap: {[key: string]: DimensionSliceInfo},
+  dimensionSliceInfoMap: { [key: string]: DimensionSliceInfo },
   parentKeys: string[]
 ): [string, RowStatus] {
   const dimensionSliceInfo = dimensionSliceInfoMap[key];
@@ -63,12 +63,11 @@ function buildRowStatusForDimensionSlice(
     },
   ];
 }
-// console.log(buildRowStatusMap(dummyRevenueMetric));
 
 const initialState: ComparisonInsightState = {
   analyzingMetrics: {} as InsightMetric,
   relatedMetrics: [],
-  tableRowStatus: {} ,
+  tableRowStatus: {},
   isLoading: true,
 };
 
@@ -79,13 +78,20 @@ export const comparisonMetricsSlice = createSlice({
     setLoadingStatus: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
-    updateMetrics: (state, action: PayloadAction<{ revenue: object, unique_user: object, unique_order: object}>) => {
+    updateMetrics: (
+      state,
+      action: PayloadAction<{
+        revenue: object;
+        unique_user: object;
+        unique_order: object;
+      }>
+    ) => {
       const revenueMetric = action.payload["revenue"] as InsightMetric;
       const buyersMetric = action.payload["unique_user"] as InsightMetric;
       const ordersMetric = action.payload["unique_order"] as InsightMetric;
 
       if (!revenueMetric || !buyersMetric || !ordersMetric) {
-        console.log('skip, invalid metrics');
+        console.log("skip, invalid metrics");
         return;
       }
 
@@ -120,7 +126,11 @@ export const comparisonMetricsSlice = createSlice({
   },
 });
 
-export const { toggleRow, selectSliceForDetail, updateMetrics, setLoadingStatus } =
-  comparisonMetricsSlice.actions;
+export const {
+  toggleRow,
+  selectSliceForDetail,
+  updateMetrics,
+  setLoadingStatus,
+} = comparisonMetricsSlice.actions;
 
 export default comparisonMetricsSlice.reducer;
