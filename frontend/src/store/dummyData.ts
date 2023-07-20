@@ -38,6 +38,12 @@ export const dummyRevenueMetric = {
         value: "USA",
       },
     ],
+    [
+      {
+        dimension: "country",
+        value: "China",
+      },
+    ],
   ],
   dimensionSliceInfo: new Map([
     [
@@ -52,11 +58,19 @@ export const dummyRevenueMetric = {
         topDrivingDimensionSliceKeys: [
           [
             {
+              dimension: "country",
+              value: "USA",
+            },
+            {
               dimension: "device",
               value: "ios",
             },
           ],
           [
+            {
+              dimension: "country",
+              value: "USA",
+            },
             {
               dimension: "brand",
               value: "nike",
@@ -85,20 +99,7 @@ export const dummyRevenueMetric = {
             value: "China",
           },
         ],
-        topDrivingDimensionSliceKeys: [
-          [
-            {
-              dimension: "device",
-              value: "ios",
-            },
-          ],
-          [
-            {
-              dimension: "brand",
-              value: "nike",
-            },
-          ],
-        ],
+        topDrivingDimensionSliceKeys: [],
         baselineValue: {
           sliceSize: 33.2,
           sliceCount: 3042,
@@ -113,9 +114,13 @@ export const dummyRevenueMetric = {
       },
     ],
     [
-      "device:ios",
+      "country:USA AND device:ios",
       {
         key: [
+          {
+            dimension: "country",
+            value: "USA",
+          },
           {
             dimension: "device",
             value: "ios",
@@ -136,9 +141,13 @@ export const dummyRevenueMetric = {
       },
     ],
     [
-      "brand:nike",
+      "brand:nike AND country:USA",
       {
         key: [
+          {
+            dimension: "country",
+            value: "USA",
+          },
           {
             dimension: "brand",
             value: "nike",
@@ -199,6 +208,12 @@ export const dummyOrdersMetric = {
       {
         dimension: "country",
         value: "USA",
+      },
+    ],
+    [
+      {
+        dimension: "country",
+        value: "China",
       },
     ],
   ],
@@ -326,6 +341,12 @@ export const dummyBuyersMetric = {
       {
         dimension: "country",
         value: "USA",
+      },
+    ],
+    [
+      {
+        dimension: "country",
+        value: "China",
       },
     ],
   ],

@@ -57,13 +57,12 @@ export default function TopDimensionSlicesTableRow({
       state.comparisonInsight.analyzingMetrics.dimensionSliceInfo
   );
   const dispatch = useDispatch();
-  const serializedKey = rowStatus.key
-    .map((keyComponent) => serializeDimensionSliceKey(keyComponent))
-    .join(" AND ");
+  const serializedKey = serializeDimensionSliceKey(dimensionSlice.key);
 
   function renderSubSlices() {
     return dimensionSlice.topDrivingDimensionSliceKeys.map((subKey) => {
       const serializedSubKey = serializeDimensionSliceKey(subKey);
+
       return (
         <TopDimensionSlicesTableRow
           rowStatus={rowStatus.children[serializedSubKey]!}

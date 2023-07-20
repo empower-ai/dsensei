@@ -64,6 +64,7 @@ function buildRowStatusForDimensionSlice(
     },
   ];
 }
+console.log(buildRowStatusMap(dummyRevenueMetric));
 
 const initialState: ComparisonInsightState = {
   analyzingMetrics: dummyRevenueMetric,
