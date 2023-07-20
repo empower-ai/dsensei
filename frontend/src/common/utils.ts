@@ -6,7 +6,7 @@ export function serializeDimensionSliceKey(key: DimensionSliceKey): string {
       k1.dimension.toLowerCase() > k2.dimension.toLowerCase() ? 1 : -1
     )
     .map((k) => `${k.dimension}:${k.value}`)
-    .join(" AND ");
+    .join("|");
 }
 
 export function getRegexMatchPatternForDimensionSliceKey(
@@ -14,10 +14,10 @@ export function getRegexMatchPatternForDimensionSliceKey(
 ): RegExp {
   const baseRegexStr = [...key]
     .sort((k1, k2) =>
-      k1.dimension.toLowerCase() > k2.dimension.toLowerCase() ? -1 : 1
+      k1.dimension.toLowerCase() > k2.dimension.toLowerCase() ? 1 : -1
     )
-    .map((k) => `${k.dimension}:.*(?<!AND.*)`)
-    .join();
+    .map((k) => `${k.dimension}:[^\\|]+`)
+    .join("\\|");
 
   return new RegExp(`^${baseRegexStr}$`);
 }

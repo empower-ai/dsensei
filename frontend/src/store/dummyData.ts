@@ -114,7 +114,7 @@ export const dummyRevenueMetric = {
       },
     ],
     [
-      "country:USA AND device:ios",
+      "country:USA|device:ios",
       {
         key: [
           {
@@ -141,7 +141,7 @@ export const dummyRevenueMetric = {
       },
     ],
     [
-      "brand:nike AND country:USA",
+      "brand:nike|country:USA",
       {
         key: [
           {
