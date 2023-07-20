@@ -105,12 +105,7 @@ export default function TopDimensionSlicesTableRow({
               )}
             </span>
           )}
-          <p
-            className="px-2 cursor"
-            onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
-          >
-            {serializedKey}
-          </p>
+          <p className="px-2 cursor">{serializedKey}</p>
           <span
             onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
             className="w-6 cursor-pointer"

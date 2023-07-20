@@ -53,7 +53,7 @@ export function DimensionSliceDetailModal() {
         <Divider />
         <Flex justifyContent="start">
           <div className="text-start">
-            <Title>Other Slices</Title>
+            <Title>Other Slices under the Same Dimension(s)</Title>
             <Subtitle>
               Showing the slices with noticeable impact under dimension(s):
               <span className="mx-1" />
