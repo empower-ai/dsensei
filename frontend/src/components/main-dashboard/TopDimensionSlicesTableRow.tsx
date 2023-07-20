@@ -30,6 +30,7 @@ type Props = {
   dimensionSlice: DimensionSliceInfo;
   rowStatus: RowStatus;
   parentDimensionSliceKey?: DimensionSliceKey;
+  overallChange: number;
 };
 
 function getChangePercentage(num1: number, num2: number): ReactNode {
@@ -42,13 +43,32 @@ function getChangePercentage(num1: number, num2: number): ReactNode {
   );
 }
 
-function getImpact(impact: number): ReactNode {
+function getPerformanceComparedWithAvg(
+  num1: number,
+  num2: number,
+  avgPerf: number
+): ReactNode {
+  if (num1 === 0) {
+    return "N/A";
+  }
+
+  const changePct = (num2 - num1) / num1;
+
+  return getImpact((changePct - avgPerf) * 100, (n) => `${n.toFixed(2)}%`);
+}
+
+function getImpact(
+  impact: number,
+  formatter: (n: number) => string = function (n: number) {
+    return n.toFixed(2);
+  }
+): ReactNode {
   if (impact > 0) {
-    return <BadgeDelta deltaType="increase">{impact}</BadgeDelta>;
+    return <BadgeDelta deltaType="increase">{formatter(impact)}</BadgeDelta>;
   } else if (impact === 0) {
-    return <BadgeDelta deltaType="unchanged">{impact}</BadgeDelta>;
+    return <BadgeDelta deltaType="unchanged">{formatter(impact)}</BadgeDelta>;
   } else {
-    return <BadgeDelta deltaType="decrease">{impact}</BadgeDelta>;
+    return <BadgeDelta deltaType="decrease">{formatter(impact)}</BadgeDelta>;
   }
 }
 
@@ -56,6 +76,7 @@ export default function TopDimensionSlicesTableRow({
   rowStatus,
   dimensionSlice,
   parentDimensionSliceKey,
+  overallChange,
 }: Props) {
   const allDimensionSliceInfo = useSelector(
     (state: RootState) =>
@@ -73,6 +94,7 @@ export default function TopDimensionSlicesTableRow({
           rowStatus={rowStatus.children[subKey]!}
           dimensionSlice={allDimensionSliceInfo[subKey]!}
           parentDimensionSliceKey={dimensionSlice.key}
+          overallChange={overallChange}
         />
       );
     });
@@ -148,12 +170,15 @@ export default function TopDimensionSlicesTableRow({
         </TableCell>
         <TableCell>
           <Flex className="justify-start items-center">
-            <Text className="mr-3">
-              {dimensionSlice.baselineValue.sliceValue} vs{" "}
-              {dimensionSlice.comparisonValue.sliceValue}
-            </Text>
             {getImpact(dimensionSlice?.impact ?? 0)}
           </Flex>
+        </TableCell>
+        <TableCell>
+          {getPerformanceComparedWithAvg(
+            dimensionSlice?.baselineValue.sliceValue,
+            dimensionSlice?.comparisonValue.sliceValue,
+            overallChange
+          )}
         </TableCell>
       </TableRow>
       {rowStatus.isExpanded && renderSubSlices()}
