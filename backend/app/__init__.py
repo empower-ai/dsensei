@@ -12,7 +12,7 @@ from datetime import datetime
 app = Flask(__name__, static_url_path='')
 CORS(app)
 
-columns_of_interest = ['age_group', 'user_gender', 'category']
+columns_of_interest = ['age_group', 'user_gender', 'category', 'product_distribution_center_id']
 csvSource = CsvSource('./data/data.csv')
 
 df = csvSource.load()
@@ -35,8 +35,8 @@ metrics_name = {
 
 metrics = MetricsController(
    df,
-    (datetime.strptime('2021-01-01', "%Y-%m-%d").date(), datetime.strptime('2021-12-31', "%Y-%m-%d").date()),
-    (datetime.strptime('2022-01-01', "%Y-%m-%d").date(), datetime.strptime('2022-12-31', "%Y-%m-%d").date()),
+    (datetime.strptime('2021-03-01', "%Y-%m-%d").date(), datetime.strptime('2021-3-31', "%Y-%m-%d").date()),
+    (datetime.strptime('2021-04-01', "%Y-%m-%d").date(), datetime.strptime('2021-4-28', "%Y-%m-%d").date()),
    columns_of_interest,
    agg_method,
    metrics_name,

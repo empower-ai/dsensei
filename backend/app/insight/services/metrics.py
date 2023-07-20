@@ -55,8 +55,6 @@ def analyze(df,
             columns: List[str],
             agg_method: Dict[str, str],
             metrics_name: Dict[str, str]):
-    # all_columns = ['year'] + columns
-    # print(columns);
     baseline = df.loc[df['created_at'].between(
         pd.to_datetime(baseline_period[0], utc=True),
         pd.to_datetime(baseline_period[1], utc=True))
@@ -66,22 +64,9 @@ def analyze(df,
         pd.to_datetime(comparison_period[1], utc=True))
     ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
 
-
-
-    # agg = df.groupby(columns).agg(agg_method)
-
-    # agg = agg.rename(columns = metrics_name)
-
-    # baseline = agg.loc[agg['created_at'].between(baseline_period[0], baseline_period[1])]
-    # comparison = agg.loc[agg['created_at'].between(comparison_period[0], comparison_period[1])]
-
-    for metrics_key in metrics_name.values():
-        comparison[f'{metrics_key}_last_period'] = baseline[metrics_key]
-
-    comparison['count_last_period'] = baseline['count']
-    comparison.fillna(0, inplace=True)
-
-    return comparison
+    joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
+    joined.fillna(0, inplace=True)
+    return joined
 
 def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, comparisonCount) -> Dict[frozenset, DimensionSliceInfo]:
     dimensions = [df.index.name] if df.index.name else list(df.index.names)
@@ -95,7 +80,7 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
         serializedKey = '|'.join([f'{dimensions[i]}:{index[i]}' for i in range(len(dimensions))])
 
         currentPeriodValue = PeriodValue(row['count'], row['count'] / comparisonCount, row[metrics_name])
-        lastPeriodValue = PeriodValue(row[f'count_last_period'], row['count_last_period'] / baselineCount, row[f'{metrics_name}_last_period'])
+        lastPeriodValue = PeriodValue(row[f'count_baseline'], row['count_baseline'] / baselineCount, row[f'{metrics_name}_baseline'])
 
         sliceInfo = DimensionSliceInfo(
             key,
@@ -152,7 +137,7 @@ class MetricsController(object):
     def getTopDrivingDimensionSliceKeys(self,
                                         parentSlice: tuple[DimensionValuePair],
                                         slice_info_dict: Dict[frozenset[DimensionValuePair], DimensionSliceInfo],
-                                        topN = 10) -> List[str]:
+                                        topN = 25) -> List[str]:
         """
         Only calculate first level child impact
         """
@@ -174,7 +159,7 @@ class MetricsController(object):
     def buildMetrics(self, metricsName: str) -> Metrics:
         metrics = Metrics()
         metrics.name = metricsName
-        metrics.baselineNumRows = self.aggs['count_last_period'].sum()
+        metrics.baselineNumRows = self.aggs['count_baseline'].sum()
         metrics.comparisonNumRows = self.aggs['count'].sum()
         metrics.dimensions = self.getDimensions()
 
@@ -209,12 +194,12 @@ class MetricsController(object):
         metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices
         }
-        metrics.baselineValue = self.aggs[f'{metricsName}_last_period'].sum()
+        metrics.baselineValue = self.aggs[f'{metricsName}_baseline'].sum()
         metrics.comparisonValue = self.aggs[metricsName].sum()
 
         metrics.baselineValueByDate = [{
             "date": "2022-01-01",
-            "value": self.aggs[f'{metricsName}_last_period'].sum()
+            "value": self.aggs[f'{metricsName}_baseline'].sum()
         }]
         metrics.comparisonValueByDate = [{
             "date": "2023-01-01",
