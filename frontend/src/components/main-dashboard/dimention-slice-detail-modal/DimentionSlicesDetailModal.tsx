@@ -50,7 +50,9 @@ export function DimensionSliceDetailModal() {
           </button>
         </Flex>
         <Flex>
-          <p>{formatDimensionSliceKeyForRendering(selectedSliceKey)}</p>
+          <p className="flex items-center">
+            {formatDimensionSliceKeyForRendering(selectedSliceKey)}
+          </p>
         </Flex>
         <Divider />
         <Flex justifyContent="start">
