@@ -21,7 +21,7 @@ import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
-import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSlicesDetailModal";
+import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
 
 // const dataFormatter = (number: number) =>
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
