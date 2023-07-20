@@ -12,7 +12,7 @@ from datetime import datetime
 app = Flask(__name__, static_url_path='')
 CORS(app)
 
-columns_of_interest = ['age_group', 'user_gender', 'category', 'product_distribution_center_id']
+columns_of_interest = ['age_group', 'user_gender', 'category', 'product_distribution_center_id', 'user_state']
 csvSource = CsvSource('./data/data.csv')
 
 df = csvSource.load()
