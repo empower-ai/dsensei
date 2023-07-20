@@ -1,5 +1,5 @@
 import "./App.css";
-import MainDashboard from "./components/main-dashboard/MainDashboard";
+import MainDashboard from "../components/main-dashboard/MainDashboard";
 
 // export default () => ;
 
