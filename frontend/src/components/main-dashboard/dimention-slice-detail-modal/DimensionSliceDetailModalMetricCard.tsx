@@ -29,8 +29,10 @@ export function DimensionSliceDetailModalMetricCard({
 
   const relatedSliceInfo = Object.keys(metric.dimensionSliceInfo)
     .filter((key) => key.match(matchingRegex))
-    .map((key) => metric.dimensionSliceInfo[key]!);
-
+    .map((key) => metric.dimensionSliceInfo[key]!)
+    .sort((info1, info2) => {
+      return info2.impact - info1.impact;
+    });
   const maxImpact = Math.max(
     ...relatedSliceInfo.map((info) => Math.abs(info.impact))
   );
@@ -78,7 +80,15 @@ export function DimensionSliceDetailModalMetricCard({
                       >
                         <Text color={sliceInfo.impact > 0 ? "emerald" : "rose"}>
                           {sliceInfo.impact > 0 ? "+" : ""}
-                          {sliceInfo.impact}
+                          {sliceInfo.impact.toFixed(2)} (
+                          {sliceInfo.impact > 0 ? "+" : ""}
+                          {(
+                            ((sliceInfo.comparisonValue.sliceValue -
+                              sliceInfo.baselineValue.sliceValue) /
+                              sliceInfo.baselineValue.sliceValue) *
+                            100
+                          ).toFixed(2)}
+                          % )
                         </Text>
                         <DeltaBar
                           value={(sliceInfo.impact / maxImpact) * 100}

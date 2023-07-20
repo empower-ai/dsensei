@@ -6,7 +6,7 @@ import {
   TableHeaderCell,
   TableBody,
 } from "@tremor/react";
-import { InsightMetric } from "../../common/types";
+import { DimensionSliceInfo, InsightMetric } from "../../common/types";
 import { serializeDimensionSliceKey } from "../../common/utils";
 import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 import { RowStatus } from "../../store/comparisonInsight";
