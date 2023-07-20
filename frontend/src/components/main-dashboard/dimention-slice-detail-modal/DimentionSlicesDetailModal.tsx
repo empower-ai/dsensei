@@ -1,5 +1,6 @@
 import {
   Bold,
+  Card,
   DeltaBar,
   Divider,
   Flex,
@@ -77,51 +78,60 @@ export function DimensionSliceDetailModal() {
             </div> */}
           </div>
         </Flex>
-        <Grid numItems={6}>
-          <div className="col-span-2 col-start-2">
-            <List>
-              <ListItem className="justify-center">
-                <Title>Slice</Title>
-              </ListItem>
-              {relatedSliceInfo.map((sliceInfo) => (
-                <ListItem className="my-3 justify-center">
-                  {formatDimensionSliceKeyForRendering(
-                    sliceInfo?.key!,
-                    undefined,
-                    false
-                  )}
-                </ListItem>
-              ))}
-            </List>
-          </div>
-          <div className="col-span-2">
-            <List>
-              <ListItem className="justify-center">
-                <Title>Impact</Title>
-              </ListItem>
-              {relatedSliceInfo.map((sliceInfo) => {
-                return (
-                  <ListItem className="my-3">
-                    <Flex
-                      justifyContent="end"
-                      alignItems="center"
-                      className="space-x-4"
-                    >
-                      <Text color={sliceInfo.impact > 0 ? "emerald" : "rose"}>
-                        {sliceInfo.impact > 0 ? "+" : ""}
-                        {sliceInfo.impact}
-                      </Text>
-                      <DeltaBar
-                        value={(sliceInfo.impact / maxImpact) * 100}
-                        className="w-[80%]"
-                      />
-                    </Flex>
+        <Flex className="justify-center mt-5">
+          <Card className="w-[80%]">
+            <Flex justifyContent="center">
+              <Title>Revenue</Title>
+            </Flex>
+            <Grid numItems={2}>
+              <div>
+                <List>
+                  <ListItem className="justify-center">
+                    <Subtitle>Slice</Subtitle>
                   </ListItem>
-                );
-              })}
-            </List>
-          </div>
-        </Grid>
+                  {relatedSliceInfo.map((sliceInfo) => (
+                    <ListItem className="my-3 justify-center">
+                      {formatDimensionSliceKeyForRendering(
+                        sliceInfo?.key!,
+                        undefined,
+                        false
+                      )}
+                    </ListItem>
+                  ))}
+                </List>
+              </div>
+              <div>
+                <List>
+                  <ListItem className="justify-center">
+                    <Subtitle>Impact</Subtitle>
+                  </ListItem>
+                  {relatedSliceInfo.map((sliceInfo) => {
+                    return (
+                      <ListItem className="my-3">
+                        <Flex
+                          justifyContent="end"
+                          alignItems="center"
+                          className="space-x-4"
+                        >
+                          <Text
+                            color={sliceInfo.impact > 0 ? "emerald" : "rose"}
+                          >
+                            {sliceInfo.impact > 0 ? "+" : ""}
+                            {sliceInfo.impact}
+                          </Text>
+                          <DeltaBar
+                            value={(sliceInfo.impact / maxImpact) * 100}
+                            className="w-[80%]"
+                          />
+                        </Flex>
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </div>
+            </Grid>
+          </Card>
+        </Flex>
       </form>
       <form method="dialog" className="modal-backdrop">
         <button>close</button>
