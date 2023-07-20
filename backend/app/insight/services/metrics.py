@@ -126,15 +126,16 @@ class MetricsController(object):
 
     def getTopDrivingDimensionSliceKeys(self,
                                         parentSlice: tuple[DimensionValuePair],
-                                        slice_info_dict: Dict[tuple[DimensionValuePair], DimensionSliceInfo],
+                                        slice_info_dict: Dict[frozenset[DimensionValuePair], DimensionSliceInfo],
                                         topN = 10) -> List[str]:
         """
         Only calculate first level child impact
         """
         parentDimension = [slice.dimension for slice in parentSlice]
         childDimensions = [dimension for dimension in self.columns_of_interest if dimension not in parentDimension]
+
         childSliceKey = [
-            tuple(
+            frozenset(
                 parentSlice + (DimensionValuePair(dimension, value),)
             )
             for dimension in childDimensions
@@ -159,7 +160,7 @@ class MetricsController(object):
             all_dimension_slices.extend(ret)
 
         slice_info_dict = {
-            dimension_slice.key : dimension_slice
+            frozenset(dimension_slice.key) : dimension_slice
             for dimension_slice in all_dimension_slices
         }
 
