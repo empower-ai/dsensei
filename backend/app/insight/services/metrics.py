@@ -153,7 +153,7 @@ class MetricsController(object):
         ]
 
         slice_info = [slice_info_dict[key] for key in childSliceKey if key in slice_info_dict]
-        slice_info.sort(key=lambda slice: slice.impact, reverse=True)
+        slice_info.sort(key=lambda slice: abs(slice.impact), reverse=True)
         return list(map(lambda slice: slice.serializedKey, slice_info[:topN]))
 
     def buildMetrics(self, metricsName: str) -> Metrics:
