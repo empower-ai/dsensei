@@ -83,7 +83,11 @@ export function DimensionSliceDetailModal() {
               </ListItem>
               {relatedSliceInfo.map((sliceInfo) => (
                 <ListItem className="my-3 justify-center">
-                  {formatDimensionSliceKeyForRendering(sliceInfo?.key!)}
+                  {formatDimensionSliceKeyForRendering(
+                    sliceInfo?.key!,
+                    undefined,
+                    false
+                  )}
                 </ListItem>
               ))}
             </List>

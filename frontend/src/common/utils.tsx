@@ -26,7 +26,8 @@ export function serializeDimensionSliceKey(key: DimensionSliceKey): string {
 
 export function formatDimensionSliceKeyForRendering(
   key: DimensionSliceKey,
-  parentKey?: DimensionSliceKey
+  parentKey?: DimensionSliceKey,
+  addBorder: boolean = true
 ): ReactNode {
   const copiedKey = [...key];
   const copiedParentKey = [...(parentKey ?? [])];
@@ -43,7 +44,9 @@ export function formatDimensionSliceKeyForRendering(
       .sort(sortDimension),
   ]
     .map((k) => (
-      <span className="border-2 bg-gray-100 text-black p-1">
+      <span
+        className={`text-black ${addBorder ? `border-2 bg-gray-100 p-1` : ""}`}
+      >
         {k.dimension} = {k.value}
       </span>
     ))
