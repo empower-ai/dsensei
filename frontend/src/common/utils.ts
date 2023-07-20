@@ -17,7 +17,7 @@ export function getRegexMatchPatternForDimensionSliceKey(
       k1.dimension.toLowerCase() > k2.dimension.toLowerCase() ? 1 : -1
     )
     .map((k) => `${k.dimension}:[^\\|]+`)
-    .join("|");
+    .join("\\|");
 
   return new RegExp(`^${baseRegexStr}$`);
 }
