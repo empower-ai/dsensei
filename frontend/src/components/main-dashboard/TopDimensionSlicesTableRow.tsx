@@ -126,8 +126,8 @@ export default function TopDimensionSlicesTableRow({
         </TableCell>
         <TableCell>
           <Text>
-            {dimensionSlice?.baselineValue.sliceSize}% vs{" "}
-            {dimensionSlice?.comparisonValue.sliceSize}%{" "}
+            {(dimensionSlice?.baselineValue.sliceSize * 100).toFixed(2)}% vs{" "}
+            {(dimensionSlice?.comparisonValue.sliceSize * 100).toFixed(2)}%{" "}
             {getChangePercentage(
               dimensionSlice?.baselineValue.sliceSize ?? 0,
               dimensionSlice?.comparisonValue.sliceSize ?? 0
@@ -137,12 +137,12 @@ export default function TopDimensionSlicesTableRow({
         <TableCell>
           <Flex className="justify-start">
             <Text>
-              {dimensionSlice?.baselineValue.sliceCount} vs{" "}
-              {dimensionSlice?.comparisonValue.sliceCount}
+              {dimensionSlice?.baselineValue.sliceValue.toFixed(2)} vs{" "}
+              {dimensionSlice?.comparisonValue.sliceValue.toFixed(2)}
             </Text>
             {getChangePercentage(
-              dimensionSlice?.baselineValue.sliceCount ?? 0,
-              dimensionSlice?.comparisonValue.sliceCount ?? 0
+              dimensionSlice?.baselineValue.sliceValue ?? 0,
+              dimensionSlice?.comparisonValue.sliceValue ?? 0
             )}
           </Flex>
         </TableCell>

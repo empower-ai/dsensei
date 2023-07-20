@@ -24,7 +24,7 @@ export default function TopDimensionSlicesTable({ metric, rowStatus }: Props) {
           <TableRow>
             <TableHeaderCell>Dimension Slice</TableHeaderCell>
             <TableHeaderCell>Slice Size</TableHeaderCell>
-            <TableHeaderCell>Slice Counts</TableHeaderCell>
+            <TableHeaderCell>Slice Value</TableHeaderCell>
             <TableHeaderCell>Impact</TableHeaderCell>
           </TableRow>
         </TableHead>

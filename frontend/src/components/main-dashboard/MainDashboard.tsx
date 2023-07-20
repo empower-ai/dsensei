@@ -78,10 +78,10 @@ export default function MainDashboard() {
       content = "0";
       deltaType = "unchanged";
     } else if (num1 > num2) {
-      content = `${change} (${changePct})`;
+      content = `${change.toFixed(2)} (${changePct})`;
       deltaType = "decrease";
     } else {
-      content = `+${change} (+${changePct})`;
+      content = `+${change.toFixed(2)} (+${changePct})`;
       deltaType = "increase";
     }
 
@@ -108,12 +108,8 @@ export default function MainDashboard() {
               <Flex className="self-center text-center justify-self-center content-center">
                 <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
                 <Metric className="flex">
-                  <p className="px-2">{analyzingMetrics.baselineValue}</p>
+                  <p className="px-2">{analyzingMetrics.baselineValue.toFixed(2)}</p>
                 </Metric>
-                {getChangePercentageBadge(
-                  analyzingMetrics.comparisonValue,
-                  analyzingMetrics.baselineValue
-                )}
               </Flex>
             </div>
             <div className="self-end content-center">
@@ -126,10 +122,6 @@ export default function MainDashboard() {
                     <Flex justifyContent="end" className="space-x-2.5">
                       <Text>{metric.name}:</Text>
                       <Title>{metric.baselineValue}</Title>
-                      {getChangePercentageBadge(
-                        metric.comparisonValue,
-                        metric.baselineValue
-                      )}
                     </Flex>
                   </ListItem>
                 ))}
@@ -147,7 +139,11 @@ export default function MainDashboard() {
             <div className="self-center text-center justify-self-center content-center">
               <Flex className="self-center text-center justify-self-center content-center">
                 <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
-                <Metric>{analyzingMetrics.comparisonValue}</Metric>
+                <Metric>{analyzingMetrics.comparisonValue.toFixed(2)}</Metric>
+                {getChangePercentageBadge(
+                  analyzingMetrics.baselineValue,
+                  analyzingMetrics.comparisonValue
+                )}
               </Flex>
             </div>
             <div className="self-end content-center">
@@ -160,6 +156,10 @@ export default function MainDashboard() {
                     <Flex justifyContent="end" className="space-x-2.5">
                       <Text>{metric.name}:</Text>
                       <Title>{metric.comparisonValue}</Title>
+                      {getChangePercentageBadge(
+                        metric.baselineValue,
+                        metric.comparisonValue
+                      )}
                     </Flex>
                   </ListItem>
                 ))}

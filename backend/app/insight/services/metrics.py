@@ -21,6 +21,7 @@ class DimensionValuePair:
 @dataclass
 class PeriodValue:
     sliceCount: int = None
+    sliceSize: float = None
     sliceValue: float = None
 
 @dataclass
@@ -35,6 +36,8 @@ class DimensionSliceInfo:
 @dataclass
 class Metrics:
     name: str = None
+    baselineNumRows: int = None
+    comparisonNumRows: int = None
     baselineValue: float = None
     comparisonValue: float = None
     baselineValueByDate: Dict[str, float] = None
@@ -61,15 +64,15 @@ def analyze(df, columns: List[str], agg_method: Dict[str, str], metrics_name: Di
 
     return this_year
 
-def toDimensionSliceInfo(df: pd.DataFrame, metrics_name) -> Dict[frozenset, DimensionSliceInfo]:
+def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, comparisonCount) -> Dict[frozenset, DimensionSliceInfo]:
     dimensions = [df.index.name] if df.index.name else list(df.index.names)
     def mapToObj(index, row):
         index = index if (isinstance(index, list) or isinstance(index, tuple)) else [index]
 
         key = tuple([DimensionValuePair(dimensions[i], index[i]) for i in range(len(dimensions))])
         serializedKey = '_'.join([str(v) for v in index])
-        currentPeriodValue = PeriodValue(row['count'], row[metrics_name])
-        lastPeriodValue = PeriodValue(row[f'count_last_year'], row[f'{metrics_name}_last_year'])
+        currentPeriodValue = PeriodValue(row['count'], row['count'] / comparisonCount, row[metrics_name])
+        lastPeriodValue = PeriodValue(row[f'count_last_year'], row['count_last_year'] / baselineCount, row[f'{metrics_name}_last_year'])
 
         sliceInfo = DimensionSliceInfo(
             key,
@@ -145,12 +148,14 @@ class MetricsController(object):
     def buildMetrics(self, metricsName: str) -> Metrics:
         metrics = Metrics()
         metrics.name = metricsName
+        metrics.baselineNumRows = self.aggs['count_last_year'].sum()
+        metrics.comparisonNumRows = self.aggs['count'].sum()
         metrics.dimensions = self.getDimensions()
 
         all_dimension_slices = []
         # Build dimension slice info
         for dimension_slice in self.slices:
-            ret = toDimensionSliceInfo(dimension_slice, metricsName)
+            ret = toDimensionSliceInfo(dimension_slice, metricsName, metrics.baselineNumRows, metrics.comparisonNumRows)
             all_dimension_slices.extend(ret)
 
         slice_info_dict = {
@@ -178,7 +183,8 @@ class MetricsController(object):
         metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices
         }
-
+        metrics.baselineValue = self.aggs[f'{metricsName}_last_year'].sum()
+        metrics.comparisonValue = self.aggs[metricsName].sum()
 
         metrics.baselineValueByDate = [{
             "date": "2022-01-01",
