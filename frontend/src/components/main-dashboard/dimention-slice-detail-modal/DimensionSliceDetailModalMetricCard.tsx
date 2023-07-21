@@ -11,6 +11,7 @@ import {
 } from "@tremor/react";
 import {
   formatDimensionSliceKeyForRendering,
+  formatNumber,
   getRegexMatchPatternForDimensionSliceKey,
   serializeDimensionSliceKey,
 } from "../../../common/utils";
@@ -80,14 +81,14 @@ export function DimensionSliceDetailModalMetricCard({
                       >
                         <Text color={sliceInfo.impact > 0 ? "emerald" : "rose"}>
                           {sliceInfo.impact > 0 ? "+" : ""}
-                          {sliceInfo.impact.toFixed(2)} (
+                          {formatNumber(sliceInfo.impact)} (
                           {sliceInfo.impact > 0 ? "+" : ""}
-                          {(
+                          {formatNumber(
                             ((sliceInfo.comparisonValue.sliceValue -
                               sliceInfo.baselineValue.sliceValue) /
                               sliceInfo.baselineValue.sliceValue) *
-                            100
-                          ).toFixed(2)}
+                              100
+                          )}
                           % )
                         </Text>
                         <DeltaBar

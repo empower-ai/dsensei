@@ -23,6 +23,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
 import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
+import { formatNumber } from "../../common/utils";
 
 // const dataFormatter = (number: number) =>
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
@@ -67,16 +68,23 @@ export default function MainDashboard() {
     }
 
     const change = num2 - num1;
-    const changePct = `${(((num2 - num1) / num1) * 100).toFixed(2)}%`;
+    const changePct = `${(((num2 - num1) / num1) * 100).toLocaleString(
+      undefined,
+      {
+        style: "decimal",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    )}%`;
     let deltaType: "unchanged" | "decrease" | "increase", content;
     if (num1 === num2) {
       content = "0";
       deltaType = "unchanged";
     } else if (num1 > num2) {
-      content = `${change.toFixed(2)} (${changePct})`;
+      content = `${formatNumber(change)} (${changePct})`;
       deltaType = "decrease";
     } else {
-      content = `+${change.toFixed(2)} (+${changePct})`;
+      content = `+${formatNumber(change)} (+${changePct})`;
       deltaType = "increase";
     }
 
@@ -104,7 +112,11 @@ export default function MainDashboard() {
                 <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
                 <Metric className="flex">
                   <p className="px-2">
-                    {analyzingMetrics.baselineValue.toFixed(2)}
+                    {analyzingMetrics.baselineValue.toLocaleString(undefined, {
+                      style: "decimal",
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </p>
                 </Metric>
               </Flex>
@@ -137,7 +149,7 @@ export default function MainDashboard() {
               <Flex className="self-center text-center justify-self-center content-center">
                 <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
                 <Metric className="mr-2">
-                  {analyzingMetrics.comparisonValue.toFixed(2)}
+                  {formatNumber(analyzingMetrics.comparisonValue)}
                 </Metric>
                 {getChangePercentageBadge(
                   analyzingMetrics.baselineValue,

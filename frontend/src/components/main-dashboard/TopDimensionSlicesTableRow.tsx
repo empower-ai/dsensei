@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import {
   formatDimensionSliceKeyForRendering,
+  formatNumber,
   serializeDimensionSliceKey,
 } from "../../common/utils";
 import { ReactNode } from "react";
@@ -35,7 +36,7 @@ type Props = {
 
 function getChangePercentage(num1: number, num2: number): ReactNode {
   const content =
-    num1 === 0 ? "N/A" : `${(((num2 - num1) / num1) * 100).toFixed(2)}%`;
+    num1 === 0 ? "N/A" : `${formatNumber(((num2 - num1) / num1) * 100)}%`;
   return (
     <Badge size="xs" color="gray" className="ml-1">
       {content}
@@ -54,13 +55,13 @@ function getPerformanceComparedWithAvg(
 
   const changePct = (num2 - num1) / num1;
 
-  return getImpact((changePct - avgPerf) * 100, (n) => `${n.toFixed(2)}%`);
+  return getImpact((changePct - avgPerf) * 100, (n) => `${formatNumber(n)}%`);
 }
 
 function getImpact(
   impact: number,
   formatter: (n: number) => string = function (n: number) {
-    return n.toFixed(2);
+    return formatNumber(n);
   }
 ): ReactNode {
   if (impact > 0) {
@@ -144,8 +145,8 @@ export default function TopDimensionSlicesTableRow({
         </TableCell>
         <TableCell>
           <Text>
-            {(dimensionSlice?.baselineValue.sliceSize * 100).toFixed(2)}% vs{" "}
-            {(dimensionSlice?.comparisonValue.sliceSize * 100).toFixed(2)}%{" "}
+            {formatNumber(dimensionSlice?.baselineValue.sliceSize * 100)}% vs{" "}
+            {formatNumber(dimensionSlice?.comparisonValue.sliceSize * 100)}%{" "}
             {getChangePercentage(
               dimensionSlice?.baselineValue.sliceSize ?? 0,
               dimensionSlice?.comparisonValue.sliceSize ?? 0
@@ -155,8 +156,8 @@ export default function TopDimensionSlicesTableRow({
         <TableCell>
           <Flex className="justify-start">
             <Text>
-              {dimensionSlice?.baselineValue.sliceValue.toFixed(2)} vs{" "}
-              {dimensionSlice?.comparisonValue.sliceValue.toFixed(2)}
+              {formatNumber(dimensionSlice?.baselineValue.sliceValue)} vs{" "}
+              {formatNumber(dimensionSlice?.comparisonValue.sliceValue)}
             </Text>
             {getChangePercentage(
               dimensionSlice?.baselineValue.sliceValue ?? 0,

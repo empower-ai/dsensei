@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { DimensionSliceKey } from "./types";
 import { Badge, Bold, Text } from "@tremor/react";
+import exp from "constants";
 
 export function sortDimension(
   dimension1: {
@@ -68,4 +69,16 @@ export function getRegexMatchPatternForDimensionSliceKey(
     .join("\\|");
 
   return new RegExp(`^${baseRegexStr}$`);
+}
+
+export function formatNumber(num: number) {
+  if (Number.isInteger(num)) {
+    return num.toLocaleString(undefined);
+  }
+
+  return num.toLocaleString(undefined, {
+    style: "decimal",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
