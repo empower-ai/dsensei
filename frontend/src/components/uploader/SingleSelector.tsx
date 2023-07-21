@@ -1,8 +1,8 @@
-import React from "react";
+import React, { ReactElement } from "react";
 import { Grid, Col, Select, SelectItem, Title } from "@tremor/react";
 
 type SingleSelectorProps = {
-  title: string | null;
+  title: ReactElement | null;
   labels: string[];
   values: string[];
   selectedValue: string;
@@ -22,11 +22,11 @@ function SingleSelector({
     </SelectItem>
   ));
   return (
-    <Grid numItems={2}>
-      <Col className="flex items-center justify-end">
-        <Title className="pr-4">{title}</Title>
+    <Grid numItems={5}>
+      <Col className="flex items-center justify-end" numColSpan={2}>
+        {title}
       </Col>
-      <Col className="flex items-center">
+      <Col className="flex items-center" numColSpan={3}>
         <Select value={selectedValue} onValueChange={onValueChange}>
           {options}
         </Select>

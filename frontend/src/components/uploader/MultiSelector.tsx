@@ -29,11 +29,11 @@ function MultiSelector({
   ));
 
   return (
-    <Grid numItems={2}>
-      <Col className="flex items-center justify-end">
+    <Grid numItems={5}>
+      <Col className="flex items-center justify-end" numColSpan={2}>
         <Title className="pr-4">{title}</Title>
       </Col>
-      <Col className="flex items-center">
+      <Col className="flex items-center" numColSpan={3}>
         <MultiSelect value={selectedValues} onValueChange={onValueChange}>
           {options}
         </MultiSelect>

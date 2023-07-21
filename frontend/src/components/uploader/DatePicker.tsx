@@ -23,25 +23,26 @@ function DatePicker({
   onCompareAgainstDateRangeChange,
 }: DatePickerProps) {
   return (
-    <Grid numItems={2}>
-      <Col className="flex items-center justify-end">
+    <Grid numItems={5}>
+      <Col className="flex items-center justify-end" numColSpan={2}>
         <Title className="pr-4">{title}</Title>
       </Col>
-      <Col className="flex items-center">
+      <Col className="flex items-center" numColSpan={3}>
         <div>
-
           <DateRangePicker
             className="max-w-sm mx-auto"
             value={dateRange}
             onValueChange={onDateRangeChange}
             enableSelect={false}
+            placeholder={"Date range"}
           />
         </div>
         <DateRangePicker
-          className="max-w-sm mx-auto"
+          className="max-w-sm mx-auto pl-4"
           value={compareAgainstDateRange}
           onValueChange={onCompareAgainstDateRangeChange}
           enableSelect={false}
+          placeholder={"Date range (compare against)s"}
         />
       </Col>
     </Grid>

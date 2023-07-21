@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import {
-  Card,
-  DateRangePickerValue,
-} from "@tremor/react";
+import { Card, Title, Subtitle, DateRangePickerValue } from "@tremor/react";
 import SingleSelector from "./SingleSelector";
 import MultiSelector from "./MultiSelector";
 import DatePicker from "./DatePicker";
 
-function DataConfig({ header }: { header: string[] }) {
+type DataConfigProps = {
+  header: string[];
+  data: {
+    [k: string]: string;
+  }[];
+};
+
+function DataConfig({ header, data }: DataConfigProps) {
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: { type: string; aggregationOption: string | null };
   }>({});
@@ -94,9 +98,36 @@ function DataConfig({ header }: { header: string[] }) {
     (c) => selectedColumns[c]["type"] === "date"
   );
 
+  const potentialDateCols = header.filter((h) => {
+    const value = data[0][h];
+    if (Number.isNaN(Number(value))) {
+      // parse non number string
+      return !Number.isNaN(Date.parse(value));
+    } else if (Number(value) > 631152000) {
+      // Timestamp larger than 1990/1/1
+      return true;
+    } else {
+      return false;
+    }
+  });
+
   return (
     <Card className="max-w-3xl mx-auto">
       <div className="flex flex-col gap-4">
+        <SingleSelector
+          title={<Title className="pr-4">{"Select a date column"}</Title>}
+          labels={potentialDateCols.length === 0 ? header : potentialDateCols}
+          values={potentialDateCols.length === 0 ? header : potentialDateCols}
+          selectedValue={selectedDateCol ? selectedDateCol : ""}
+          onValueChange={onSelectDateColumn}
+        />
+        <DatePicker
+          title={"Select date ranges"}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          compareAgainstDateRange={compareAgainstDateRange}
+          onCompareAgainstDateRangeChange={setCompareAgainstDateRange}
+        />
         <MultiSelector
           title={"Select metric columns"}
           labels={header}
@@ -110,7 +141,7 @@ function DataConfig({ header }: { header: string[] }) {
           .filter((c) => selectedColumns[c]["type"] === "metric")
           .map((m) => (
             <SingleSelector
-              title={m}
+              title={<Subtitle className="pr-4">{m}</Subtitle>}
               labels={["Sum", "Count", "Distinct Count"]}
               values={["sum", "count", "distinct"]}
               selectedValue={selectedColumns[m]["aggregationOption"]!}
@@ -126,20 +157,6 @@ function DataConfig({ header }: { header: string[] }) {
             (c) => selectedColumns[c]["type"] === "dimension"
           )}
           onValueChange={onSelectDimension}
-        />
-        <SingleSelector
-          title={"Select a date column"}
-          labels={header}
-          values={header}
-          selectedValue={selectedDateCol ? selectedDateCol : ""}
-          onValueChange={onSelectDateColumn}
-        />
-        <DatePicker
-          title={"Select date ranges"}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          compareAgainstDateRange={compareAgainstDateRange}
-          onCompareAgainstDateRangeChange={setCompareAgainstDateRange}
         />
       </div>
     </Card>

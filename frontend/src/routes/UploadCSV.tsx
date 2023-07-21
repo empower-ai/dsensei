@@ -57,8 +57,8 @@ function CsvUploader() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <Title>CSV Upload</Title>
+    <div className="flex flex-col gap-6 justify-center items-center">
+      <Title className="pt-6">CSV Upload</Title>
       <Card className="max-w-3xl mx-auto">
         <form>
           <Flex>
@@ -82,9 +82,11 @@ function CsvUploader() {
           </Flex>
         </form>
       </Card>
-
+      {header.length > 0 && data.length > 0 ? (
+        <DataConfig header={header} data={data} />
+      ) : null}
       {header.length > 0 ? <DataPreviewer header={header} data={data} /> : null}
-      {header.length > 0 ? <DataConfig header={header} /> : null}
+
     </div>
   );
 }
