@@ -40,11 +40,16 @@ function helper(
     children: {},
   };
 
+  let hasMatching = false;
   Object.values(row.children).forEach((child) => {
-    helper(child, checkingKey, checkingKeyComponents);
+    if (helper(child, checkingKey, checkingKeyComponents)) {
+      hasMatching = true;
+    }
   });
 
-  row.children[checkingKey] = newRow;
+  if (!hasMatching) {
+    row.children[checkingKey] = newRow;
+  }
   return true;
 }
 
