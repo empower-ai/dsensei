@@ -19,21 +19,20 @@ function DataConfig({ header, data }: DataConfigProps) {
   const [compareAgainstDateRange, setCompareAgainstDateRange] =
     useState<DateRangePickerValue>({});
 
-  const onSelectMetrics = (metrics: string[]) => {
+  const onSelectMetrics = (metrics: string[], type: string) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
     const addedMetrics = metrics.filter(
       (m) =>
         !Object.keys(selectedColumnsClone).includes(m) ||
         (Object.keys(selectedColumnsClone).includes(m) &&
-          selectedColumnsClone[m]["type"] !== "metric")
+          selectedColumnsClone[m]["type"] !== type)
     );
     addedMetrics.map(
       (m) =>
-        (selectedColumnsClone[m] = { type: "metric", aggregationOption: "sum" })
+        (selectedColumnsClone[m] = { type: type, aggregationOption: "sum" })
     );
     const removedMetrics = Object.keys(selectedColumnsClone).filter(
-      (m) =>
-        selectedColumnsClone[m]["type"] === "metric" && !metrics.includes(m)
+      (m) => selectedColumnsClone[m]["type"] === type && !metrics.includes(m)
     );
     removedMetrics.map((m) => delete selectedColumnsClone[m]);
     console.log(selectedColumnsClone);
@@ -45,7 +44,10 @@ function DataConfig({ header, data }: DataConfigProps) {
     aggregationOption: string
   ) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
-    if (selectedColumnsClone[metric]["type"] !== "metric") {
+    if (
+      selectedColumnsClone[metric]["type"] !== "metric" &&
+      selectedColumnsClone[metric]["type"] !== "supporting_metric"
+    ) {
       throw new Error(
         "Invalid aggregation option update on non-metric columns."
       );
@@ -114,6 +116,7 @@ function DataConfig({ header, data }: DataConfigProps) {
   return (
     <Card className="max-w-3xl mx-auto">
       <div className="flex flex-col gap-4">
+        {/* Date column selector */}
         <SingleSelector
           title={<Title className="pr-4">{"Select a date column"}</Title>}
           labels={potentialDateCols.length === 0 ? header : potentialDateCols}
@@ -121,6 +124,7 @@ function DataConfig({ header, data }: DataConfigProps) {
           selectedValue={selectedDateCol ? selectedDateCol : ""}
           onValueChange={onSelectDateColumn}
         />
+        {/* Date pickers */}
         <DatePicker
           title={"Select date ranges"}
           dateRange={dateRange}
@@ -128,14 +132,21 @@ function DataConfig({ header, data }: DataConfigProps) {
           compareAgainstDateRange={compareAgainstDateRange}
           onCompareAgainstDateRangeChange={setCompareAgainstDateRange}
         />
-        <MultiSelector
-          title={"Select metric columns"}
+        {/* Analysing metric single selector */}
+        <SingleSelector
+          title={<Title className="pr-4">{"Select metric columns"}</Title>}
           labels={header}
           values={header}
-          selectedValues={Object.keys(selectedColumns).filter(
-            (c) => selectedColumns[c]["type"] === "metric"
-          )}
-          onValueChange={onSelectMetrics}
+          selectedValue={
+            Object.keys(selectedColumns).filter(
+              (c) => selectedColumns[c]["type"] === "metric"
+            ).length > 0
+              ? Object.keys(selectedColumns).filter(
+                  (c) => selectedColumns[c]["type"] === "metric"
+                )[0]
+              : ""
+          }
+          onValueChange={(metric) => onSelectMetrics([metric], "metric")}
         />
         {Object.keys(selectedColumns)
           .filter((c) => selectedColumns[c]["type"] === "metric")
@@ -149,10 +160,61 @@ function DataConfig({ header, data }: DataConfigProps) {
               key={m}
             />
           ))}
+        {/* Supporting metrics multi selector */}
+        <MultiSelector
+          title={"Select supporting metric columns (optional)"}
+          labels={header.filter(
+            (h) =>
+              !(
+                selectedColumns.hasOwnProperty(h) &&
+                selectedColumns[h]["type"] === "metric"
+              )
+          )}
+          values={header.filter(
+            (h) =>
+              !(
+                selectedColumns.hasOwnProperty(h) &&
+                selectedColumns[h]["type"] === "metric"
+              )
+          )}
+          selectedValues={Object.keys(selectedColumns).filter(
+            (c) => selectedColumns[c]["type"] === "supporting_metric"
+          )}
+          onValueChange={(metrics) =>
+            onSelectMetrics(metrics, "supporting_metric")
+          }
+        />
+        {Object.keys(selectedColumns)
+          .filter((c) => selectedColumns[c]["type"] === "supporting_metric")
+          .map((m) => (
+            <SingleSelector
+              title={<Subtitle className="pr-4">{m}</Subtitle>}
+              labels={["Sum", "Count", "Distinct Count"]}
+              values={["sum", "count", "distinct"]}
+              selectedValue={selectedColumns[m]["aggregationOption"]!}
+              onValueChange={(v) => onSelectMetricAggregationOption(m, v)}
+              key={m}
+            />
+          ))}
+        {/* Dimension columns multi selector */}
         <MultiSelector
           title={"Select dimension columns"}
-          labels={header}
-          values={header}
+          labels={header.filter(
+            (h) =>
+              !(
+                selectedColumns.hasOwnProperty(h) &&
+                (selectedColumns[h]["type"] === "metric" ||
+                  selectedColumns[h]["type"] === "supporting_metric")
+              )
+          )}
+          values={header.filter(
+            (h) =>
+              !(
+                selectedColumns.hasOwnProperty(h) &&
+                (selectedColumns[h]["type"] === "metric" ||
+                  selectedColumns[h]["type"] === "supporting_metric")
+              )
+          )}
           selectedValues={Object.keys(selectedColumns).filter(
             (c) => selectedColumns[c]["type"] === "dimension"
           )}
