@@ -155,7 +155,7 @@ export default function MainDashboard() {
             </div>
             <div className="self-end content-center">
               <Text>
-                <Bold>Related Metrics</Bold>
+                <Bold>Supporting Metrics</Bold>
               </Text>
               <List>
                 {relatedMetrics.map((metric) => (
@@ -194,7 +194,7 @@ export default function MainDashboard() {
             </div>
             <div className="self-end content-center">
               <Text>
-                <Bold>Related Metrics</Bold>
+                <Bold>Supporting Metrics</Bold>
               </Text>
               <List>
                 {relatedMetrics.map((metric) => (
