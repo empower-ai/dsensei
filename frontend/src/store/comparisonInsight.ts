@@ -123,24 +123,30 @@ export const comparisonMetricsSlice = createSlice({
     },
     updateMetrics: (
       state,
-      action: PayloadAction<{
-        revenue: object;
-        unique_user: object;
-        unique_order: object;
-      }>
+      action: PayloadAction<{[key: string]: object}>
     ) => {
-      const revenueMetric = action.payload["revenue"] as InsightMetric;
-      const buyersMetric = action.payload["unique_user"] as InsightMetric;
-      const ordersMetric = action.payload["unique_order"] as InsightMetric;
+      const keys = Object.keys(action.payload);
+      // const revenueMetric = action.payload["revenue"] as InsightMetric;
+      // const buyersMetric = action.payload["unique_user"] as InsightMetric;
+      // const ordersMetric = action.payload["unique_order"] as InsightMetric;
 
-      if (!revenueMetric || !buyersMetric || !ordersMetric) {
-        console.log("skip, invalid metrics");
-        return;
-      }
+      // if (!revenueMetric || !buyersMetric || !ordersMetric) {
+      //   console.log("skip, invalid metrics");
+      //   return;
+      // }
 
-      state.analyzingMetrics = revenueMetric;
-      state.relatedMetrics = [buyersMetric, ordersMetric];
-      state.tableRowStatus = buildRowStatusMap(revenueMetric);
+      state.analyzingMetrics = action.payload[keys[0]] as InsightMetric;
+      state.relatedMetrics = keys.map((key, index) => {
+        if (index === 0) {
+          return undefined;
+          }
+          return action.payload[key] as InsightMetric;
+        }).filter((metric) => metric !== undefined) as InsightMetric[];
+
+      console.log('state.analyzingMetrics', state.analyzingMetrics);
+      console.log('state.relatedMetrics', state.relatedMetrics);
+
+      state.tableRowStatus = buildRowStatusMap(state.analyzingMetrics);
       state.isLoading = false;
     },
 

@@ -10,6 +10,7 @@ function CsvUploader() {
   const [file, setFile] = useState<File>();
   const [header, setHeader] = useState<string[]>([]);
   const [data, setData] = useState<{ [k: string]: string }[]>([]);
+  const [content, setContent] = useState<string>("");
 
   const fileReader = new FileReader();
 
@@ -52,6 +53,7 @@ function CsvUploader() {
       return obj;
     });
 
+    setContent(raw_string);
     setData(array);
     setHeader(csvHeader);
   };
@@ -83,7 +85,7 @@ function CsvUploader() {
         </form>
       </Card>
       {header.length > 0 && data.length > 0 ? (
-        <DataConfig header={header} data={data} />
+        <DataConfig header={header} data={data} csvContent={content} />
       ) : null}
       {header.length > 0 ? <DataPreviewer header={header} data={data} /> : null}
 

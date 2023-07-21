@@ -1,11 +1,11 @@
-import App from "./routes/App";
+import MainDashboard from "./components/main-dashboard/MainDashboard";
 import CsvUploader from "./routes/UploadCSV";
 import { createBrowserRouter } from "react-router-dom";
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <App />,
+    path: "/dashboard",
+    element: <MainDashboard />,
   },
   {
     path: "upload_csv",

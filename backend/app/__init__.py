@@ -1,4 +1,5 @@
-from flask import Flask
+from io import StringIO
+from flask import Flask, request
 from config import Config
 import os
 from flask_cors import CORS, cross_origin
@@ -24,19 +25,20 @@ agg_method = {
     'price': 'sum',
     'user_id': 'nunique',
     'order_id': 'nunique',
-    'order_items_id': 'count'
+    'created_at': 'count'
 }
 metrics_name = {
-    'price': 'revenue',
-    'user_id': 'unique_user',
-    'order_id': 'unique_order',
-    'order_items_id': "count"
+    'price': 'price',
+    'user_id': 'user_id',
+    'order_id': 'order_id',
+    'created_at': "count"
 }
 
 metrics = MetricsController(
    df,
     (datetime.strptime('2021-03-01', "%Y-%m-%d").date(), datetime.strptime('2021-3-31', "%Y-%m-%d").date()),
     (datetime.strptime('2021-04-01', "%Y-%m-%d").date(), datetime.strptime('2021-4-28', "%Y-%m-%d").date()),
+    'created_at',
    columns_of_interest,
    agg_method,
    metrics_name,
@@ -53,3 +55,53 @@ def after_request(response):
 def getMetrics():
     # return 'test'
     return metrics.getMetrics()
+
+
+@app.route('/insight', methods=['POST'])
+def getInsight():
+    data = request.get_json()
+
+
+    print(data.keys())
+
+    csvContent = data['csvContent']
+    baselineDateRange = data['baselineDateRange']
+    comparisonDateRange = data['comparisonDateRange']
+    selectedColumns = data['selectedColumns']
+
+    baselineStart = datetime.strptime(baselineDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    baselineEnd = datetime.strptime(baselineDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    comparisonStart = datetime.strptime(comparisonDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    comparisonEnd = datetime.strptime(comparisonDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+
+
+    date_column = list(filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0]
+
+    agg_method = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))
+    metrics_name = {k: k for k, v in agg_method}
+    metrics_name.update({date_column: 'count'})
+    agg_method = {k: v['aggregationOption'] for k, v in agg_method}
+    agg_method.update({date_column: 'count'})
+
+    dimensions = list(filter(lambda x: x[1]['type'] == 'dimension', selectedColumns.items()))
+    dimensions = [k for k, v in dimensions]
+
+    df = pd.read_csv(StringIO(csvContent))
+    df[date_column] = pd.to_datetime(df[date_column])
+
+    metrics = MetricsController(
+        df,
+        (baselineStart, baselineEnd),
+        (comparisonStart, comparisonEnd),
+        date_column,
+        dimensions,
+        agg_method,
+        metrics_name,
+    )
+
+    return metrics.getMetrics()
+        # return 'test'
+    # except Exception as e:
+    #     e.with_traceback()
+    #     print('error')
+    #     return 'error'

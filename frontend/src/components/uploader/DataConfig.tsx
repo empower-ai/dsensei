@@ -1,23 +1,26 @@
 import React, { useState } from "react";
-import { Card, Title, Subtitle, DateRangePickerValue } from "@tremor/react";
+import { Card, Title, Subtitle, DateRangePickerValue, Button } from "@tremor/react";
 import SingleSelector from "./SingleSelector";
 import MultiSelector from "./MultiSelector";
 import DatePicker from "./DatePicker";
+import { useNavigate } from "react-router-dom";
 
 type DataConfigProps = {
   header: string[];
   data: {
     [k: string]: string;
   }[];
+  csvContent: string;
 };
 
-function DataConfig({ header, data }: DataConfigProps) {
+function DataConfig({ header, data, csvContent }: DataConfigProps) {
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: { type: string; aggregationOption: string | null };
   }>({});
-  const [dateRange, setDateRange] = useState<DateRangePickerValue>({});
-  const [compareAgainstDateRange, setCompareAgainstDateRange] =
+  const [baselineDateRange, setDateRange] = useState<DateRangePickerValue>({});
+  const [comparisonDateRange, setCompareAgainstDateRange] =
     useState<DateRangePickerValue>({});
+  const navigate = useNavigate();
 
   const onSelectMetrics = (metrics: string[], type: string) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
@@ -113,6 +116,15 @@ function DataConfig({ header, data }: DataConfigProps) {
     }
   });
 
+  const handleOnSubmit = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    navigate('/dashboard', { state: {
+      csvContent,
+      selectedColumns,
+      baselineDateRange,
+      comparisonDateRange
+    }});
+  }
+
   return (
     <Card className="max-w-3xl mx-auto">
       <div className="flex flex-col gap-4">
@@ -127,9 +139,9 @@ function DataConfig({ header, data }: DataConfigProps) {
         {/* Date pickers */}
         <DatePicker
           title={"Select date ranges"}
-          dateRange={dateRange}
+          dateRange={baselineDateRange}
           onDateRangeChange={setDateRange}
-          compareAgainstDateRange={compareAgainstDateRange}
+          compareAgainstDateRange={comparisonDateRange}
           onCompareAgainstDateRangeChange={setCompareAgainstDateRange}
         />
         {/* Analysing metric single selector */}
@@ -221,6 +233,9 @@ function DataConfig({ header, data }: DataConfigProps) {
           onValueChange={onSelectDimension}
         />
       </div>
+      <Button className="mt-4" onClick={(e) => {
+        handleOnSubmit(e);
+      }}>Submit</Button>
     </Card>
   );
 }

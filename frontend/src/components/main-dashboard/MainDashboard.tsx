@@ -24,21 +24,39 @@ import { RootState } from "../../store";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
 import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
 import { formatDateString, formatNumber } from "../../common/utils";
+import { useLocation } from "react-router-dom";
 
 // const dataFormatter = (number: number) =>
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
 
 export default function MainDashboard() {
   const dispatch = useDispatch();
+  const routerState = useLocation().state;
+
+  const { csvContent, baselineDateRange, comparisonDateRange, selectedColumns } = routerState;
+  console.log(routerState);
 
   useEffect(() => {
     dispatch(setLoadingStatus(true));
-    fetch("http://127.0.0.1:5000/a", { mode: "cors" }).then((res) => {
+    fetch("http://127.0.0.1:5000/insight",
+      {
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify({
+          csvContent,
+          baselineDateRange,
+          comparisonDateRange,
+          selectedColumns
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      }).then((res) => {
       res.json().then((json) => {
         dispatch(updateMetrics(json));
       });
     });
-  }, []);
+  }, [dispatch]);
 
   const { analyzingMetrics, relatedMetrics, tableRowStatus, isLoading } =
     useSelector((state: RootState) => state.comparisonInsight);

@@ -52,14 +52,15 @@ class Metrics:
 def analyze(df,
             baseline_period: Tuple[datetime.date, datetime.date],
             comparison_period: Tuple[datetime.date, datetime.date],
+            date_column,
             columns: List[str],
             agg_method: Dict[str, str],
             metrics_name: Dict[str, str]):
-    baseline = df.loc[df['created_at'].between(
+    baseline = df.loc[df[date_column].between(
         pd.to_datetime(baseline_period[0], utc=True),
         pd.to_datetime(baseline_period[1], utc=True))
     ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
-    comparison = df.loc[df['created_at'].between(
+    comparison = df.loc[df[date_column].between(
         pd.to_datetime(comparison_period[0], utc=True),
         pd.to_datetime(comparison_period[1], utc=True))
     ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
@@ -89,7 +90,7 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
             currentPeriodValue,
             currentPeriodValue.sliceValue - lastPeriodValue.sliceValue)
         return sliceInfo
-
+    # print(df)
     return df.apply(lambda row: mapToObj(row.name, row), axis=1).tolist()
 
 
@@ -106,31 +107,36 @@ class NpEncoder(json.JSONEncoder):
 class MetricsController(object):
     def __init__(self,
                  data: pd.DataFrame,
-                 baseline_period: Tuple[datetime.date, datetime.date],
-                 comparison_period: Tuple[datetime.date, datetime.date],
+                 baseline_date_range: Tuple[datetime.date, datetime.date],
+                 comparison_date_range: Tuple[datetime.date, datetime.date],
+                 date_column: str,
                  columns_of_interest: List[str],
                  agg_method: Dict[str, str],
                  metrics_name: Dict[str, str]):
         self.df = data
-
         self.columns_of_interest = columns_of_interest
         self.agg_method = agg_method
         self.metrics_name = metrics_name
-        self.aggs = analyze(self.df, baseline_period, comparison_period, self.columns_of_interest, agg_method, metrics_name)
+        self.date_column = date_column
+        self.baseline_date_range = baseline_date_range
+        self.comparison_date_range = comparison_date_range
+        self.aggs = analyze(self.df, baseline_date_range, comparison_date_range, date_column, self.columns_of_interest, agg_method, metrics_name)
 
         self.slices = []
-        self.slice(baseline_period, comparison_period)
+        self.slice(baseline_date_range, comparison_date_range)
 
     def slice(self, baseline_period, comparison_period):
         for i in range(1, len(self.columns_of_interest) + 1):
             for columns in combinations(self.columns_of_interest, i):
-                dimension_slice = analyze(self.df, baseline_period, comparison_period, list(columns), self.agg_method, self.metrics_name)
+                dimension_slice = analyze(self.df, baseline_period, comparison_period, self.date_column, list(columns), self.agg_method, self.metrics_name)
                 self.slices.append(dimension_slice)
 
     def getDimensions(self) -> Dict[str, Dimension]:
         dimensions = {}
         for column in self.columns_of_interest:
-            dimensions[column] = Dimension(name=column, values=self.df[column].unique().tolist())
+            values = self.df[column].unique()
+            values = list(filter(lambda x: x is not None and x is not np.NaN, values))
+            dimensions[column] = Dimension(name=column, values=values)
         return dimensions
 
     def getTopDrivingDimensionSliceKeys(self,
@@ -206,8 +212,8 @@ class MetricsController(object):
             "date": "2023-01-01",
             "value": self.aggs[metricsName].sum()
         }]
-        metrics.baselineDateRange = ['2021-01-01', '2021-12-31']
-        metrics.comparisonDateRange = ['2022-01-01', '2022-12-31']
+        metrics.baselineDateRange = [self.baseline_date_range[0].strftime("%Y-%m-%d"), self.baseline_date_range[1].strftime("%Y-%m-%d")]
+        metrics.comparisonDateRange = [self.comparison_date_range[0].strftime("%Y-%m-%d"), self.comparison_date_range[1].strftime("%Y-%m-%d")]
 
         return metrics
 
@@ -215,8 +221,14 @@ class MetricsController(object):
         return self.slices
 
     def getMetrics(self) -> str:
-        revenue = asdict(self.buildMetrics('revenue'))
-        unique_user = asdict(self.buildMetrics('unique_user'))
-        unique_order = asdict(self.buildMetrics('unique_order'))
-        ret = { 'revenue': revenue, 'unique_user': unique_user, 'unique_order': unique_order }
+        ret = {
+            k: asdict(self.buildMetrics(k))
+            for k, v in self.metrics_name.items()
+            if k != self.date_column
+        }
+
+        # revenue = asdict(self.buildMetrics('revenue'))
+        # unique_user = asdict(self.buildMetrics('unique_user'))
+        # unique_order = asdict(self.buildMetrics('unique_order'))
+        # ret = { 'revenue': revenue, 'unique_user': unique_user, 'unique_order': unique_order }
         return json.dumps(ret, cls=NpEncoder)
