@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { DimensionSliceKey } from "./types";
+import { DimensionSliceKey, InsightMetric } from "./types";
 import { Badge, Bold, Text } from "@tremor/react";
 import exp from "constants";
 import moment from "moment";
@@ -86,4 +86,12 @@ export function formatNumber(num: number) {
 
 export function formatDateString(dateString: string): string {
   return moment(new Date(dateString)).utc().format("MMM D, YYYY");
+}
+
+export function formatMetricName(metric: InsightMetric): string {
+  const aggregationMethod =
+    metric.aggregationMethod === "nunique"
+      ? "COUNT DISTINCT"
+      : metric.aggregationMethod;
+  return `${aggregationMethod.toUpperCase()}(${metric.name})`;
 }

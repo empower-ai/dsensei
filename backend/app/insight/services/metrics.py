@@ -37,6 +37,7 @@ class DimensionSliceInfo:
 @dataclass
 class Metrics:
     name: str = None
+    aggregationMethod: str = None
     baselineNumRows: int = None
     comparisonNumRows: int = None
     baselineValue: float = None
@@ -191,6 +192,7 @@ class MetricsController(object):
             pd.to_datetime(self.comparison_date_range[1], utc=True))
         ].groupby('date').agg(self.agg_method)
 
+        metrics.aggregationMethod = self.agg_method[metricsName]
         metrics.baselineValueByDate = [
             {
                 "date": index.strftime("%Y-%m-%d"),

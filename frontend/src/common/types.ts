@@ -1,5 +1,6 @@
 export interface InsightMetric {
   name: string;
+  aggregationMethod: string;
   baselineValue: number;
   baselineValueByDate: {
     date: string;

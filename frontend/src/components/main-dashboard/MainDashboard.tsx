@@ -24,11 +24,13 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
 import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
-import { formatDateString, formatNumber } from "../../common/utils";
+import {
+  formatDateString,
+  formatMetricName,
+  formatNumber,
+} from "../../common/utils";
 import { useLocation } from "react-router-dom";
-
-// const dataFormatter = (number: number) =>
-//   `${Intl.NumberFormat("us").format(number).toString()}%`;
+import { InsightMetric } from "../../common/types";
 
 export default function MainDashboard() {
   const dispatch = useDispatch();
@@ -40,7 +42,6 @@ export default function MainDashboard() {
     comparisonDateRange,
     selectedColumns,
   } = routerState;
-  console.log(routerState);
 
   useEffect(() => {
     dispatch(setLoadingStatus(true));
@@ -130,8 +131,6 @@ export default function MainDashboard() {
 
   return (
     <main className="px-12 pt-20">
-      <Title>Result</Title>
-      <Text>Metric: {analyzingMetrics.name}</Text>
       <Grid numItems={4} className="gap-6 mt-6">
         <Card className="border-t-4 border-t-orange-500">
           <div className="h-[100%] grid">
@@ -147,7 +146,9 @@ export default function MainDashboard() {
             </div>
             <div className="self-center text-center justify-self-center content-center">
               <Flex className="self-center text-center justify-self-center content-center">
-                <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
+                <Text className="self-end mr-2">
+                  {formatMetricName(analyzingMetrics)}:
+                </Text>
                 <Metric className="flex">
                   <p className="px-2">
                     {analyzingMetrics.baselineValue.toLocaleString(undefined, {
@@ -167,7 +168,7 @@ export default function MainDashboard() {
                 {relatedMetrics.map((metric) => (
                   <ListItem>
                     <Flex justifyContent="end" className="space-x-2.5">
-                      <Text>{metric.name}:</Text>
+                      <Text>{formatMetricName(metric)}:</Text>
                       <Title>{metric.baselineValue}</Title>
                     </Flex>
                   </ListItem>
@@ -188,7 +189,9 @@ export default function MainDashboard() {
             </div>
             <div className="self-center text-center justify-self-center content-center">
               <Flex className="self-center text-center justify-self-center content-center">
-                <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
+                <Text className="self-end mr-2">
+                  {formatMetricName(analyzingMetrics)}:
+                </Text>
                 <Metric className="mr-2">
                   {formatNumber(analyzingMetrics.comparisonValue)}
                 </Metric>
@@ -206,7 +209,7 @@ export default function MainDashboard() {
                 {relatedMetrics.map((metric) => (
                   <ListItem>
                     <Flex justifyContent="end" className="space-x-2.5">
-                      <Text>{metric.name}:</Text>
+                      <Text>{formatMetricName(metric)}:</Text>
                       <Title>{metric.comparisonValue}</Title>
                       {getChangePercentageBadge(
                         metric.baselineValue,
@@ -224,7 +227,9 @@ export default function MainDashboard() {
           <TabGroup>
             <TabList>
               {allMetrics.map((metric) => (
-                <Tab key={metric.name}>{metric.name}</Tab>
+                <Tab key={formatMetricName(metric)}>
+                  {formatMetricName(metric)}
+                </Tab>
               ))}
             </TabList>
             <TabPanels>

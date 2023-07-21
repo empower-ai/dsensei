@@ -11,6 +11,7 @@ import {
 } from "@tremor/react";
 import {
   formatDimensionSliceKeyForRendering,
+  formatMetricName,
   formatNumber,
   getRegexMatchPatternForDimensionSliceKey,
   serializeDimensionSliceKey,
@@ -41,7 +42,7 @@ export function DimensionSliceDetailModalMetricCard({
     <Flex className="justify-center mt-5">
       <Card className="w-[80%]">
         <Flex justifyContent="center">
-          <Title>Metrics: {metric.name}</Title>
+          <Title>Metrics: {formatMetricName(metric)}</Title>
         </Flex>
         {relatedSliceInfo.length === 0 ? (
           <Flex justifyContent="center">
