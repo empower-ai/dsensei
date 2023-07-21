@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Col,
-  Grid,
-  MultiSelect,
-  MultiSelectItem,
-  Title,
-} from "@tremor/react";
+import { Col, Grid, MultiSelect, MultiSelectItem, Text } from "@tremor/react";
 
 type MultiSelectorProps = {
   title: string | null;
@@ -31,7 +25,7 @@ function MultiSelector({
   return (
     <Grid numItems={5}>
       <Col className="flex items-center justify-end" numColSpan={2}>
-        <Title className="pr-4">{title}</Title>
+        <Text className="pr-4 text-black">{title}</Text>
       </Col>
       <Col className="flex items-center" numColSpan={3}>
         <MultiSelect value={selectedValues} onValueChange={onValueChange}>

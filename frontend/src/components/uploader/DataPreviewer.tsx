@@ -9,14 +9,24 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Flex,
+  Button,
 } from "@tremor/react";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 type DataPreviewerProps = {
   header: string[];
   data: { [k: string]: string }[];
+  fileName?: string;
+  onReset: () => void;
 };
 
-function DataPreviewer({ header, data }: DataPreviewerProps) {
+function DataPreviewer({
+  header,
+  data,
+  fileName,
+  onReset,
+}: DataPreviewerProps) {
   if (data.length === 0) {
     return (
       <Card className="max-w-3xl mx-auto">
@@ -40,7 +50,13 @@ function DataPreviewer({ header, data }: DataPreviewerProps) {
 
   return (
     <Card className="max-w-3xl mx-auto">
-      <Title>{"Sample data from the uploaded CSV file"}</Title>
+      <Flex>
+        <Title>CSV Content Preview</Title>
+        <Button icon={ArrowPathIcon} onClick={onReset}>
+          Start Over
+        </Button>
+      </Flex>
+      <Text>File: {fileName}</Text>
       <Table className="mt-2">
         <TableHead>
           <TableRow>{tableHeader}</TableRow>

@@ -4,7 +4,7 @@ import {
   Grid,
   DateRangePicker,
   DateRangePickerValue,
-  Title,
+  Text,
 } from "@tremor/react";
 
 type DatePickerProps = {
@@ -25,7 +25,7 @@ function DatePicker({
   return (
     <Grid numItems={5}>
       <Col className="flex items-center justify-end" numColSpan={2}>
-        <Title className="pr-4">{title}</Title>
+        <Text className="text-black pr-4">{title}</Text>
       </Col>
       <Col className="flex items-center" numColSpan={3}>
         <div>

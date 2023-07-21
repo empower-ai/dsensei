@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Card, Title, Subtitle, DateRangePickerValue, Button } from "@tremor/react";
+import {
+  Card,
+  Title,
+  Subtitle,
+  DateRangePickerValue,
+  Button,
+  Text,
+} from "@tremor/react";
 import SingleSelector from "./SingleSelector";
 import MultiSelector from "./MultiSelector";
 import DatePicker from "./DatePicker";
@@ -116,21 +123,27 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
     }
   });
 
-  const handleOnSubmit = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    navigate('/dashboard', { state: {
-      csvContent,
-      selectedColumns,
-      baselineDateRange,
-      comparisonDateRange
-    }});
-  }
+  const handleOnSubmit = (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    navigate("/dashboard", {
+      state: {
+        csvContent,
+        selectedColumns,
+        baselineDateRange,
+        comparisonDateRange,
+      },
+    });
+  };
 
   return (
     <Card className="max-w-3xl mx-auto">
       <div className="flex flex-col gap-4">
         {/* Date column selector */}
         <SingleSelector
-          title={<Title className="pr-4">{"Select a date column"}</Title>}
+          title={
+            <Text className="pr-4 text-black">{"Select date column"}</Text>
+          }
           labels={potentialDateCols.length === 0 ? header : potentialDateCols}
           values={potentialDateCols.length === 0 ? header : potentialDateCols}
           selectedValue={selectedDateCol ? selectedDateCol : ""}
@@ -146,7 +159,9 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
         />
         {/* Analysing metric single selector */}
         <SingleSelector
-          title={<Title className="pr-4">{"Select metric columns"}</Title>}
+          title={
+            <Text className="pr-4 text-black">{"Select metric columns"}</Text>
+          }
           labels={header}
           values={header}
           selectedValue={
@@ -233,9 +248,14 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
           onValueChange={onSelectDimension}
         />
       </div>
-      <Button className="mt-4" onClick={(e) => {
-        handleOnSubmit(e);
-      }}>Submit</Button>
+      <Button
+        className="mt-4"
+        onClick={(e) => {
+          handleOnSubmit(e);
+        }}
+      >
+        Submit
+      </Button>
     </Card>
   );
 }
