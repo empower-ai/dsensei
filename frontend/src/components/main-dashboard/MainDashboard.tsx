@@ -33,25 +33,29 @@ export default function MainDashboard() {
   const dispatch = useDispatch();
   const routerState = useLocation().state;
 
-  const { csvContent, baselineDateRange, comparisonDateRange, selectedColumns } = routerState;
+  const {
+    csvContent,
+    baselineDateRange,
+    comparisonDateRange,
+    selectedColumns,
+  } = routerState;
   console.log(routerState);
 
   useEffect(() => {
     dispatch(setLoadingStatus(true));
-    fetch("http://127.0.0.1:5000/insight",
-      {
-        mode: 'cors',
-        method: 'POST',
-        body: JSON.stringify({
-          csvContent,
-          baselineDateRange,
-          comparisonDateRange,
-          selectedColumns
-        }),
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      }).then((res) => {
+    fetch("http://127.0.0.1:5000/insight", {
+      mode: "cors",
+      method: "POST",
+      body: JSON.stringify({
+        csvContent,
+        baselineDateRange,
+        comparisonDateRange,
+        selectedColumns,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((res) => {
       res.json().then((json) => {
         dispatch(updateMetrics(json));
       });
@@ -114,7 +118,7 @@ export default function MainDashboard() {
   }
 
   return (
-    <main className="px-12 py-12">
+    <main className="px-12 pt-20">
       <Title>Result</Title>
       <Text>Metric: {analyzingMetrics.name}</Text>
       <Grid numItems={4} className="gap-6 mt-6">
