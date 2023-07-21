@@ -79,17 +79,21 @@ export function DimensionSliceDetailModalMetricCard({
                         alignItems="center"
                         className="space-x-4"
                       >
-                        <Text color={sliceInfo.impact > 0 ? "emerald" : "rose"}>
+                        <Text
+                          color={sliceInfo.impact > 0 ? "emerald" : "rose"}
+                          className="truncate"
+                        >
                           {sliceInfo.impact > 0 ? "+" : ""}
                           {formatNumber(sliceInfo.impact)} (
-                          {sliceInfo.impact > 0 ? "+" : ""}
-                          {formatNumber(
-                            ((sliceInfo.comparisonValue.sliceValue -
-                              sliceInfo.baselineValue.sliceValue) /
-                              sliceInfo.baselineValue.sliceValue) *
-                              100
-                          )}
-                          % )
+                          {sliceInfo.baselineValue.sliceValue === 0
+                            ? "N/A"
+                            : `${sliceInfo.impact > 0 ? "+" : ""}${formatNumber(
+                                ((sliceInfo.comparisonValue.sliceValue -
+                                  sliceInfo.baselineValue.sliceValue) /
+                                  sliceInfo.baselineValue.sliceValue) *
+                                  100
+                              )}%`}
+                          )
                         </Text>
                         <DeltaBar
                           value={(sliceInfo.impact / maxImpact) * 100}
