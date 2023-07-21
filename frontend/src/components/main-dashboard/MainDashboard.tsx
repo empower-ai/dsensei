@@ -66,7 +66,12 @@ export default function MainDashboard() {
     useSelector((state: RootState) => state.comparisonInsight);
 
   if (isLoading) {
-    return <></>;
+    return (
+      <Flex className="h-screen	gap-3" justifyContent="center">
+        <p>Loading</p>
+        <span className="loading loading-bars loading-lg"></span>
+      </Flex>
+    );
   }
 
   const allMetrics = [analyzingMetrics, ...relatedMetrics];
