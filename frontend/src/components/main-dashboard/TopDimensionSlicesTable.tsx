@@ -12,6 +12,8 @@ import { InsightMetric } from "../../common/types";
 import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 import { RowStatus } from "../../store/comparisonInsight";
 import { ReactNode, useState } from "react";
+import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
+import { TooltipIcon } from "../../common/TooltipIcon";
 
 type Props = {
   metric: InsightMetric;
@@ -84,11 +86,36 @@ export default function TopDimensionSlicesTable({
       <Table>
         <TableHead>
           <TableRow>
-            <TableHeaderCell>Dimension Slice</TableHeaderCell>
-            <TableHeaderCell>Slice Size</TableHeaderCell>
-            <TableHeaderCell>Slice Value</TableHeaderCell>
-            <TableHeaderCell>Impact</TableHeaderCell>
-            <TableHeaderCell>Performance Compared with Average</TableHeaderCell>
+            <TableHeaderCell>
+              <Flex justifyContent="start" className="gap-2">
+                Dimension Slice{" "}
+                <TooltipIcon text="asdf a asdf sdf sdf sdf asdf;asd fjsdf asdf; sdf sdf asd;f as;dfjsd;fjsdio fsdoif jsdjfnzvn ;sd spdf " />
+              </Flex>
+            </TableHeaderCell>
+            <TableHeaderCell>
+              <Flex justifyContent="start" className="gap-2">
+                Slice Size
+                <TooltipIcon text="foo" />
+              </Flex>
+            </TableHeaderCell>
+            <TableHeaderCell>
+              <Flex justifyContent="start" className="gap-2">
+                Slice Value
+                <TooltipIcon text="foo" />
+              </Flex>
+            </TableHeaderCell>
+            <TableHeaderCell>
+              <Flex justifyContent="start" className="gap-2">
+                Impact
+                <TooltipIcon text="foo" />
+              </Flex>
+            </TableHeaderCell>
+            <TableHeaderCell>
+              <Flex justifyContent="start" className="gap-2">
+                Performance Compared with Average
+                <TooltipIcon text="foo" />
+              </Flex>
+            </TableHeaderCell>
           </TableRow>
         </TableHead>
         <TableBody>

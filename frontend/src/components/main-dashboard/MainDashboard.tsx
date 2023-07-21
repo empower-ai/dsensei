@@ -59,6 +59,7 @@ export default function MainDashboard() {
       },
     }).then((res) => {
       res.json().then((json) => {
+        console.log(json);
         dispatch(updateMetrics(json));
       });
     });
