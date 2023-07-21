@@ -267,6 +267,7 @@ export default function MainDashboard() {
                     <TopDimensionSlicesTable
                       metric={analyzingMetrics}
                       rowStatus={tableRowStatusByDimension[dimension]}
+                      dimension={dimension}
                       title={
                         <>
                           <Title>Dimension: {dimension}</Title>

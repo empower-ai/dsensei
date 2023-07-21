@@ -170,13 +170,25 @@ export const comparisonMetricsSlice = createSlice({
       state.isLoading = false;
     },
 
-    toggleRow: (state, action: PayloadAction<string[]>) => {
+    toggleRow: (
+      state,
+      action: PayloadAction<{
+        keyPath: string[];
+        dimension?: string;
+      }>
+    ) => {
       let rowStatus: RowStatus | undefined;
       let initialized = false;
-      action.payload.forEach((key) => {
+      const { keyPath, dimension } = action.payload;
+      keyPath.forEach((key) => {
         if (!rowStatus) {
           if (!initialized) {
-            rowStatus = state.tableRowStatus[key];
+            console.log(dimension);
+            if (dimension) {
+              rowStatus = state.tableRowStatusByDimension[dimension][key];
+            } else {
+              rowStatus = state.tableRowStatus[key];
+            }
           } else {
             rowStatus = undefined;
           }

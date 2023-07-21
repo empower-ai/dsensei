@@ -31,6 +31,7 @@ type Props = {
   dimensionSlice: DimensionSliceInfo;
   rowStatus: RowStatus;
   parentDimensionSliceKey?: DimensionSliceKey;
+  dimension?: string;
   overallChange: number;
 };
 
@@ -78,6 +79,7 @@ export default function TopDimensionSlicesTableRow({
   dimensionSlice,
   parentDimensionSliceKey,
   overallChange,
+  dimension,
 }: Props) {
   const allDimensionSliceInfo = useSelector(
     (state: RootState) =>
@@ -94,6 +96,7 @@ export default function TopDimensionSlicesTableRow({
           dimensionSlice={allDimensionSliceInfo[subKey]!}
           parentDimensionSliceKey={dimensionSlice.key}
           overallChange={overallChange}
+          dimension={dimension}
         />
       );
     });
@@ -120,7 +123,12 @@ export default function TopDimensionSlicesTableRow({
             <span
               className="w-4 cursor-pointer"
               onClick={() => {
-                dispatch(toggleRow(rowStatus.key));
+                dispatch(
+                  toggleRow({
+                    keyPath: rowStatus.key,
+                    dimension,
+                  })
+                );
               }}
             >
               {rowStatus.isExpanded ? (

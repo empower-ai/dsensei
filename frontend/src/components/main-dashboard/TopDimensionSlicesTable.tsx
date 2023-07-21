@@ -14,12 +14,14 @@ import { ReactNode } from "react";
 type Props = {
   metric: InsightMetric;
   rowStatus: { [key: string]: RowStatus };
+  dimension?: string;
   title?: ReactNode;
 };
 
 export default function TopDimensionSlicesTable({
   metric,
   rowStatus,
+  dimension,
   title,
 }: Props) {
   const overallChange =
@@ -48,6 +50,7 @@ export default function TopDimensionSlicesTable({
                 rowStatus={rowStatus[key]!}
                 dimensionSlice={dimensionSlice}
                 overallChange={overallChange}
+                dimension={dimension}
               />
             );
           })}
