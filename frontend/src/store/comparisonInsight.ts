@@ -78,7 +78,7 @@ function buildRowStatusMap(metric: InsightMetric): {
     }
   });
 
-  console.log(result);
+  console.log(metric.topDriverSliceKeys);
 
   return result;
 }

@@ -22,10 +22,7 @@ import { ReactNode, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
-import {
-  setLoadingStatus,
-  updateMetrics
-} from "../../store/comparisonInsight";
+import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
 
 // const dataFormatter = (number: number) =>
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
@@ -35,20 +32,18 @@ export default function MainDashboard() {
 
   useEffect(() => {
     dispatch(setLoadingStatus(true));
-    fetch("http://127.0.0.1:5000/a", {mode: 'cors'}).then((res) => {
+    fetch("http://127.0.0.1:5000/a", { mode: "cors" }).then((res) => {
       res.json().then((json) => {
         dispatch(updateMetrics(json));
-      }
-    );
+      });
     });
   }, []);
 
-  const { analyzingMetrics, relatedMetrics, tableRowStatus, isLoading } = useSelector(
-    (state: RootState) => state.comparisonInsight
-  );
+  const { analyzingMetrics, relatedMetrics, tableRowStatus, isLoading } =
+    useSelector((state: RootState) => state.comparisonInsight);
 
   if (isLoading) {
-    return <></>
+    return <></>;
   }
 
   const allMetrics = [analyzingMetrics, ...relatedMetrics];
@@ -102,13 +97,15 @@ export default function MainDashboard() {
             <div>
               <Title>Baseline Period</Title>
               <Text>Apr 1, 2022 to Apr 30, 2022</Text>
-              <Text>1000 total rows</Text>
+              <Text>{analyzingMetrics.baselineNumRows} total rows</Text>
             </div>
             <div className="self-center text-center justify-self-center content-center">
               <Flex className="self-center text-center justify-self-center content-center">
                 <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
                 <Metric className="flex">
-                  <p className="px-2">{analyzingMetrics.baselineValue.toFixed(2)}</p>
+                  <p className="px-2">
+                    {analyzingMetrics.baselineValue.toFixed(2)}
+                  </p>
                 </Metric>
               </Flex>
             </div>
@@ -134,12 +131,14 @@ export default function MainDashboard() {
             <div>
               <Title>Comparison Period</Title>
               <Text>Apr 1, 2022 to Apr 30, 2022</Text>
-              <Text>1000 total rows</Text>
+              <Text>{analyzingMetrics.comparisonNumRows} total rows</Text>
             </div>
             <div className="self-center text-center justify-self-center content-center">
               <Flex className="self-center text-center justify-self-center content-center">
                 <Text className="self-end mr-2">{analyzingMetrics.name}:</Text>
-                <Metric>{analyzingMetrics.comparisonValue.toFixed(2)}</Metric>
+                <Metric className="mr-2">
+                  {analyzingMetrics.comparisonValue.toFixed(2)}
+                </Metric>
                 {getChangePercentageBadge(
                   analyzingMetrics.baselineValue,
                   analyzingMetrics.comparisonValue
