@@ -99,6 +99,7 @@ def getInsight():
 
     df = pd.read_csv(StringIO(csvContent))
     df[date_column] = pd.to_datetime(df[date_column])
+    df['date'] = df[date_column].dt.date
 
     metrics = MetricsController(
         df,

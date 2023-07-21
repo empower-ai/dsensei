@@ -174,44 +174,38 @@ class MetricsController(object):
             ret = toDimensionSliceInfo(dimension_slice, metricsName, metrics.baselineNumRows, metrics.comparisonNumRows)
             all_dimension_slices.extend(ret)
 
-        slice_info_dict = {
-            frozenset(dimension_slice.key) : dimension_slice
-            for dimension_slice in all_dimension_slices
-        }
-
-        # metrics.topDriverSliceKeys = self.getTopDrivingDimensionSliceKeys(
-        #     (),
-        #     slice_info_dict
-        # )
         all_dimension_slices.sort(key=lambda slice: abs(slice.impact), reverse=True)
         metrics.topDriverSliceKeys = list(map(lambda slice: slice.serializedKey, all_dimension_slices[:100]))
-
-        def getTopDrivingDimensionSliceKeys(dimension_slice: DimensionSliceInfo):
-            dimension_slice.topDrivingDimensionSliceKeys = self.getTopDrivingDimensionSliceKeys(
-                dimension_slice.key,
-                slice_info_dict
-            )
-            return dimension_slice
-
-        # all_dimension_slices = map(
-        #     getTopDrivingDimensionSliceKeys,
-        #     all_dimension_slices
-        # )
-
         metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices
         }
         metrics.baselineValue = self.aggs[f'{metricsName}_baseline'].sum()
         metrics.comparisonValue = self.aggs[metricsName].sum()
 
-        metrics.baselineValueByDate = [{
-            "date": "2022-01-01",
-            "value": self.aggs[f'{metricsName}_baseline'].sum()
-        }]
-        metrics.comparisonValueByDate = [{
-            "date": "2023-01-01",
-            "value": self.aggs[metricsName].sum()
-        }]
+        baseline = self.df.loc[self.df[self.date_column].between(
+            pd.to_datetime(self.baseline_date_range[0], utc=True),
+            pd.to_datetime(self.baseline_date_range[1], utc=True))
+        ].groupby('date').agg(self.agg_method)
+        comparison = self.df.loc[self.df[self.date_column].between(
+            pd.to_datetime(self.comparison_date_range[0], utc=True),
+            pd.to_datetime(self.comparison_date_range[1], utc=True))
+        ].groupby('date').agg(self.agg_method)
+
+        metrics.baselineValueByDate = [
+            {
+                "date": index.strftime("%Y-%m-%d"),
+                "value": row[f'{metricsName}']
+            }
+            for index, row in baseline.iterrows()
+        ]
+        metrics.comparisonValueByDate = [
+            {
+                "date": index.strftime("%Y-%m-%d"),
+                "value": row[f'{metricsName}']
+            }
+            for index, row in comparison.iterrows()
+        ]
+
         metrics.baselineDateRange = [self.baseline_date_range[0].strftime("%Y-%m-%d"), self.baseline_date_range[1].strftime("%Y-%m-%d")]
         metrics.comparisonDateRange = [self.comparison_date_range[0].strftime("%Y-%m-%d"), self.comparison_date_range[1].strftime("%Y-%m-%d")]
 
