@@ -14,6 +14,7 @@
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "daisyui": "^3.2.1",
+    "moment": "^2.29.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^8.1.1",

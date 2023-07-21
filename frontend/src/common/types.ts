@@ -1,23 +1,19 @@
-export interface DateRange {
-  startDate: Date;
-  endDate: Date;
-}
 export interface InsightMetric {
   name: string;
   baselineValue: number;
   baselineValueByDate: {
-    date: Date;
+    date: string;
     value: number;
   }[];
   baselineNumRows: number;
   comparisonValue: number;
   comparisonValueByDate: {
-    date: Date;
+    date: string;
     value: number;
   }[];
   comparisonNumRows: number;
-  baselineDateRange: DateRange;
-  comparisonDateRange: DateRange;
+  baselineDateRange: [string, string];
+  comparisonDateRange: [string, string];
   topDriverSliceKeys: string[];
   dimensions: {
     [key: string]: string[];

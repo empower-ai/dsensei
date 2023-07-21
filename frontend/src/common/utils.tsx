@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { DimensionSliceKey } from "./types";
 import { Badge, Bold, Text } from "@tremor/react";
 import exp from "constants";
+import moment from "moment";
 
 export function sortDimension(
   dimension1: {
@@ -81,4 +82,8 @@ export function formatNumber(num: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+export function formatDateString(dateString: string): string {
+  return moment(new Date(dateString)).utc().format("MMM D, YYYY");
 }

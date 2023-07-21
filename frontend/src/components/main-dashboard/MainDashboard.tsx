@@ -23,7 +23,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
 import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
-import { formatNumber } from "../../common/utils";
+import { formatDateString, formatNumber } from "../../common/utils";
 
 // const dataFormatter = (number: number) =>
 //   `${Intl.NumberFormat("us").format(number).toString()}%`;
@@ -104,7 +104,12 @@ export default function MainDashboard() {
           <div className="h-[100%] grid">
             <div>
               <Title>Baseline Period</Title>
-              <Text>Apr 1, 2022 to Apr 30, 2022</Text>
+              <Text>
+                {" "}
+                {formatDateString(
+                  analyzingMetrics.baselineDateRange[0]
+                )} to {formatDateString(analyzingMetrics.baselineDateRange[1])}
+              </Text>
               <Text>{analyzingMetrics.baselineNumRows} total rows</Text>
             </div>
             <div className="self-center text-center justify-self-center content-center">
@@ -142,7 +147,10 @@ export default function MainDashboard() {
           <div className="h-[100%] grid">
             <div>
               <Title>Comparison Period</Title>
-              <Text>Apr 1, 2022 to Apr 30, 2022</Text>
+              <Text>
+                {formatDateString(analyzingMetrics.comparisonDateRange[0])} to{" "}
+                {formatDateString(analyzingMetrics.comparisonDateRange[1])}
+              </Text>
               <Text>{analyzingMetrics.comparisonNumRows} total rows</Text>
             </div>
             <div className="self-center text-center justify-self-center content-center">
