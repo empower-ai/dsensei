@@ -259,8 +259,9 @@ export default function MainDashboard() {
           <TabPanel>
             <div className="mt-6">
               <TopDimensionSlicesTable
-                rowStatus={tableRowStatus}
+                rowStatusMap={tableRowStatus}
                 metric={analyzingMetrics}
+                maxDefaultRows={100}
               />
             </div>
           </TabPanel>
@@ -271,8 +272,9 @@ export default function MainDashboard() {
                   <div className="mb-6">
                     <TopDimensionSlicesTable
                       metric={analyzingMetrics}
-                      rowStatus={tableRowStatusByDimension[dimension]}
+                      rowStatusMap={tableRowStatusByDimension[dimension]}
                       dimension={dimension}
+                      maxDefaultRows={5}
                       title={
                         <>
                           <Title>Dimension: {dimension}</Title>

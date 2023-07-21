@@ -61,7 +61,6 @@ function helper(
 function buildRowStatusMap(metric: InsightMetric): {
   [key: string]: RowStatus;
 } {
-  // const dimensionSliceInfoMap = metric.dimensionSliceInfo;
   const result: { [key: string]: RowStatus } = {};
   metric.topDriverSliceKeys.forEach((key) => {
     const keyComponents = key.split("|");
@@ -82,8 +81,6 @@ function buildRowStatusMap(metric: InsightMetric): {
       };
     }
   });
-
-  console.log(metric.topDriverSliceKeys);
 
   return result;
 }

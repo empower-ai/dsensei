@@ -5,22 +5,26 @@ import {
   TableRow,
   TableHeaderCell,
   TableBody,
+  Text,
+  Flex,
 } from "@tremor/react";
 import { InsightMetric } from "../../common/types";
 import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 import { RowStatus } from "../../store/comparisonInsight";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 type Props = {
   metric: InsightMetric;
-  rowStatus: { [key: string]: RowStatus };
+  rowStatusMap: { [key: string]: RowStatus };
+  maxDefaultRows?: number;
   dimension?: string;
   title?: ReactNode;
 };
 
 export default function TopDimensionSlicesTable({
   metric,
-  rowStatus,
+  rowStatusMap,
+  maxDefaultRows,
   dimension,
   title,
 }: Props) {
@@ -28,9 +32,55 @@ export default function TopDimensionSlicesTable({
     metric.baselineValue === 0
       ? 0
       : (metric.comparisonValue - metric.baselineValue) / metric.baselineValue;
+
+  const [isCollapsed, setIsCollapse] = useState(true);
+  const rowStatusKeys = Object.keys(rowStatusMap);
+
+  let rowStatusKeysToRender = rowStatusKeys;
+  const haveRowsToExpand =
+    maxDefaultRows &&
+    maxDefaultRows > 0 &&
+    maxDefaultRows < rowStatusKeys.length;
+
+  if (haveRowsToExpand) {
+    if (isCollapsed) {
+      rowStatusKeysToRender = rowStatusKeys.slice(0, maxDefaultRows);
+    } else {
+      rowStatusKeysToRender = rowStatusKeys;
+    }
+  }
+
+  function renderExpandControl() {
+    if (!haveRowsToExpand) {
+      return null;
+    }
+
+    return isCollapsed ? (
+      <button
+        onClick={() => setIsCollapse(false)}
+        className="btn-link text-sky-800"
+      >
+        Show All
+      </button>
+    ) : (
+      <button
+        onClick={() => setIsCollapse(true)}
+        className="btn-link text-sky-800"
+      >
+        Collapse
+      </button>
+    );
+  }
+
   return (
     <Card>
       {title}
+      <Flex justifyContent="start" className="gap-2">
+        <Text>
+          Showing {rowStatusKeysToRender.length} of {rowStatusKeys.length} rows.
+        </Text>
+        {renderExpandControl()}
+      </Flex>
       <Table>
         <TableHead>
           <TableRow>
@@ -42,12 +92,12 @@ export default function TopDimensionSlicesTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          {Object.keys(rowStatus).map((key) => {
+          {rowStatusKeysToRender.map((key) => {
             const dimensionSlice = metric.dimensionSliceInfo[key]!;
 
             return (
               <TopDimensionSlicesTableRow
-                rowStatus={rowStatus[key]!}
+                rowStatus={rowStatusMap[key]!}
                 dimensionSlice={dimensionSlice}
                 overallChange={overallChange}
                 dimension={dimension}
