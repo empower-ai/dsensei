@@ -65,7 +65,7 @@ function getImpact(
   }
 ): ReactNode {
   if (impact > 0) {
-    return <BadgeDelta deltaType="increase">{formatter(impact)}</BadgeDelta>;
+    return <BadgeDelta deltaType="increase">+{formatter(impact)}</BadgeDelta>;
   } else if (impact === 0) {
     return <BadgeDelta deltaType="unchanged">{formatter(impact)}</BadgeDelta>;
   } else {
