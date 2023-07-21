@@ -17,6 +17,11 @@ export interface ComparisonInsightState {
   tableRowStatus: {
     [key: string]: RowStatus;
   };
+  tableRowStatusByDimension: {
+    [key: string]: {
+      [key: string]: RowStatus;
+    };
+  };
   isLoading: boolean;
 }
 
@@ -83,34 +88,56 @@ function buildRowStatusMap(metric: InsightMetric): {
   return result;
 }
 
-// function buildRowStatusForDimensionSlice(
-//   key: string,
-//   dimensionSliceInfoMap: { [key: string]: DimensionSliceInfo },
-//   parentKeys: string[]
-// ): [string, RowStatus] {
-//   const dimensionSliceInfo = dimensionSliceInfoMap[key];
+function buildRowStatusByDimensionMap(metric: InsightMetric): {
+  [key: string]: {
+    [key: string]: RowStatus;
+  };
+} {
+  const result: { [key: string]: { [key: string]: RowStatus } } = {};
 
-//   return [
-//     key,
-//     {
-//       key: [...parentKeys, key],
-//       isExpanded: false,
-//       children: Object.fromEntries(
-//         dimensionSliceInfo?.topDrivingDimensionSliceKeys.map((subKey) =>
-//           buildRowStatusForDimensionSlice(subKey, dimensionSliceInfoMap, [
-//             ...parentKeys,
-//             key,
-//           ])
-//         ) ?? []
-//       ),
-//     },
-//   ];
-// }
+  metric.topDriverSliceKeys.forEach((key) => {
+    const keyComponents = key.split("|");
+    if (keyComponents.length > 1) {
+      return;
+    }
+
+    const [dimension] = keyComponents[0].split(":");
+
+    if (!result[dimension]) {
+      result[dimension] = {};
+    }
+
+    result[dimension][key] = {
+      key: [key],
+      keyComponents,
+      isExpanded: false,
+      children: {},
+    };
+  });
+
+  metric.topDriverSliceKeys.forEach((key) => {
+    const keyComponents = key.split("|");
+    if (keyComponents.length === 1) {
+      return;
+    }
+
+    keyComponents.forEach((keyComponent) => {
+      const [dimension] = keyComponent.split(":");
+
+      Object.values(result[dimension]).forEach((child) => {
+        helper(child, key, keyComponents);
+      });
+    });
+  });
+
+  return result;
+}
 
 const initialState: ComparisonInsightState = {
   analyzingMetrics: {} as InsightMetric,
   relatedMetrics: [],
   tableRowStatus: {},
+  tableRowStatusByDimension: {},
   isLoading: true,
 };
 
@@ -123,30 +150,23 @@ export const comparisonMetricsSlice = createSlice({
     },
     updateMetrics: (
       state,
-      action: PayloadAction<{[key: string]: object}>
+      action: PayloadAction<{ [key: string]: object }>
     ) => {
       const keys = Object.keys(action.payload);
-      // const revenueMetric = action.payload["revenue"] as InsightMetric;
-      // const buyersMetric = action.payload["unique_user"] as InsightMetric;
-      // const ordersMetric = action.payload["unique_order"] as InsightMetric;
-
-      // if (!revenueMetric || !buyersMetric || !ordersMetric) {
-      //   console.log("skip, invalid metrics");
-      //   return;
-      // }
-
       state.analyzingMetrics = action.payload[keys[0]] as InsightMetric;
-      state.relatedMetrics = keys.map((key, index) => {
-        if (index === 0) {
-          return undefined;
+      state.relatedMetrics = keys
+        .map((key, index) => {
+          if (index === 0) {
+            return undefined;
           }
           return action.payload[key] as InsightMetric;
-        }).filter((metric) => metric !== undefined) as InsightMetric[];
-
-      console.log('state.analyzingMetrics', state.analyzingMetrics);
-      console.log('state.relatedMetrics', state.relatedMetrics);
+        })
+        .filter((metric) => metric !== undefined) as InsightMetric[];
 
       state.tableRowStatus = buildRowStatusMap(state.analyzingMetrics);
+      state.tableRowStatusByDimension = buildRowStatusByDimensionMap(
+        state.analyzingMetrics
+      );
       state.isLoading = false;
     },
 

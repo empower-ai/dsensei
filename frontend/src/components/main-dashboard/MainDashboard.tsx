@@ -16,6 +16,7 @@ import {
   List,
   ListItem,
   Bold,
+  Divider,
 } from "@tremor/react";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { ReactNode, useEffect } from "react";
@@ -62,8 +63,13 @@ export default function MainDashboard() {
     });
   }, [dispatch]);
 
-  const { analyzingMetrics, relatedMetrics, tableRowStatus, isLoading } =
-    useSelector((state: RootState) => state.comparisonInsight);
+  const {
+    analyzingMetrics,
+    relatedMetrics,
+    tableRowStatus,
+    tableRowStatusByDimension,
+    isLoading,
+  } = useSelector((state: RootState) => state.comparisonInsight);
 
   if (isLoading) {
     return (
@@ -254,9 +260,22 @@ export default function MainDashboard() {
             </div>
           </TabPanel>
           <TabPanel>
-            <div className="mt-6">
+            <div className="mt-6 flex">
               <Card>
-                <div className="h-96" />
+                {Object.keys(analyzingMetrics.dimensions).map((dimension) => (
+                  <div className="mb-6">
+                    <TopDimensionSlicesTable
+                      metric={analyzingMetrics}
+                      rowStatus={tableRowStatusByDimension[dimension]}
+                      title={
+                        <>
+                          <Title>Dimension: {dimension}</Title>
+                          <Divider />
+                        </>
+                      }
+                    />
+                  </div>
+                ))}
               </Card>
             </div>
           </TabPanel>

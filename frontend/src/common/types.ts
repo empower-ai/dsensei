@@ -16,7 +16,7 @@ export interface InsightMetric {
   comparisonDateRange: [string, string];
   topDriverSliceKeys: string[];
   dimensions: {
-    [key: string]: string[];
+    [key: string]: { name: string; values: string[] };
   };
   dimensionSliceInfo: {
     [key: string]: DimensionSliceInfo;

@@ -6,23 +6,29 @@ import {
   TableHeaderCell,
   TableBody,
 } from "@tremor/react";
-import { DimensionSliceInfo, InsightMetric } from "../../common/types";
-import { serializeDimensionSliceKey } from "../../common/utils";
+import { InsightMetric } from "../../common/types";
 import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 import { RowStatus } from "../../store/comparisonInsight";
+import { ReactNode } from "react";
 
 type Props = {
   metric: InsightMetric;
   rowStatus: { [key: string]: RowStatus };
+  title?: ReactNode;
 };
 
-export default function TopDimensionSlicesTable({ metric, rowStatus }: Props) {
+export default function TopDimensionSlicesTable({
+  metric,
+  rowStatus,
+  title,
+}: Props) {
   const overallChange =
     metric.baselineValue === 0
       ? 0
       : (metric.comparisonValue - metric.baselineValue) / metric.baselineValue;
   return (
     <Card>
+      {title}
       <Table>
         <TableHead>
           <TableRow>
