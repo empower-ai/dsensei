@@ -51,12 +51,12 @@ export default function MainDashboard() {
   const chartData = allMetrics.map((metric) =>
     (
       metric.baselineValueByDate.map((baselineValue) => ({
-        date: baselineValue.date,
+        date: formatDateString(baselineValue.date),
         Baseline: baselineValue.value,
       })) as any[]
     ).concat(
       metric.comparisonValueByDate.map((comparisonValue) => ({
-        date: comparisonValue.date,
+        date: formatDateString(comparisonValue.date),
         Comparison: comparisonValue.value,
       }))
     )
@@ -204,6 +204,7 @@ export default function MainDashboard() {
                     categories={["Baseline", "Comparison"]}
                     colors={["emerald", "gray"]}
                     yAxisWidth={40}
+                    valueFormatter={formatNumber}
                   />
                 </TabPanel>
               ))}
