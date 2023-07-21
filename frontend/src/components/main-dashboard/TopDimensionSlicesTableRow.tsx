@@ -86,9 +86,7 @@ export default function TopDimensionSlicesTableRow({
   const serializedKey = serializeDimensionSliceKey(dimensionSlice.key);
 
   function renderSubSlices() {
-    return dimensionSlice.topDrivingDimensionSliceKeys.map((subKey) => {
-      // const serializedSubKey = serializeDimensionSliceKey(subKey);
-
+    return Object.keys(rowStatus.children).map((subKey) => {
       return (
         <TopDimensionSlicesTableRow
           rowStatus={rowStatus.children[subKey]!}
@@ -112,14 +110,12 @@ export default function TopDimensionSlicesTableRow({
           <p
             style={{
               width: `${
-                (rowStatus.key.length - 1) * 12 +
-                (dimensionSlice.topDrivingDimensionSliceKeys.length > 0
-                  ? 0
-                  : 12)
+                (rowStatus.key.length - 1) * 25 +
+                (Object.keys(rowStatus.children).length > 0 ? 0 : 15)
               }px`,
             }}
           ></p>
-          {dimensionSlice.topDrivingDimensionSliceKeys.length > 0 && (
+          {Object.keys(rowStatus.children).length > 0 && (
             <span
               className="w-4 cursor-pointer"
               onClick={() => {

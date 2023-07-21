@@ -21,7 +21,7 @@ export interface InsightMetric {
   topDriverSliceKeys: string[];
   dimensions: {
     [key: string]: string[];
-  }
+  };
   dimensionSliceInfo: {
     [key: string]: DimensionSliceInfo;
   };
@@ -45,7 +45,7 @@ export type DimensionSliceKey = {
 export interface DimensionSliceInfo {
   key: DimensionSliceKey;
   serializedKey: string;
-  topDrivingDimensionSliceKeys: string[];
+  // topDrivingDimensionSliceKeys: string[];
   baselineValue: {
     sliceSize: number;
     sliceCount: number;

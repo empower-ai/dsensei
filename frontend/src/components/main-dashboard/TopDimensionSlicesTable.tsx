@@ -34,7 +34,7 @@ export default function TopDimensionSlicesTable({ metric, rowStatus }: Props) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {metric.topDriverSliceKeys.map((key) => {
+          {Object.keys(rowStatus).map((key) => {
             const dimensionSlice = metric.dimensionSliceInfo[key]!;
 
             return (

@@ -1,18 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {
-  DimensionSliceInfo,
-  DimensionSliceKey,
-  InsightMetric,
-} from "../common/types";
-import { serializeDimensionSliceKey } from "../common/utils";
-// import {
-//   dummyBuyersMetric,
-//   dummyOrdersMetric,
-//   dummyRevenueMetric,
-// } from "./dummyData";
+import { InsightMetric } from "../common/types";
 
 export type RowStatus = {
   key: string[];
+  keyComponents: string[];
   isExpanded: boolean;
   children: {
     [key: string]: RowStatus;
@@ -29,40 +20,87 @@ export interface ComparisonInsightState {
   isLoading: boolean;
 }
 
+function helper(
+  row: RowStatus,
+  checkingKey: string,
+  checkingKeyComponents: string[]
+) {
+  if (
+    !row.keyComponents.every((component) =>
+      checkingKeyComponents.includes(component)
+    )
+  ) {
+    return false;
+  }
+
+  const newRow = {
+    key: [...row.key, checkingKey],
+    keyComponents: checkingKeyComponents,
+    isExpanded: false,
+    children: {},
+  };
+
+  Object.values(row.children).forEach((child) => {
+    helper(child, checkingKey, checkingKeyComponents);
+  });
+
+  row.children[checkingKey] = newRow;
+  return true;
+}
+
 function buildRowStatusMap(metric: InsightMetric): {
   [key: string]: RowStatus;
 } {
-  const dimensionSliceInfoMap = metric.dimensionSliceInfo;
-  return Object.fromEntries(
-    metric.topDriverSliceKeys.map((key) =>
-      buildRowStatusForDimensionSlice(key, dimensionSliceInfoMap, [])
-    )
-  );
+  // const dimensionSliceInfoMap = metric.dimensionSliceInfo;
+  const result: { [key: string]: RowStatus } = {};
+  metric.topDriverSliceKeys.forEach((key) => {
+    const keyComponents = key.split("|");
+    let hasMatching = false;
+
+    Object.values(result).forEach((child) => {
+      if (helper(child, key, keyComponents)) {
+        hasMatching = true;
+      }
+    });
+
+    if (!hasMatching) {
+      result[key] = {
+        key: [key],
+        keyComponents: keyComponents,
+        isExpanded: false,
+        children: {},
+      };
+    }
+  });
+
+  console.log(result);
+
+  return result;
 }
 
-function buildRowStatusForDimensionSlice(
-  key: string,
-  dimensionSliceInfoMap: { [key: string]: DimensionSliceInfo },
-  parentKeys: string[]
-): [string, RowStatus] {
-  const dimensionSliceInfo = dimensionSliceInfoMap[key];
+// function buildRowStatusForDimensionSlice(
+//   key: string,
+//   dimensionSliceInfoMap: { [key: string]: DimensionSliceInfo },
+//   parentKeys: string[]
+// ): [string, RowStatus] {
+//   const dimensionSliceInfo = dimensionSliceInfoMap[key];
 
-  return [
-    key,
-    {
-      key: [...parentKeys, key],
-      isExpanded: false,
-      children: Object.fromEntries(
-        dimensionSliceInfo?.topDrivingDimensionSliceKeys.map((subKey) =>
-          buildRowStatusForDimensionSlice(subKey, dimensionSliceInfoMap, [
-            ...parentKeys,
-            key,
-          ])
-        ) ?? []
-      ),
-    },
-  ];
-}
+//   return [
+//     key,
+//     {
+//       key: [...parentKeys, key],
+//       isExpanded: false,
+//       children: Object.fromEntries(
+//         dimensionSliceInfo?.topDrivingDimensionSliceKeys.map((subKey) =>
+//           buildRowStatusForDimensionSlice(subKey, dimensionSliceInfoMap, [
+//             ...parentKeys,
+//             key,
+//           ])
+//         ) ?? []
+//       ),
+//     },
+//   ];
+// }
 
 const initialState: ComparisonInsightState = {
   analyzingMetrics: {} as InsightMetric,
