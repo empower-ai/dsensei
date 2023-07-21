@@ -36,6 +36,12 @@ metrics_name = {
     'created_at': "count"
 }
 
+agg_method_map = {
+    "sum": "sum",
+    "count": "count",
+    "distinct": "nunique"
+}
+
 metrics = MetricsController(
    df,
     (datetime.strptime('2021-03-01', "%Y-%m-%d").date(), datetime.strptime('2021-3-31', "%Y-%m-%d").date()),
@@ -82,10 +88,10 @@ def getInsight():
 
     date_column = list(filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0]
 
-    agg_method = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))
+    agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]['type'] == 'supporting_metric', selectedColumns.items()))
     metrics_name = {k: k for k, v in agg_method}
     metrics_name.update({date_column: 'count'})
-    agg_method = {k: v['aggregationOption'] for k, v in agg_method}
+    agg_method = {k: agg_method_map[v['aggregationOption']] for k, v in agg_method}
     agg_method.update({date_column: 'count'})
 
     dimensions = list(filter(lambda x: x[1]['type'] == 'dimension', selectedColumns.items()))
