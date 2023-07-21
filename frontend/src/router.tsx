@@ -8,7 +8,7 @@ export const router = createBrowserRouter([
     element: <MainDashboard />,
   },
   {
-    path: "upload_csv",
+    path: "/",
     element: <CsvUploader />,
   },
 ]);

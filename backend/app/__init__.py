@@ -12,6 +12,8 @@ from datetime import datetime
 
 app = Flask(__name__, static_url_path='')
 CORS(app)
+app.config.from_object(Config)
+app._static_folder = os.path.abspath("static/")
 
 columns_of_interest = ['age_group', 'user_gender', 'category', 'product_distribution_center_id', 'user_state']
 csvSource = CsvSource('./data/data.csv')
@@ -56,6 +58,9 @@ def getMetrics():
     # return 'test'
     return metrics.getMetrics()
 
+@app.route('/')
+def main():
+    return app.send_static_file('index.html')
 
 @app.route('/insight', methods=['POST'])
 def getInsight():
