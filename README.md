@@ -23,7 +23,7 @@ There are multiple ways to run DSensei on your machine.
 The recommended way is to use the official Docker image. Make sure you have Docker installed on your system, then run the following command:
 
 ```shell
-docker run -p 5000:5000 dsensei/dsensei-insight:latest
+docker run -p 5000:5000 dsenseiapp/dsensei:0.1.0
 ```
 
 This will pull the latest version of the DSensei-insight image and start the application on port 5000.
