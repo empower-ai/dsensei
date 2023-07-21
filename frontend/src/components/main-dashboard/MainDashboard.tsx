@@ -127,7 +127,7 @@ export default function MainDashboard() {
       <Title>Result</Title>
       <Text>Metric: {analyzingMetrics.name}</Text>
       <Grid numItems={4} className="gap-6 mt-6">
-        <Card>
+        <Card className="border-t-4 border-t-orange-500">
           <div className="h-[100%] grid">
             <div>
               <Title>Baseline Period</Title>
@@ -170,7 +170,7 @@ export default function MainDashboard() {
             </div>
           </div>
         </Card>
-        <Card>
+        <Card className="border-t-4 border-t-sky-500">
           <div className="h-[100%] grid">
             <div>
               <Title>Comparison Period</Title>
@@ -229,7 +229,7 @@ export default function MainDashboard() {
                     data={data}
                     index="date"
                     categories={["Baseline", "Comparison"]}
-                    colors={["emerald", "gray"]}
+                    colors={["orange", "sky"]}
                     yAxisWidth={40}
                     valueFormatter={formatNumber}
                   />
