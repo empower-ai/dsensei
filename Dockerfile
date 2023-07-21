@@ -19,7 +19,7 @@ RUN python3 -m venv /opt/venv
 RUN . /opt/venv/bin/activate && pip install -r requirements.txt
 
 # Expose the desired port (change if necessary)
-EXPOSE 5000
+EXPOSE 5001
 
 # Run Flask application
-CMD . /opt/venv/bin/activate && exec flask run -h 0.0.0.0
+CMD . /opt/venv/bin/activate && exec flask run -h 0.0.0.0 -p 5001

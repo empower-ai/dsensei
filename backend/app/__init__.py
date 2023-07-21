@@ -15,43 +15,6 @@ CORS(app)
 app.config.from_object(Config)
 app._static_folder = os.path.abspath("static/")
 
-columns_of_interest = ['age_group', 'user_gender', 'category', 'product_distribution_center_id', 'user_state']
-csvSource = CsvSource('./data/data.csv')
-
-df = csvSource.load()
-df['created_at'] = pd.to_datetime(df['created_at'])
-df['year'] = df['created_at'].dt.year
-df['age_group'] = (df['user_age'] / 10).astype(int) * 10
-
-agg_method = {
-    'price': 'sum',
-    'user_id': 'nunique',
-    'order_id': 'nunique',
-    'created_at': 'count'
-}
-metrics_name = {
-    'price': 'price',
-    'user_id': 'user_id',
-    'order_id': 'order_id',
-    'created_at': "count"
-}
-
-agg_method_map = {
-    "sum": "sum",
-    "count": "count",
-    "distinct": "nunique"
-}
-
-metrics = MetricsController(
-   df,
-    (datetime.strptime('2021-03-01', "%Y-%m-%d").date(), datetime.strptime('2021-3-31', "%Y-%m-%d").date()),
-    (datetime.strptime('2021-04-01', "%Y-%m-%d").date(), datetime.strptime('2021-4-28', "%Y-%m-%d").date()),
-    'created_at',
-   columns_of_interest,
-   agg_method,
-   metrics_name,
-   )
-
 @app.after_request
 def after_request(response):
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -59,10 +22,11 @@ def after_request(response):
   response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
   return response
 
-@app.route('/a')
-def getMetrics():
-    # return 'test'
-    return metrics.getMetrics()
+agg_method_map = {
+    "sum": "sum",
+    "count": "count",
+    "distinct": "nunique"
+}
 
 @app.route('/')
 def main():
@@ -71,10 +35,6 @@ def main():
 @app.route('/insight', methods=['POST'])
 def getInsight():
     data = request.get_json()
-
-
-    print(data.keys())
-
     csvContent = data['csvContent']
     baselineDateRange = data['baselineDateRange']
     comparisonDateRange = data['comparisonDateRange']
