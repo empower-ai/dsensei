@@ -14,7 +14,8 @@ WIP
 
 ## Demo Videos
 
-WIP
+https://github.com/dsensei/dsensei-insight/assets/1261809/a6257ac2-211f-476e-8f8c-1840dd9947c8
+
 
 ## Setup
 There are multiple ways to run DSensei on your machine.
