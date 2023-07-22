@@ -87,7 +87,7 @@ export default function MainDashboard() {
     (
       metric.baselineValueByDate.map((baselineValue) => ({
         date: formatDateString(baselineValue.date),
-        Baseline: baselineValue.value,
+        Base: baselineValue.value,
       })) as any[]
     ).concat(
       metric.comparisonValueByDate.map((comparisonValue) => ({
@@ -136,7 +136,7 @@ export default function MainDashboard() {
         <Card className="border-t-4 border-t-orange-500">
           <div className="h-[100%] grid">
             <div>
-              <Title>Baseline Period</Title>
+              <Title>Base Period</Title>
               <Text>
                 {" "}
                 {formatDateString(
@@ -240,7 +240,7 @@ export default function MainDashboard() {
                     className="mt-6"
                     data={data}
                     index="date"
-                    categories={["Baseline", "Comparison"]}
+                    categories={["Base", "Comparison"]}
                     colors={["orange", "sky"]}
                     yAxisWidth={40}
                     valueFormatter={formatNumber}
