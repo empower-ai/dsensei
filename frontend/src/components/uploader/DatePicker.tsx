@@ -27,23 +27,29 @@ function DatePicker({
       <Col className="flex items-center justify-end" numColSpan={2}>
         <Text className="text-black pr-4">{title}</Text>
       </Col>
-      <Col className="flex items-center" numColSpan={3}>
-        <div>
-          <DateRangePicker
-            className="max-w-sm mx-auto"
-            value={dateRange}
-            onValueChange={onDateRangeChange}
-            enableSelect={false}
-            placeholder={"Date range"}
-          />
-        </div>
+      <Col className="items-center" numColSpan={3}>
         <DateRangePicker
-          className="max-w-sm mx-auto pl-4"
+          className="col-span-3 max-w-full"
+          value={dateRange}
+          onValueChange={onDateRangeChange}
+          enableSelect={false}
+          placeholder={"Comparison Date range"}
+        />
+      </Col>
+      <Col className="items-center col-start-3" numColSpan={3}>
+        <Text className="py-1 pl-2">
+          Date range of the period to analyze (comparison period).
+        </Text>
+        <DateRangePicker
+          className="col-span-3 max-w-full"
           value={compareAgainstDateRange}
           onValueChange={onCompareAgainstDateRangeChange}
           enableSelect={false}
-          placeholder={"Date range (compare against)s"}
+          placeholder={"Base Date range"}
         />
+        <Text className="pt-1 pl-2">
+          Date range to of the period compare with (base period).
+        </Text>
       </Col>
     </Grid>
   );

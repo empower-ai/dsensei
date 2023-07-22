@@ -6,6 +6,9 @@ import {
   DateRangePickerValue,
   Button,
   Text,
+  Flex,
+  Divider,
+  Bold,
 } from "@tremor/react";
 import SingleSelector from "./SingleSelector";
 import MultiSelector from "./MultiSelector";
@@ -45,7 +48,6 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
       (m) => selectedColumnsClone[m]["type"] === type && !metrics.includes(m)
     );
     removedMetrics.map((m) => delete selectedColumnsClone[m]);
-    console.log(selectedColumnsClone);
     setSelectedColumns(selectedColumnsClone);
   };
 
@@ -63,7 +65,6 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
       );
     }
     selectedColumnsClone[metric]["aggregationOption"] = aggregationOption;
-    console.log(selectedColumnsClone);
     setSelectedColumns(selectedColumnsClone);
   };
 
@@ -88,7 +89,6 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
         !dimensions.includes(d)
     );
     removedDimension.map((m) => delete selectedColumnsClone[m]);
-    console.log(selectedColumnsClone);
     setSelectedColumns(selectedColumnsClone);
   };
 
@@ -102,7 +102,6 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
     }
     prevDateColumns.map((d) => delete selectedColumnsClone[d]);
     selectedColumnsClone[dateCol] = { type: "date", aggregationOption: null };
-    console.log(selectedColumnsClone);
     setSelectedColumns(selectedColumnsClone);
   };
 
@@ -123,6 +122,28 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
     }
   });
 
+  function canSubmit() {
+    const hasMetricColumn =
+      Object.values(selectedColumns).filter(
+        (column) => column.type === "metric"
+      ).length > 0;
+
+    const hasDimensionColumn =
+      Object.values(selectedColumns).filter(
+        (column) => column.type === "dimension"
+      ).length > 0;
+
+    return (
+      csvContent.length > 0 &&
+      baselineDateRange.from &&
+      baselineDateRange.to &&
+      comparisonDateRange.from &&
+      comparisonDateRange.to &&
+      hasMetricColumn &&
+      hasDimensionColumn
+    );
+  }
+
   const handleOnSubmit = (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
@@ -138,6 +159,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
 
   return (
     <Card className="max-w-3xl mx-auto">
+      <Title>Report Config</Title>
       <div className="flex flex-col gap-4">
         {/* Date column selector */}
         <SingleSelector
@@ -148,6 +170,21 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
           values={potentialDateCols.length === 0 ? header : potentialDateCols}
           selectedValue={selectedDateCol ? selectedDateCol : ""}
           onValueChange={onSelectDateColumn}
+          instruction={
+            <Text>
+              Choose the column that is parsable to dates. E.g:{" "}
+              <Bold>2020-04-13</Bold>. See supported format{" "}
+              <a
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-800 underline"
+                href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format"
+              >
+                here
+              </a>
+              .
+            </Text>
+          }
         />
         {/* Date pickers */}
         <DatePicker
@@ -185,6 +222,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
               selectedValue={selectedColumns[m]["aggregationOption"]!}
               onValueChange={(v) => onSelectMetricAggregationOption(m, v)}
               key={m}
+              instruction={<Text>How to aggregation the metric.</Text>}
             />
           ))}
         {/* Supporting metrics multi selector */}
@@ -210,6 +248,13 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
           onValueChange={(metrics) =>
             onSelectMetrics(metrics, "supporting_metric")
           }
+          instruction={
+            <Text>
+              Optional list of additional metrics to analyze together. For
+              instance you may want to analyze the number of buyers and orders
+              when analyzing the total sales revenue.
+            </Text>
+          }
         />
         {Object.keys(selectedColumns)
           .filter((c) => selectedColumns[c]["type"] === "supporting_metric")
@@ -221,6 +266,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
               selectedValue={selectedColumns[m]["aggregationOption"]!}
               onValueChange={(v) => onSelectMetricAggregationOption(m, v)}
               key={m}
+              instruction={<Text>How to aggregation the metric.</Text>}
             />
           ))}
         {/* Dimension columns multi selector */}
@@ -246,16 +292,26 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
             (c) => selectedColumns[c]["type"] === "dimension"
           )}
           onValueChange={onSelectDimension}
+          instruction={
+            <Text>
+              A list of column to aggregate the metrics based on. For instance
+              user demographics (gender, age group, ...), product attributes
+              (brand, category, ...).
+            </Text>
+          }
         />
       </div>
-      <Button
-        className="mt-4"
-        onClick={(e) => {
-          handleOnSubmit(e);
-        }}
-      >
-        Submit
-      </Button>
+      <Flex justifyContent="center">
+        <Button
+          className="mt-4"
+          onClick={(e) => {
+            handleOnSubmit(e);
+          }}
+          disabled={!canSubmit()}
+        >
+          Submit
+        </Button>
+      </Flex>
     </Card>
   );
 }

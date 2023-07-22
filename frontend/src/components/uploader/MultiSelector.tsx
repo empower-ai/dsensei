@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactElement } from "react";
 import { Col, Grid, MultiSelect, MultiSelectItem, Text } from "@tremor/react";
 
 type MultiSelectorProps = {
@@ -7,6 +7,7 @@ type MultiSelectorProps = {
   values: string[];
   selectedValues: string[];
   onValueChange: (value: string[]) => void;
+  instruction?: ReactElement;
 };
 
 function MultiSelector({
@@ -15,6 +16,7 @@ function MultiSelector({
   values,
   selectedValues,
   onValueChange,
+  instruction,
 }: MultiSelectorProps) {
   const options = values.map((v, i) => (
     <MultiSelectItem value={v} key={v}>
@@ -31,6 +33,9 @@ function MultiSelector({
         <MultiSelect value={selectedValues} onValueChange={onValueChange}>
           {options}
         </MultiSelect>
+      </Col>
+      <Col className="items-center col-start-3 pt-2 pl-2" numColSpan={3}>
+        {instruction}
       </Col>
     </Grid>
   );

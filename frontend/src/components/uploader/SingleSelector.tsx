@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react";
-import { Grid, Col, Select, SelectItem, Title } from "@tremor/react";
+import { Grid, Col, Select, SelectItem, Title, Text } from "@tremor/react";
 
 type SingleSelectorProps = {
   title: ReactElement | null;
@@ -7,6 +7,7 @@ type SingleSelectorProps = {
   values: string[];
   selectedValue: string;
   onValueChange: (value: string) => void;
+  instruction?: ReactElement;
 };
 
 function SingleSelector({
@@ -15,6 +16,7 @@ function SingleSelector({
   values,
   selectedValue,
   onValueChange,
+  instruction,
 }: SingleSelectorProps) {
   const options = values.map((v, i) => (
     <SelectItem value={v} key={v}>
@@ -26,10 +28,17 @@ function SingleSelector({
       <Col className="flex items-center justify-end" numColSpan={2}>
         {title}
       </Col>
-      <Col className="flex items-center" numColSpan={3}>
-        <Select value={selectedValue} onValueChange={onValueChange}>
+      <Col className="items-center" numColSpan={3}>
+        <Select
+          className="row-span-full"
+          value={selectedValue}
+          onValueChange={onValueChange}
+        >
           {options}
         </Select>
+      </Col>
+      <Col className="items-center col-start-3 pt-2 pl-2" numColSpan={3}>
+        {instruction}
       </Col>
     </Grid>
   );

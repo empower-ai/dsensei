@@ -30,7 +30,6 @@ import {
   formatNumber,
 } from "../../common/utils";
 import { useLocation } from "react-router-dom";
-import { InsightMetric } from "../../common/types";
 
 export default function MainDashboard() {
   const dispatch = useDispatch();

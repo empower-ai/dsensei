@@ -88,8 +88,7 @@ export default function TopDimensionSlicesTable({
           <TableRow>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Dimension Slice{" "}
-                <TooltipIcon text="asdf a asdf sdf sdf sdf asdf;asd fjsdf asdf; sdf sdf asd;f as;dfjsd;fjsdio fsdoif jsdjfnzvn ;sd spdf " />
+                Dimension Slice <TooltipIcon text="" />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
