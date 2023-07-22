@@ -1,10 +1,9 @@
-# <img valign="middle" src="https://github.com/logunify/dsensei/blob/main/docs/images/logo.png" width="65" height="65"/> DSensei
+# <img valign="middle" src="https://github.com/logunify/dsensei/blob/main/docs/images/logo.png" width="65" height="65"/> [![Discord](https://img.shields.io/badge/discord-@DSensei-blue.svg?logo=discord)](https://discord.gg/fRzNUEugRU)
 
-[![Discord](https://img.shields.io/badge/discord-@DSensei-blue.svg?logo=discord)](https://discord.gg/fRzNUEugRU)
-
-## DSensei
+# DSensei
 
 The video is muted by default, 🎧 Unmute for audio explanations and improve your viewing experience!
+
 https://github.com/dsensei/dsensei-insight/assets/1261809/4452e2fb-d77c-44e8-bb42-ad8972bebb5c
 
 DSensei is an open-source insight discovery engine that goes beyond
