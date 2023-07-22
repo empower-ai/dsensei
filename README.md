@@ -10,6 +10,12 @@ The video is muted by default, 🎧 Unmute for audio explanations and improve yo
 
 ### Quick Start
 
+Live Demo
+
+[https://app.dsensei.app](https://app.dsensei.app)
+
+Running Locally
+
 ```shell
 docker run -p 5001:5001 dsenseiapp/dsensei
 ```
@@ -20,8 +26,7 @@ Open [http://localhost:5001](http://localhost:5001)
 
 - [What is DSensei](#What-is-DSensei)
 - [Setup](#Setup)
-- [Usage](#Usage)
-- [Known Issues](#Known-Issues)
+- [Contact](#Contact)
 
 ## What is DSensei
 
@@ -64,7 +69,7 @@ docker run -p 5001:5001 dsenseiapp/dsensei
 
 This will pull the latest version of the DSensei-insight image and start the application on port 5001.
 
-### Running Locally
+### Running from code
 
 To run the application locally without Docker, you need to have `python3` and `nodejs-18` installed on your system, then follow these steps.
 
@@ -73,4 +78,6 @@ To run the application locally without Docker, you need to have `python3` and `n
 3. Switch to the `backend` directory and install python dependencies: `python install -r requirements.txt`
 4. Finally, run the application by executing the following command in the backend directory `flask run -p 5001`
 
-## Usage
+## Contact
+
+Please submit your bug report or feature request directly on github or in our [discord group](https://discord.gg/fRzNUEugRU). We appreciate all your feedback!
