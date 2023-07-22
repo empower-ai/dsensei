@@ -95,14 +95,23 @@ export function MetricCard({
               <Bold>Supporting Metrics</Bold>
             </Text>
             <List>
-              {supportingMetrics.map((metric) => (
+              {supportingMetrics.length > 0 ? (
+                supportingMetrics.map((metric) => (
+                  <ListItem>
+                    <Flex justifyContent="end" className="space-x-2.5">
+                      <Text>{metric.name}:</Text>
+                      <Title>{metric.baseValue}</Title>
+                    </Flex>
+                  </ListItem>
+                ))
+              ) : (
                 <ListItem>
+                  {" "}
                   <Flex justifyContent="end" className="space-x-2.5">
-                    <Text>{metric.name}:</Text>
-                    <Title>{metric.baseValue}</Title>
+                    N/A
                   </Flex>
                 </ListItem>
-              ))}
+              )}
             </List>
           </div>
         </div>
@@ -129,18 +138,27 @@ export function MetricCard({
               <Bold>Supporting Metrics</Bold>
             </Text>
             <List>
-              {supportingMetrics.map((metric) => (
+              {supportingMetrics.length > 0 ? (
+                supportingMetrics.map((metric) => (
+                  <ListItem>
+                    <Flex justifyContent="end" className="space-x-2.5">
+                      <Text>{metric.name}:</Text>
+                      <Title>{metric.comparisonValue}</Title>
+                      {getChangePercentageBadge(
+                        metric.baseValue,
+                        metric.comparisonValue
+                      )}
+                    </Flex>
+                  </ListItem>
+                ))
+              ) : (
                 <ListItem>
+                  {" "}
                   <Flex justifyContent="end" className="space-x-2.5">
-                    <Text>{metric.name}:</Text>
-                    <Title>{metric.comparisonValue}</Title>
-                    {getChangePercentageBadge(
-                      metric.baseValue,
-                      metric.comparisonValue
-                    )}
+                    N/A
                   </Flex>
                 </ListItem>
-              ))}
+              )}
             </List>
           </div>
         </div>
