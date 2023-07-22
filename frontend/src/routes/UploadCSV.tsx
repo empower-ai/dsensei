@@ -102,6 +102,9 @@ function CsvUploader() {
           </Card>
         </>
       )}
+      {header.length > 0 && data.length > 0 && (
+        <DataConfig header={header} data={data} csvContent={content} />
+      )}
       {header.length > 0 && (
         <DataPreviewer
           fileName={file?.name}
@@ -115,9 +118,6 @@ function CsvUploader() {
           header={header}
           data={data}
         />
-      )}
-      {header.length > 0 && data.length > 0 && (
-        <DataConfig header={header} data={data} csvContent={content} />
       )}
     </div>
   );
