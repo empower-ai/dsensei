@@ -113,7 +113,6 @@ function CsvUploader() {
             setData([]);
             setHeader([]);
             setContent("");
-            console.log("test");
           }}
           header={header}
           data={data}

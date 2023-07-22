@@ -58,7 +58,6 @@ export default function MainDashboard() {
       },
     }).then((res) => {
       res.json().then((json) => {
-        console.log(json);
         dispatch(updateMetrics(json));
       });
     });
@@ -134,9 +133,9 @@ export default function MainDashboard() {
       <Flex justifyContent="end">
         <Text>
           Showing <Bold>{analyzingMetrics.topDriverSliceKeys.length}</Bold> top
-          slices. Analyzed total of{" "}
+          slices. Total of{" "}
           <Bold>{Object.keys(analyzingMetrics.dimensionSliceInfo).length}</Bold>{" "}
-          slices.
+          slices analyzed.
         </Text>
       </Flex>
       <Grid numItems={4} className="gap-6 mt-6">

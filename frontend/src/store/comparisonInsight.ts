@@ -180,7 +180,6 @@ export const comparisonMetricsSlice = createSlice({
       keyPath.forEach((key) => {
         if (!rowStatus) {
           if (!initialized) {
-            console.log(dimension);
             if (dimension) {
               rowStatus = state.tableRowStatusByDimension[dimension][key];
             } else {
