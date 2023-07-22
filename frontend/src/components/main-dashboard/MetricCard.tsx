@@ -87,7 +87,7 @@ export function MetricCard({
           <div className="self-center text-center justify-self-center content-center">
             <Flex className="self-center text-center justify-self-center content-center">
               <Text className="self-end mr-2">{metricName}:</Text>
-              <Metric className="mr-2">{formatNumber(comparisonValue)}</Metric>
+              <Metric className="mr-2">{formatNumber(baseValue)}</Metric>
             </Flex>
           </div>
           <div className="self-end content-center">
