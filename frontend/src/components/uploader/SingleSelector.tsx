@@ -1,5 +1,5 @@
-import React, { ReactElement } from "react";
-import { Grid, Col, Select, SelectItem, Title, Text } from "@tremor/react";
+import { Col, Grid, Select, SelectItem } from "@tremor/react";
+import { ReactElement } from "react";
 
 type SingleSelectorProps = {
   title: ReactElement | null;

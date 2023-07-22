@@ -1,9 +1,8 @@
-import React from "react";
 import {
   Col,
-  Grid,
   DateRangePicker,
   DateRangePickerValue,
+  Grid,
   Text,
 } from "@tremor/react";
 

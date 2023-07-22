@@ -1,19 +1,18 @@
 import {
   Card,
-  Table,
-  TableHead,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  Text,
   Flex,
+  Table,
+  TableBody,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  Text,
 } from "@tremor/react";
-import { InsightMetric } from "../../common/types";
-import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
-import { RowStatus } from "../../store/comparisonInsight";
 import { ReactNode, useState } from "react";
-import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import { TooltipIcon } from "../../common/TooltipIcon";
+import { InsightMetric } from "../../common/types";
+import { RowStatus } from "../../store/comparisonInsight";
+import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 
 type Props = {
   metric: InsightMetric;

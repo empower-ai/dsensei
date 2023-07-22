@@ -1,26 +1,12 @@
-import {
-  Bold,
-  Card,
-  DeltaBar,
-  Divider,
-  Flex,
-  Grid,
-  List,
-  ListItem,
-  Subtitle,
-  Text,
-  Title,
-} from "@tremor/react";
-import { RootState } from "../../../store";
+import { Bold, Divider, Flex, Subtitle, Text, Title } from "@tremor/react";
 import { useSelector } from "react-redux";
 import {
   formatDimensionSliceKeyForRendering,
   formatMetricName,
-  getRegexMatchPatternForDimensionSliceKey,
-  serializeDimensionSliceKey,
 } from "../../../common/utils";
-import { DimensionSliceDetailModalMetricCard } from "./DimensionSliceDetailModalMetricCard";
+import { RootState } from "../../../store";
 import { MetricCard } from "../MetricCard";
+import { DimensionSliceDetailModalMetricCard } from "./DimensionSliceDetailModalMetricCard";
 
 export function DimensionSliceDetailModal() {
   const { analyzingMetrics, relatedMetrics, selectedSliceKey, isLoading } =

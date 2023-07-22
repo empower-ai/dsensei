@@ -1,8 +1,7 @@
+import { Text } from "@tremor/react";
+import moment from "moment";
 import { ReactNode } from "react";
 import { DimensionSliceKey, InsightMetric } from "./types";
-import { Badge, Bold, Text } from "@tremor/react";
-import exp from "constants";
-import moment from "moment";
 
 export function sortDimension(
   dimension1: {

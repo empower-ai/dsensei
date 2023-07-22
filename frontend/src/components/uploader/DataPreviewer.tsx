@@ -1,18 +1,17 @@
-import React from "react";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import {
-  Title,
+  Button,
   Card,
-  Text,
+  Flex,
   Table,
+  TableBody,
+  TableCell,
   TableHead,
   TableHeaderCell,
-  TableBody,
   TableRow,
-  TableCell,
-  Flex,
-  Button,
+  Text,
+  Title,
 } from "@tremor/react";
-import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 type DataPreviewerProps = {
   header: string[];

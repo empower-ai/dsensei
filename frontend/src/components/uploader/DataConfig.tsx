@@ -1,19 +1,18 @@
-import React, { useState } from "react";
 import {
-  Card,
-  Title,
-  Subtitle,
-  DateRangePickerValue,
-  Button,
-  Text,
-  Flex,
-  Divider,
   Bold,
+  Button,
+  Card,
+  DateRangePickerValue,
+  Flex,
+  Subtitle,
+  Text,
+  Title,
 } from "@tremor/react";
-import SingleSelector from "./SingleSelector";
-import MultiSelector from "./MultiSelector";
-import DatePicker from "./DatePicker";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import DatePicker from "./DatePicker";
+import MultiSelector from "./MultiSelector";
+import SingleSelector from "./SingleSelector";
 
 type DataConfigProps = {
   header: string[];
@@ -27,9 +26,9 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: { type: string; aggregationOption: string | null };
   }>({});
-  const [comparisonDateRange, setComparisonDateRange] = useState<DateRangePickerValue>({});
-  const [baseDateRange, setBaseDateRange] =
+  const [comparisonDateRange, setComparisonDateRange] =
     useState<DateRangePickerValue>({});
+  const [baseDateRange, setBaseDateRange] = useState<DateRangePickerValue>({});
   const navigate = useNavigate();
 
   const onSelectMetrics = (metrics: string[], type: string) => {

@@ -10,13 +10,8 @@ import {
   Text,
   Title,
 } from "@tremor/react";
-import {
-  formatDateString,
-  formatMetricName,
-  formatNumber,
-} from "../../common/utils";
-import { InsightMetric } from "../../common/types";
 import { ReactNode } from "react";
+import { formatDateString, formatNumber } from "../../common/utils";
 
 interface Props {
   baseDateRange: [string, string];

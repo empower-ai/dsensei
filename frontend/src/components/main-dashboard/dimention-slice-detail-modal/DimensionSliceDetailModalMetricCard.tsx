@@ -9,6 +9,7 @@ import {
   Text,
   Title,
 } from "@tremor/react";
+import { DimensionSliceKey, InsightMetric } from "../../../common/types";
 import {
   formatDimensionSliceKeyForRendering,
   formatMetricName,
@@ -16,7 +17,6 @@ import {
   getRegexMatchPatternForDimensionSliceKey,
   serializeDimensionSliceKey,
 } from "../../../common/utils";
-import { DimensionSliceKey, InsightMetric } from "../../../common/types";
 
 type Props = {
   selectedSliceKey: DimensionSliceKey;

@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-import { Title, Card, Flex, Text } from "@tremor/react";
+import { Card, Flex, Text, Title } from "@tremor/react";
 
-import DataPreviewer from "../components/uploader/DataPreviewer";
 import DataConfig from "../components/uploader/DataConfig";
+import DataPreviewer from "../components/uploader/DataPreviewer";
 
 function CsvUploader() {
   const [file, setFile] = useState<File | null>();
@@ -12,8 +12,6 @@ function CsvUploader() {
   const [data, setData] = useState<{ [k: string]: string }[]>([]);
   const [content, setContent] = useState<string>("");
   const [error, setError] = useState<string>("");
-
-  const fileReader = new FileReader();
 
   const csvFileToArray = (raw_string: string) => {
     const csvHeader = raw_string.slice(0, raw_string.indexOf("\n")).split(",");
@@ -37,6 +35,8 @@ function CsvUploader() {
   };
 
   const onDrop = useCallback(<T extends File>(acceptedFiles: T[]) => {
+    const fileReader = new FileReader();
+
     fileReader.onload = function (event) {
       const text = event.target?.result;
       if (!text || typeof text !== "string") {
@@ -52,7 +52,7 @@ function CsvUploader() {
       setError("Cannot load the file. Please upload a valid CSV file.");
     }
   }, []);
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     multiple: false,
     accept: { "text/*": [".csv"] },

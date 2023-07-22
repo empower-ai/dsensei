@@ -1,47 +1,38 @@
 import {
+  Bold,
   Card,
+  Divider,
+  Flex,
   Grid,
-  Title,
-  Text,
+  LineChart,
   Tab,
-  TabList,
   TabGroup,
+  TabList,
   TabPanel,
   TabPanels,
-  Metric,
-  LineChart,
-  BadgeDelta,
-  Badge,
-  Flex,
-  List,
-  ListItem,
-  Bold,
-  Divider,
+  Text,
+  Title,
 } from "@tremor/react";
-import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
-import { ReactNode, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../store";
-import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
-import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import {
   formatDateString,
   formatMetricName,
   formatNumber,
 } from "../../common/utils";
-import { useLocation } from "react-router-dom";
+import { RootState } from "../../store";
+import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
 import { MetricCard } from "./MetricCard";
+import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
+import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
 
 export default function MainDashboard() {
   const dispatch = useDispatch();
   const routerState = useLocation().state;
 
-  const {
-    csvContent,
-    baseDateRange,
-    comparisonDateRange,
-    selectedColumns,
-  } = routerState;
+  const { csvContent, baseDateRange, comparisonDateRange, selectedColumns } =
+    routerState;
 
   useEffect(() => {
     dispatch(setLoadingStatus(true));
@@ -62,7 +53,7 @@ export default function MainDashboard() {
         dispatch(updateMetrics(json));
       });
     });
-  }, [dispatch]);
+  });
 
   const {
     analyzingMetrics,
@@ -95,39 +86,6 @@ export default function MainDashboard() {
       }))
     )
   );
-
-  function getChangePercentageBadge(num1: number, num2: number): ReactNode {
-    if (num1 === 0) {
-      return <Badge color="gray">N/A</Badge>;
-    }
-
-    const change = num2 - num1;
-    const changePct = `${(((num2 - num1) / num1) * 100).toLocaleString(
-      undefined,
-      {
-        style: "decimal",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }
-    )}%`;
-    let deltaType: "unchanged" | "decrease" | "increase", content;
-    if (num1 === num2) {
-      content = "0";
-      deltaType = "unchanged";
-    } else if (num1 > num2) {
-      content = `${formatNumber(change)} (${changePct})`;
-      deltaType = "decrease";
-    } else {
-      content = `+${formatNumber(change)} (+${changePct})`;
-      deltaType = "increase";
-    }
-
-    return (
-      <BadgeDelta size="xs" deltaType={deltaType}>
-        {content}
-      </BadgeDelta>
-    );
-  }
 
   return (
     <main className="px-12 pt-20">

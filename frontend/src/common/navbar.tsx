@@ -1,4 +1,3 @@
-import { Button } from "@tremor/react";
 import logo from "../assets/logo.png";
 export function NavBar() {
   return (

@@ -1,4 +1,4 @@
-export const metrics = fetch('http://localhost:3000/metrics/metrics')
+export const metrics = fetch("http://localhost:3000/metrics/metrics");
 
 // export const dummyRevenueMetric = {
 //   name: "revenue",

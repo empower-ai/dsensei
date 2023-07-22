@@ -1,5 +1,5 @@
-import React, { ReactElement } from "react";
 import { Col, Grid, MultiSelect, MultiSelectItem, Text } from "@tremor/react";
+import { ReactElement } from "react";
 
 type MultiSelectorProps = {
   title: string | null;

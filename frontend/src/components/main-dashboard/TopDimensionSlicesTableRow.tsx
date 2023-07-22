@@ -1,4 +1,9 @@
 import {
+  ChevronDoubleDownIcon,
+  ChevronDoubleRightIcon,
+  DocumentMagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import {
   Badge,
   BadgeDelta,
   Flex,
@@ -6,26 +11,21 @@ import {
   TableRow,
   Text,
 } from "@tremor/react";
+import { ReactNode } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Md5 } from "ts-md5";
 import { DimensionSliceInfo, DimensionSliceKey } from "../../common/types";
-import {
-  ChevronDoubleDownIcon,
-  ChevronDoubleRightIcon,
-  DocumentMagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
 import {
   formatDimensionSliceKeyForRendering,
   formatNumber,
   serializeDimensionSliceKey,
 } from "../../common/utils";
-import { ReactNode } from "react";
+import { RootState } from "../../store";
 import {
   RowStatus,
   selectSliceForDetail,
   toggleRow,
 } from "../../store/comparisonInsight";
-import { Md5 } from "ts-md5";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../store";
 
 type Props = {
   dimensionSlice: DimensionSliceInfo;
