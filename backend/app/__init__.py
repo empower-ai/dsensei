@@ -82,4 +82,4 @@ def getInsight():
     #     return 'error'
 
 if __name__ == '__main__':
-   app.run(processes=4)
+   app.run(processes=4, port=5001)

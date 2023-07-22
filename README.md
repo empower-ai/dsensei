@@ -58,7 +58,7 @@ To run the application locally without Docker, you need to have `python3` and `n
 1. First, navigate to the `frontend` directory and install dependencies using pnpm `pnpm install` or npm `npm install`
 2. Then build the frontend `npm run build`
 3. Switch to the `backend` directory and install python dependencies: `python install -r requirements.txt`
-4. Finally, run the application by executing the following command in the backend directory `flask run`
+4. Finally, run the application by executing the following command in the backend directory `flask run -p 5001`
 
 ### Building Your Own Docker Image
 
