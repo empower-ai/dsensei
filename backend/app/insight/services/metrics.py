@@ -143,7 +143,7 @@ class MetricsController(object):
     def getTopDrivingDimensionSliceKeys(self,
                                         parentSlice: tuple[DimensionValuePair],
                                         slice_info_dict: Dict[frozenset[DimensionValuePair], DimensionSliceInfo],
-                                        topN = 100) -> List[str]:
+                                        topN = 1000) -> List[str]:
         """
         Only calculate first level child impact
         """
@@ -176,7 +176,7 @@ class MetricsController(object):
             all_dimension_slices.extend(ret)
 
         all_dimension_slices.sort(key=lambda slice: abs(slice.impact), reverse=True)
-        metrics.topDriverSliceKeys = list(map(lambda slice: slice.serializedKey, all_dimension_slices[:100]))
+        metrics.topDriverSliceKeys = list(map(lambda slice: slice.serializedKey, all_dimension_slices[:1000]))
         metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices
         }
