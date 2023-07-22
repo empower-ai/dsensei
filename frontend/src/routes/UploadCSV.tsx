@@ -1,7 +1,16 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-import { Card, Flex, Text, Title } from "@tremor/react";
+import {
+  Accordion,
+  AccordionBody,
+  AccordionHeader,
+  Card,
+  Divider,
+  Flex,
+  Text,
+  Title,
+} from "@tremor/react";
 
 import DataConfig from "../components/uploader/DataConfig";
 import DataPreviewer from "../components/uploader/DataPreviewer";
@@ -118,6 +127,118 @@ function CsvUploader() {
           data={data}
         />
       )}
+      <Card className="max-w-3xl mx-auto">
+        <Accordion defaultOpen={true} className="border-0">
+          <AccordionHeader>How to use DSensei?</AccordionHeader>
+          <AccordionBody>
+            <iframe
+              className="w-[100%] h-[450px]"
+              title="Demo"
+              allowFullScreen={true}
+              seamless={true}
+              src="https://www.loom.com/embed/9bd150ea3ef945fca3754e3fcf8a2602?sid=492e4f71-19a4-44c5-a2fa-f6bd4cfd1292"
+            />
+          </AccordionBody>
+        </Accordion>
+        <Accordion className="border-0">
+          <AccordionHeader>What is DSensei?</AccordionHeader>
+          <AccordionBody>
+            DSensei, an open-source insight discovery engine, goes beyond
+            traditional BI dashboards by uncovering patterns and revelations in
+            datasets. While BI dashboards can answer the question of "what,"
+            they fall short of explaining the "why." When facing movements in
+            metrics, it often requires significant manual effort to explore
+            various combinations and identify the underlying causes.
+            <br />
+            <br />
+            For example, consider an e-commerce platform experiencing a recent
+            surge in return orders. To pinpoint the reason, one would need to
+            generate multiple hypotheses (E.g: Is the rise in returns limited to
+            specific brands, product categories, regions, or some specific
+            combinations? Is there a global phenomenon influenced by a general
+            increase in the number of orders.) and conduct extensive slicing and
+            dicing to uncover potential factors. This process can be arduous and
+            time-consuming.
+            <br />
+            <br />
+            We built DSensei to address this. By autonomously exploring all
+            possible combinations over a specified time period, DSensei offers a
+            holistic view of the data and presents the top drivers in a
+            user-friendly interface. This empowers users to establish a holistic
+            view of all the key drivers and delve into each factor effortlessly
+            and gain intuitive insights into the reasons behind specific
+            movements in their datasets. As a result, users can get the answer
+            to the “why” more effectively.
+          </AccordionBody>
+        </Accordion>
+        <Accordion className="border-0">
+          <AccordionHeader>Can I host/run DSensei locally?</AccordionHeader>
+          <AccordionBody>
+            Yes, you absolute can! DSensei is open sourced, we provide multiple
+            ways of hosting. Check our{" "}
+            <a
+              href="https://github.com/dsensei/dsensei-insight"
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-500"
+            >
+              document
+            </a>{" "}
+            for more details.
+          </AccordionBody>
+        </Accordion>
+        <Accordion className="border-0">
+          <AccordionHeader>
+            Can it integrate with my database / data warehouse?
+          </AccordionHeader>
+          <AccordionBody>
+            Not yet, but we're actively working on it! We'd love to hear your
+            need, please contact us via{" "}
+            <a href="mailto:founders@dsensei.app" className="text-blue-500">
+              email
+            </a>{" "}
+            or{" "}
+            <a
+              href="https://discord.gg/5yUtntbw"
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-500"
+            >
+              discord
+            </a>{" "}
+            .
+          </AccordionBody>
+        </Accordion>
+        <Divider />
+        <Text>
+          Any feature request? Contact us via{" "}
+          <a href="mailto:founders@dsensei.app" className="text-blue-500">
+            email
+          </a>{" "}
+          or{" "}
+          <a
+            href="https://discord.gg/5yUtntbw"
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-500"
+          >
+            discord
+          </a>
+          .
+        </Text>
+        <Text className="pt-1">
+          Like the project? Star us on{" "}
+          <a
+            href="https://github.com/dsensei/dsensei-insight"
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-500"
+          >
+            github
+          </a>
+          .
+        </Text>
+      </Card>
     </div>
   );
 }
