@@ -1,10 +1,29 @@
-# <img valign="middle" src="https://github.com/logunify/dsensei/blob/main/docs/images/logo.png" width="65" height="65"/> [![Discord](https://img.shields.io/badge/discord-@DSensei-blue.svg?logo=discord)](https://discord.gg/fRzNUEugRU)
+# <img valign="middle" src="https://github.com/logunify/dsensei/blob/main/docs/images/logo.png" width="65" height="65"/> DSensei
 
-# DSensei
+[![Discord](https://img.shields.io/badge/discord-@DSensei-blue.svg?logo=discord)](https://discord.gg/fRzNUEugRU)
+
+## Introduction
+
+https://github.com/dsensei/dsensei-insight/assets/1261809/4452e2fb-d77c-44e8-bb42-ad8972bebb5c
 
 The video is muted by default, 🎧 Unmute for audio explanations and improve your viewing experience!
 
-https://github.com/dsensei/dsensei-insight/assets/1261809/4452e2fb-d77c-44e8-bb42-ad8972bebb5c
+### Quick Start
+
+```shell
+docker run -p 5001:5001 dsenseiapp/dsensei
+```
+
+Open [http://localhost:5001](http://localhost:5001)
+
+## Table of Contents
+
+- [What is DSensei](#What-is-DSensei)
+- [Setup](#Setup)
+- [Usage](#Usage)
+- [Known Issues](#Known-Issues)
+
+## What is DSensei
 
 DSensei is an open-source insight discovery engine that goes beyond
 traditional BI dashboards by uncovering patterns and revelations in
@@ -31,12 +50,6 @@ and gain intuitive insights into the reasons behind specific
 movements in their datasets. As a result, users can get the answer
 to the “why” more effectively.
 
-## Table of Contents
-
-- [Setup](#Setup)
-- [Usage](#Usage)
-- [Known Issues](#Known-Issues)
-
 ## Setup
 
 There are multiple ways to run DSensei on your machine.
@@ -46,7 +59,7 @@ There are multiple ways to run DSensei on your machine.
 The recommended way is to use the official Docker image. Make sure you have Docker installed on your system, then run the following command:
 
 ```shell
-docker run -p 5001:5001 dsenseiapp/dsensei:latest
+docker run -p 5001:5001 dsenseiapp/dsensei
 ```
 
 This will pull the latest version of the DSensei-insight image and start the application on port 5001.
@@ -59,9 +72,5 @@ To run the application locally without Docker, you need to have `python3` and `n
 2. Then build the frontend `npm run build`
 3. Switch to the `backend` directory and install python dependencies: `python install -r requirements.txt`
 4. Finally, run the application by executing the following command in the backend directory `flask run -p 5001`
-
-### Building Your Own Docker Image
-
-If you want to modify and run the application using Docker, you can build the Docker image using the provided `Dockerfile` in this project.
 
 ## Usage
