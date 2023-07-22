@@ -1,14 +1,13 @@
-from io import StringIO
-from flask import Flask, request
-from config import Config
 import os
-from flask_cors import CORS, cross_origin
-
-from app.insight.datasource.csvSource import CsvSource
-from app.insight.services.metrics import MetricsController
+from datetime import datetime
+from io import StringIO
 
 import pandas as pd
-from datetime import datetime
+from app.insight.datasource.csvSource import CsvSource
+from app.insight.services.metrics import MetricsController
+from config import Config
+from flask import Flask, request
+from flask_cors import CORS
 
 app = Flask(__name__, static_url_path='')
 CORS(app)
@@ -77,3 +76,6 @@ def getInsight():
     #     e.with_traceback()
     #     print('error')
     #     return 'error'
+
+if __name__ == '__main__':
+   app.run(processes=4)
