@@ -132,9 +132,16 @@ export default function MainDashboard() {
     <main className="px-12 pt-20">
       <Flex justifyContent="end">
         <Text>
-          Showing <Bold>{analyzingMetrics.topDriverSliceKeys.length}</Bold> top
-          slices. Total of{" "}
-          <Bold>{Object.keys(analyzingMetrics.dimensionSliceInfo).length}</Bold>{" "}
+          Showing{" "}
+          <Bold>
+            {formatNumber(analyzingMetrics.topDriverSliceKeys.length)}
+          </Bold>{" "}
+          top slices. Total of{" "}
+          <Bold>
+            {formatNumber(
+              Object.keys(analyzingMetrics.dimensionSliceInfo).length
+            )}
+          </Bold>{" "}
           slices analyzed.
         </Text>
       </Flex>
@@ -149,7 +156,9 @@ export default function MainDashboard() {
                   analyzingMetrics.baselineDateRange[0]
                 )} to {formatDateString(analyzingMetrics.baselineDateRange[1])}
               </Text>
-              <Text>{analyzingMetrics.baselineNumRows} total rows</Text>
+              <Text>
+                {formatNumber(analyzingMetrics.baselineNumRows)} total rows
+              </Text>
             </div>
             <div className="self-center text-center justify-self-center content-center">
               <Flex className="self-center text-center justify-self-center content-center">
@@ -192,7 +201,9 @@ export default function MainDashboard() {
                 {formatDateString(analyzingMetrics.comparisonDateRange[0])} to{" "}
                 {formatDateString(analyzingMetrics.comparisonDateRange[1])}
               </Text>
-              <Text>{analyzingMetrics.comparisonNumRows} total rows</Text>
+              <Text>
+                {formatNumber(analyzingMetrics.comparisonNumRows)} total rows
+              </Text>
             </div>
             <div className="self-center text-center justify-self-center content-center">
               <Flex className="self-center text-center justify-self-center content-center">
