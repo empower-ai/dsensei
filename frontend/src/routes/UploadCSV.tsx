@@ -149,12 +149,12 @@ function CsvUploader() {
             <Title>What is DSensei?</Title>
           </AccordionHeader>
           <AccordionBody>
-            DSensei, an open-source insight discovery engine, goes beyond
+            DSensei is an open-source insight discovery engine that goes beyond
             traditional BI dashboards by uncovering patterns and revelations in
             datasets. While BI dashboards can answer the question of "what,"
-            they fall short of explaining the "why." When facing movements in
-            metrics, it often requires significant manual effort to explore
-            various combinations and identify the underlying causes.
+            they fall short of explaining the "why." As a result, when facing
+            movements in metrics, it often requires significant manual effort to
+            explore various combinations and identify the underlying causes.
             <br />
             <br />
             For example, consider an e-commerce platform experiencing a recent
