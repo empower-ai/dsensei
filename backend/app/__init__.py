@@ -31,6 +31,10 @@ agg_method_map = {
 def main():
     return app.send_static_file('index.html')
 
+@app.route('/dashboard')
+def dashboard():
+    return app.send_static_file('index.html')
+
 @app.route('/insight', methods=['POST'])
 def getInsight():
     data = request.get_json()
