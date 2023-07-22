@@ -7,11 +7,13 @@ import {
   TableHeaderCell,
   TableRow,
   Text,
+  Title,
 } from "@tremor/react";
 import { ReactNode, useState } from "react";
+import { useDispatch } from "react-redux";
 import { TooltipIcon } from "../../common/TooltipIcon";
 import { InsightMetric } from "../../common/types";
-import { RowStatus } from "../../store/comparisonInsight";
+import { RowStatus, toggleGroupRows } from "../../store/comparisonInsight";
 import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 
 type Props = {
@@ -20,6 +22,7 @@ type Props = {
   maxDefaultRows?: number;
   dimension?: string;
   title?: ReactNode;
+  enableGroupToggle?: boolean;
 };
 
 export default function TopDimensionSlicesTable({
@@ -28,7 +31,9 @@ export default function TopDimensionSlicesTable({
   maxDefaultRows,
   dimension,
   title,
+  enableGroupToggle,
 }: Props) {
+  const dispatch = useDispatch();
   const overallChange =
     metric.baselineValue === 0
       ? 0
@@ -81,6 +86,21 @@ export default function TopDimensionSlicesTable({
           Showing {rowStatusKeysToRender.length} of {rowStatusKeys.length} rows.
         </Text>
         {renderExpandControl()}
+        {enableGroupToggle && (
+          <>
+            <Title>|</Title>
+            <label className="label cursor-pointer content-center">
+              <input
+                type="checkbox"
+                className="toggle"
+                onChange={() => {
+                  dispatch(toggleGroupRows());
+                }}
+              />
+              <Text className="pl-2">Group Related Slices Together</Text>
+            </label>
+          </>
+        )}
       </Flex>
       <Table className="overflow-visible">
         <TableHead>

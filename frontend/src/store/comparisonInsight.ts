@@ -23,6 +23,7 @@ export interface ComparisonInsightState {
     };
   };
   isLoading: boolean;
+  groupRows: boolean;
 }
 
 function helper(
@@ -58,10 +59,26 @@ function helper(
   return true;
 }
 
-function buildRowStatusMap(metric: InsightMetric): {
+function buildRowStatusMap(
+  metric: InsightMetric,
+  groupRows: boolean
+): {
   [key: string]: RowStatus;
 } {
   const result: { [key: string]: RowStatus } = {};
+
+  if (!groupRows) {
+    metric.topDriverSliceKeys.forEach((key) => {
+      result[key] = {
+        key: [key],
+        keyComponents: key.split("|"),
+        isExpanded: false,
+        children: {},
+      };
+    });
+    return result;
+  }
+
   metric.topDriverSliceKeys.forEach((key) => {
     const keyComponents = key.split("|");
     let hasMatching = false;
@@ -81,7 +98,6 @@ function buildRowStatusMap(metric: InsightMetric): {
       };
     }
   });
-
   return result;
 }
 
@@ -136,6 +152,7 @@ const initialState: ComparisonInsightState = {
   tableRowStatus: {},
   tableRowStatusByDimension: {},
   isLoading: true,
+  groupRows: true,
 };
 
 export const comparisonMetricsSlice = createSlice({
@@ -160,7 +177,7 @@ export const comparisonMetricsSlice = createSlice({
         })
         .filter((metric) => metric !== undefined) as InsightMetric[];
 
-      state.tableRowStatus = buildRowStatusMap(state.analyzingMetrics);
+      state.tableRowStatus = buildRowStatusMap(state.analyzingMetrics, true);
       state.tableRowStatusByDimension = buildRowStatusByDimensionMap(
         state.analyzingMetrics
       );
@@ -200,6 +217,13 @@ export const comparisonMetricsSlice = createSlice({
     selectSliceForDetail: (state, action: PayloadAction<string>) => {
       state.selectedSliceKey = action.payload;
     },
+    toggleGroupRows: (state, action: PayloadAction<void>) => {
+      state.groupRows = !state.groupRows;
+      state.tableRowStatus = buildRowStatusMap(
+        state.analyzingMetrics,
+        state.groupRows
+      );
+    },
   },
 });
 
@@ -208,6 +232,7 @@ export const {
   selectSliceForDetail,
   updateMetrics,
   setLoadingStatus,
+  toggleGroupRows,
 } = comparisonMetricsSlice.actions;
 
 export default comparisonMetricsSlice.reducer;

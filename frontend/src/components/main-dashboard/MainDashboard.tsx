@@ -165,6 +165,7 @@ export default function MainDashboard() {
                 rowStatusMap={tableRowStatus}
                 metric={analyzingMetrics}
                 maxDefaultRows={100}
+                enableGroupToggle={true}
               />
             </div>
           </TabPanel>
