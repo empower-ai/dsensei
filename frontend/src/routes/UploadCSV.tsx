@@ -71,12 +71,12 @@ function CsvUploader() {
   });
 
   return (
-    <div className="flex flex-col gap-6 justify-center items-center pt-20">
-      <Title className="pt-6">New Report</Title>
+    <div className="flex flex-col gap-2 justify-center items-center pt-20">
+      <Title>New Report</Title>
       {header.length === 0 && (
         <>
           <Text>Please Upload a CSV file to start.</Text>
-          <Card className="max-w-3xl mx-auto">
+          <Card className="max-w-6xl">
             <div {...getRootProps()}>
               <div className="flex items-center w-full justify-center">
                 <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
@@ -105,9 +105,11 @@ function CsvUploader() {
                 </label>
               </div>
             </div>
-            <Flex justifyContent="center" className="pt-5">
-              {error && <Text color="red">{error}</Text>}
-            </Flex>
+            {error && (
+              <Flex justifyContent="center" className="pt-5">
+                <Text color="red">{error}</Text>
+              </Flex>
+            )}
           </Card>
         </>
       )}
@@ -127,12 +129,14 @@ function CsvUploader() {
           data={data}
         />
       )}
-      <Card className="max-w-3xl mx-auto">
+      <Card className="max-w-6xl p-3">
         <Accordion defaultOpen={true} className="border-0">
-          <AccordionHeader>How to use DSensei?</AccordionHeader>
+          <AccordionHeader>
+            <Title>How to use DSensei?</Title>
+          </AccordionHeader>
           <AccordionBody>
             <iframe
-              className="w-[100%] h-[450px]"
+              className="w-[100%] h-[550px]"
               title="Demo"
               allowFullScreen={true}
               seamless={true}
@@ -141,7 +145,9 @@ function CsvUploader() {
           </AccordionBody>
         </Accordion>
         <Accordion className="border-0">
-          <AccordionHeader>What is DSensei?</AccordionHeader>
+          <AccordionHeader>
+            <Title>What is DSensei?</Title>
+          </AccordionHeader>
           <AccordionBody>
             DSensei, an open-source insight discovery engine, goes beyond
             traditional BI dashboards by uncovering patterns and revelations in
@@ -172,7 +178,9 @@ function CsvUploader() {
           </AccordionBody>
         </Accordion>
         <Accordion className="border-0">
-          <AccordionHeader>Can I host/run DSensei locally?</AccordionHeader>
+          <AccordionHeader>
+            <Title>Can I host/run DSensei locally?</Title>
+          </AccordionHeader>
           <AccordionBody>
             Yes, you absolute can! DSensei is open sourced, we provide multiple
             ways of hosting. Check our{" "}
@@ -189,11 +197,13 @@ function CsvUploader() {
         </Accordion>
         <Accordion className="border-0">
           <AccordionHeader>
-            Can it integrate with my database / data warehouse?
+            <Title>
+              Can DSensei pull data directly from my database / data warehouse?
+            </Title>
           </AccordionHeader>
           <AccordionBody>
-            Not yet, but we're actively working on it! We'd love to hear your
-            need, please contact us via{" "}
+            Not yet, we're actively working on it! We'd love to hear your need,
+            please contact us via{" "}
             <a href="mailto:founders@dsensei.app" className="text-blue-500">
               email
             </a>{" "}
@@ -209,23 +219,30 @@ function CsvUploader() {
             .
           </AccordionBody>
         </Accordion>
-        <Divider />
-        <Text>
-          Any feature request? Contact us via{" "}
-          <a href="mailto:founders@dsensei.app" className="text-blue-500">
-            email
-          </a>{" "}
-          or{" "}
-          <a
-            href="https://discord.gg/5yUtntbw"
-            target="_blank"
-            rel="noreferrer"
-            className="text-blue-500"
-          >
-            discord
-          </a>
-          .
-        </Text>
+        <Accordion className="border-0">
+          <AccordionHeader>
+            <Title>I have some feedback or need some feature.</Title>
+          </AccordionHeader>
+          <AccordionBody>
+            We're currently actively developing the project, and would
+            appreciate all your feedback and feature request. Please contact us
+            via{" "}
+            <a href="mailto:founders@dsensei.app" className="text-blue-500">
+              email
+            </a>{" "}
+            or{" "}
+            <a
+              href="https://discord.gg/5yUtntbw"
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-500"
+            >
+              discord
+            </a>
+            .
+          </AccordionBody>
+        </Accordion>
+        <Divider className="mt-1 mb-1" />
         <Text className="pt-1">
           Like the project? Star us on{" "}
           <a

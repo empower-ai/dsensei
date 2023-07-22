@@ -157,7 +157,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
   };
 
   return (
-    <Card className="max-w-3xl mx-auto">
+    <Card className="max-w-6xl mx-auto">
       <Title>Report Config</Title>
       <div className="flex flex-col gap-4">
         {/* Date column selector */}
