@@ -14,7 +14,7 @@ WIP
 
 ## Demo Videos
 
-https://github.com/dsensei/dsensei-insight/assets/1261809/a6257ac2-211f-476e-8f8c-1840dd9947c8
+https://github.com/dsensei/dsensei-insight/assets/1261809/4452e2fb-d77c-44e8-bb42-ad8972bebb5c
 
 
 ## Setup
