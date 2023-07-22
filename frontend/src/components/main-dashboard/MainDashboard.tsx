@@ -131,6 +131,14 @@ export default function MainDashboard() {
 
   return (
     <main className="px-12 pt-20">
+      <Flex justifyContent="end">
+        <Text>
+          Showing <Bold>{analyzingMetrics.topDriverSliceKeys.length}</Bold> top
+          slices. Analyzed total of{" "}
+          <Bold>{Object.keys(analyzingMetrics.dimensionSliceInfo).length}</Bold>{" "}
+          slices.
+        </Text>
+      </Flex>
       <Grid numItems={4} className="gap-6 mt-6">
         <Card className="border-t-4 border-t-orange-500">
           <div className="h-[100%] grid">
