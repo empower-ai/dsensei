@@ -53,7 +53,13 @@ export default function MainDashboard() {
         dispatch(updateMetrics(json));
       });
     });
-  });
+  }, [
+    baseDateRange,
+    comparisonDateRange,
+    csvContent,
+    dispatch,
+    selectedColumns,
+  ]);
 
   const {
     analyzingMetrics,
