@@ -110,7 +110,13 @@ export default function MainDashboard() {
           slices analyzed.
         </Text>
       </Flex>
-      <Grid numItems={4} className="gap-6 mt-6">
+      <Grid
+        numItems={4}
+        numItemsLg={4}
+        numItemsMd={2}
+        numItemsSm={1}
+        className="gap-6 mt-6"
+      >
         <MetricCard
           baseDateRange={analyzingMetrics.baselineDateRange}
           comparisonDateRange={analyzingMetrics.comparisonDateRange}
@@ -171,7 +177,7 @@ export default function MainDashboard() {
           </TabPanel>
           <TabPanel>
             <div className="mt-6 flex">
-              <Card>
+              <Card className="overflow-overlay">
                 {Object.keys(analyzingMetrics.dimensions).map((dimension) => (
                   <div className="mb-6">
                     <TopDimensionSlicesTable

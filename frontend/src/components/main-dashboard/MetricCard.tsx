@@ -73,7 +73,7 @@ export function MetricCard({
 }: Props) {
   return (
     <>
-      <Card className="border-t-4 border-t-orange-500 h-[100%]">
+      <Card className="border-t-4 border-t-orange-500 h-[100%] overflow-overlay">
         <div className="h-[100%] grid">
           <div>
             <Title>Base Period</Title>
@@ -116,7 +116,7 @@ export function MetricCard({
           </div>
         </div>
       </Card>
-      <Card className="border-t-4 border-t-sky-500 h-[100%]">
+      <Card className="border-t-4 border-t-sky-500 h-[100%] overflow-overlay">
         <div className="h-[100%] grid">
           <div>
             <Title>Comparison Period</Title>
