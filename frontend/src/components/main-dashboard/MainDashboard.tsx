@@ -30,6 +30,7 @@ import {
   formatNumber,
 } from "../../common/utils";
 import { useLocation } from "react-router-dom";
+import { MetricCard } from "./MetricCard";
 
 export default function MainDashboard() {
   const dispatch = useDispatch();
@@ -146,100 +147,20 @@ export default function MainDashboard() {
         </Text>
       </Flex>
       <Grid numItems={4} className="gap-6 mt-6">
-        <Card className="border-t-4 border-t-orange-500">
-          <div className="h-[100%] grid">
-            <div>
-              <Title>Base Period</Title>
-              <Text>
-                {" "}
-                {formatDateString(
-                  analyzingMetrics.baselineDateRange[0]
-                )} to {formatDateString(analyzingMetrics.baselineDateRange[1])}
-              </Text>
-              <Text>
-                {formatNumber(analyzingMetrics.baselineNumRows)} total rows
-              </Text>
-            </div>
-            <div className="self-center text-center justify-self-center content-center">
-              <Flex className="self-center text-center justify-self-center content-center">
-                <Text className="self-end mr-2">
-                  {formatMetricName(analyzingMetrics)}:
-                </Text>
-                <Metric className="flex">
-                  <p className="px-2">
-                    {analyzingMetrics.baselineValue.toLocaleString(undefined, {
-                      style: "decimal",
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </p>
-                </Metric>
-              </Flex>
-            </div>
-            <div className="self-end content-center">
-              <Text>
-                <Bold>Supporting Metrics</Bold>
-              </Text>
-              <List>
-                {relatedMetrics.map((metric) => (
-                  <ListItem>
-                    <Flex justifyContent="end" className="space-x-2.5">
-                      <Text>{formatMetricName(metric)}:</Text>
-                      <Title>{metric.baselineValue}</Title>
-                    </Flex>
-                  </ListItem>
-                ))}
-              </List>
-            </div>
-          </div>
-        </Card>
-        <Card className="border-t-4 border-t-sky-500">
-          <div className="h-[100%] grid">
-            <div>
-              <Title>Comparison Period</Title>
-              <Text>
-                {formatDateString(analyzingMetrics.comparisonDateRange[0])} to{" "}
-                {formatDateString(analyzingMetrics.comparisonDateRange[1])}
-              </Text>
-              <Text>
-                {formatNumber(analyzingMetrics.comparisonNumRows)} total rows
-              </Text>
-            </div>
-            <div className="self-center text-center justify-self-center content-center">
-              <Flex className="self-center text-center justify-self-center content-center">
-                <Text className="self-end mr-2">
-                  {formatMetricName(analyzingMetrics)}:
-                </Text>
-                <Metric className="mr-2">
-                  {formatNumber(analyzingMetrics.comparisonValue)}
-                </Metric>
-                {getChangePercentageBadge(
-                  analyzingMetrics.baselineValue,
-                  analyzingMetrics.comparisonValue
-                )}
-              </Flex>
-            </div>
-            <div className="self-end content-center">
-              <Text>
-                <Bold>Supporting Metrics</Bold>
-              </Text>
-              <List>
-                {relatedMetrics.map((metric) => (
-                  <ListItem>
-                    <Flex justifyContent="end" className="space-x-2.5">
-                      <Text>{formatMetricName(metric)}:</Text>
-                      <Title>{metric.comparisonValue}</Title>
-                      {getChangePercentageBadge(
-                        metric.baselineValue,
-                        metric.comparisonValue
-                      )}
-                    </Flex>
-                  </ListItem>
-                ))}
-              </List>
-            </div>
-          </div>
-        </Card>
+        <MetricCard
+          baseDateRange={analyzingMetrics.baselineDateRange}
+          comparisonDateRange={analyzingMetrics.comparisonDateRange}
+          baseNumRows={analyzingMetrics.baselineNumRows}
+          comparisonNumRows={analyzingMetrics.comparisonNumRows}
+          baseValue={analyzingMetrics.baselineValue}
+          comparisonValue={analyzingMetrics.comparisonValue}
+          supportingMetrics={relatedMetrics.map((metric) => ({
+            name: formatMetricName(metric),
+            baseValue: metric.baselineValue,
+            comparisonValue: metric.comparisonValue,
+          }))}
+          metricName={formatMetricName(analyzingMetrics)}
+        />
         <Card className="col-span-2">
           <Title>Charts</Title>
           <TabGroup>

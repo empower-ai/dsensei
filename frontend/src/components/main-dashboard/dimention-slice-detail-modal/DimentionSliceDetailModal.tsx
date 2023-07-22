@@ -15,28 +15,25 @@ import { RootState } from "../../../store";
 import { useSelector } from "react-redux";
 import {
   formatDimensionSliceKeyForRendering,
+  formatMetricName,
   getRegexMatchPatternForDimensionSliceKey,
   serializeDimensionSliceKey,
 } from "../../../common/utils";
 import { DimensionSliceDetailModalMetricCard } from "./DimensionSliceDetailModalMetricCard";
+import { MetricCard } from "../MetricCard";
 
 export function DimensionSliceDetailModal() {
-  const { analyzingMetrics, relatedMetrics, selectedSliceKey, isLoading } = useSelector(
-    (state: RootState) => state.comparisonInsight
-  );
+  const { analyzingMetrics, relatedMetrics, selectedSliceKey, isLoading } =
+    useSelector((state: RootState) => state.comparisonInsight);
 
   if (isLoading) {
     return null;
   }
 
-
   const allMetrics = [analyzingMetrics, ...relatedMetrics];
 
   if (!selectedSliceKey) {
-    return (
-      <dialog id="slice_detail" className="modal">
-      </dialog>
-    );
+    return <dialog id="slice_detail" className="modal"></dialog>;
   }
 
   const sliceInfo = analyzingMetrics.dimensionSliceInfo[selectedSliceKey];
@@ -50,9 +47,36 @@ export function DimensionSliceDetailModal() {
           </button>
         </Flex>
         <Flex>
-          <p className="flex items-center">
+          <p className="flex items-center gap-2">
+            <Text>
+              <Bold>Dimension Slice:</Bold>
+            </Text>{" "}
             {formatDimensionSliceKeyForRendering(sliceInfo.key)}
           </p>
+        </Flex>
+        <Divider />
+        <Title>Metric Value</Title>
+        <Flex justifyContent="center">
+          <Flex className="pt-3 gap-6 w-[80%] h-[400px]">
+            <MetricCard
+              baseDateRange={analyzingMetrics.baselineDateRange}
+              comparisonDateRange={analyzingMetrics.comparisonDateRange}
+              baseNumRows={analyzingMetrics.baselineNumRows}
+              comparisonNumRows={analyzingMetrics.comparisonNumRows}
+              baseValue={sliceInfo.baselineValue.sliceValue}
+              comparisonValue={sliceInfo.comparisonValue.sliceValue}
+              supportingMetrics={relatedMetrics.map((metric) => ({
+                name: formatMetricName(metric),
+                baseValue:
+                  metric.dimensionSliceInfo[selectedSliceKey].baselineValue
+                    .sliceValue,
+                comparisonValue:
+                  metric.dimensionSliceInfo[selectedSliceKey].comparisonValue
+                    .sliceValue,
+              }))}
+              metricName={formatMetricName(analyzingMetrics)}
+            />
+          </Flex>
         </Flex>
         <Divider />
         <Flex justifyContent="start">
