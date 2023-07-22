@@ -38,7 +38,7 @@ export default function MainDashboard() {
 
   const {
     csvContent,
-    baselineDateRange,
+    baseDateRange,
     comparisonDateRange,
     selectedColumns,
   } = routerState;
@@ -50,7 +50,7 @@ export default function MainDashboard() {
       method: "POST",
       body: JSON.stringify({
         csvContent,
-        baselineDateRange,
+        baseDateRange,
         comparisonDateRange,
         selectedColumns,
       }),

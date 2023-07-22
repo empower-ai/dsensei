@@ -27,8 +27,8 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: { type: string; aggregationOption: string | null };
   }>({});
-  const [baselineDateRange, setDateRange] = useState<DateRangePickerValue>({});
-  const [comparisonDateRange, setCompareAgainstDateRange] =
+  const [comparisonDateRange, setComparisonDateRange] = useState<DateRangePickerValue>({});
+  const [baseDateRange, setBaseDateRange] =
     useState<DateRangePickerValue>({});
   const navigate = useNavigate();
 
@@ -135,10 +135,10 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
 
     return (
       csvContent.length > 0 &&
-      baselineDateRange.from &&
-      baselineDateRange.to &&
       comparisonDateRange.from &&
       comparisonDateRange.to &&
+      baseDateRange.from &&
+      baseDateRange.to &&
       hasMetricColumn &&
       hasDimensionColumn
     );
@@ -151,7 +151,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
       state: {
         csvContent,
         selectedColumns,
-        baselineDateRange,
+        baseDateRange,
         comparisonDateRange,
       },
     });
@@ -189,10 +189,10 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
         {/* Date pickers */}
         <DatePicker
           title={"Select date ranges"}
-          dateRange={baselineDateRange}
-          onDateRangeChange={setDateRange}
-          compareAgainstDateRange={comparisonDateRange}
-          onCompareAgainstDateRangeChange={setCompareAgainstDateRange}
+          comparisonDateRange={comparisonDateRange}
+          onComparisonDateRangeChange={setComparisonDateRange}
+          baseDateRange={baseDateRange}
+          onBaseDateRangeChange={setBaseDateRange}
         />
         {/* Analysing metric single selector */}
         <SingleSelector

@@ -9,18 +9,18 @@ import {
 
 type DatePickerProps = {
   title: string | null;
-  dateRange: DateRangePickerValue;
-  onDateRangeChange: (value: DateRangePickerValue) => void;
-  compareAgainstDateRange: DateRangePickerValue;
-  onCompareAgainstDateRangeChange: (value: DateRangePickerValue) => void;
+  comparisonDateRange: DateRangePickerValue;
+  onComparisonDateRangeChange: (value: DateRangePickerValue) => void;
+  baseDateRange: DateRangePickerValue;
+  onBaseDateRangeChange: (value: DateRangePickerValue) => void;
 };
 
 function DatePicker({
   title,
-  dateRange,
-  onDateRangeChange,
-  compareAgainstDateRange,
-  onCompareAgainstDateRangeChange,
+  comparisonDateRange,
+  onComparisonDateRangeChange,
+  baseDateRange,
+  onBaseDateRangeChange,
 }: DatePickerProps) {
   return (
     <Grid numItems={5}>
@@ -30,8 +30,8 @@ function DatePicker({
       <Col className="items-center" numColSpan={3}>
         <DateRangePicker
           className="col-span-3 max-w-full"
-          value={dateRange}
-          onValueChange={onDateRangeChange}
+          value={comparisonDateRange}
+          onValueChange={onComparisonDateRangeChange}
           enableSelect={false}
           placeholder={"Comparison Date range"}
         />
@@ -42,8 +42,8 @@ function DatePicker({
         </Text>
         <DateRangePicker
           className="col-span-3 max-w-full"
-          value={compareAgainstDateRange}
-          onValueChange={onCompareAgainstDateRangeChange}
+          value={baseDateRange}
+          onValueChange={onBaseDateRangeChange}
           enableSelect={false}
           placeholder={"Base Date range"}
         />

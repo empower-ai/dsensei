@@ -36,12 +36,12 @@ def main():
 def getInsight():
     data = request.get_json()
     csvContent = data['csvContent']
-    baselineDateRange = data['baselineDateRange']
+    baseDateRange = data['baseDateRange']
     comparisonDateRange = data['comparisonDateRange']
     selectedColumns = data['selectedColumns']
 
-    baselineStart = datetime.strptime(baselineDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-    baselineEnd = datetime.strptime(baselineDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    baselineStart = datetime.strptime(baseDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    baselineEnd = datetime.strptime(baseDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
     comparisonStart = datetime.strptime(comparisonDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
     comparisonEnd = datetime.strptime(comparisonDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
 
