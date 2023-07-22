@@ -82,36 +82,37 @@ export default function TopDimensionSlicesTable({
         </Text>
         {renderExpandControl()}
       </Flex>
-      <Table>
+      <Table className="overflow-visible">
         <TableHead>
           <TableRow>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Dimension Slice <TooltipIcon text="" />
+                Dimension Slice{" "}
+                <TooltipIcon text="Dimension slice is a defined by a set of dimension and value pairs." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
                 Slice Size
-                <TooltipIcon text="foo" />
+                <TooltipIcon text="Size of the slice, calculated by: total_rows_in_slice / total_rows" />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
                 Slice Value
-                <TooltipIcon text="foo" />
+                <TooltipIcon text="Metric value aggregated to the slice." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
                 Impact
-                <TooltipIcon text="foo" />
+                <TooltipIcon text="Impact of the slice to the overall metric movement, calculated by: slice_value_of_comparison_period - slice_value_of_base_period." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
                 Performance Compared with Average
-                <TooltipIcon text="foo" />
+                <TooltipIcon text="Performance of the slice compared with average performance, calculated by: change_pct_of_slice - avg_change_pct" />
               </Flex>
             </TableHeaderCell>
           </TableRow>
