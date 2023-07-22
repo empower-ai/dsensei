@@ -14,6 +14,8 @@ WIP
 
 ## Demo Videos
 
+The video is muted by default, 🎧 Unmute for audio explanations and improve your viewing experience!
+
 https://github.com/dsensei/dsensei-insight/assets/1261809/4452e2fb-d77c-44e8-bb42-ad8972bebb5c
 
 
