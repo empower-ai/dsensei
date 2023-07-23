@@ -28,7 +28,7 @@ function DataPreviewer({
 }: DataPreviewerProps) {
   if (data.length === 0) {
     return (
-      <Card className="max-w-3xl mx-auto">
+      <Card className="max-w-6xl mx-auto">
         <Title>Empty CSV file received</Title>
       </Card>
     );
@@ -48,7 +48,7 @@ function DataPreviewer({
   ));
 
   return (
-    <Card className="max-w-3xl mx-auto">
+    <Card className="max-w-6xl mx-auto">
       <Flex>
         <Title>CSV Content Preview</Title>
         <Button icon={ArrowPathIcon} onClick={onReset}>

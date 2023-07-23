@@ -79,7 +79,7 @@ export default function TopDimensionSlicesTable({
   }
 
   return (
-    <Card>
+    <Card className="overflow-overlay">
       {title}
       <Flex justifyContent="start" className="gap-2">
         <Text>
