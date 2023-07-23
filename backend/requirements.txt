@@ -6,7 +6,7 @@
 #
 click==8.1.6
     # via flask
-flask==2.0.3
+flask==2.2.5
     # via
     #   -r requirements.in
     #   flask-cors
@@ -30,5 +30,5 @@ pytz==2021.3
     # via pandas
 six==1.16.0
     # via python-dateutil
-werkzeug==2.2.3
+werkzeug==2.3.6
     # via flask
