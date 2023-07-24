@@ -75,7 +75,18 @@ function CsvUploader() {
       <Title>New Report</Title>
       {header.length === 0 && (
         <>
-          <Text>Please Upload a CSV file to start.</Text>
+          <Text>
+            Please Upload a CSV file to start (
+            <a
+              target="_blank"
+              href={process.env.PUBLIC_URL + "/sample_data.csv"}
+              className="text-blue-800"
+              rel="noreferrer"
+            >
+              sample csv
+            </a>
+            )
+          </Text>
           <Card className="max-w-6xl">
             <div {...getRootProps()}>
               <div className="flex items-center w-full justify-center">
