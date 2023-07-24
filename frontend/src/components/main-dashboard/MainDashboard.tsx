@@ -65,6 +65,7 @@ export default function MainDashboard() {
     analyzingMetrics,
     relatedMetrics,
     tableRowStatus,
+    tableRowCSV,
     tableRowStatusByDimension,
     isLoading,
   } = useSelector((state: RootState) => state.comparisonInsight);
@@ -169,6 +170,7 @@ export default function MainDashboard() {
             <div className="mt-6">
               <TopDimensionSlicesTable
                 rowStatusMap={tableRowStatus}
+                rowCSV={tableRowCSV}
                 metric={analyzingMetrics}
                 maxDefaultRows={100}
                 enableGroupToggle={true}
@@ -182,7 +184,10 @@ export default function MainDashboard() {
                   <div className="mb-6">
                     <TopDimensionSlicesTable
                       metric={analyzingMetrics}
-                      rowStatusMap={tableRowStatusByDimension[dimension]}
+                      rowStatusMap={
+                        tableRowStatusByDimension[dimension].rowStatus
+                      }
+                      rowCSV={tableRowStatusByDimension[dimension].rowCSV}
                       dimension={dimension}
                       maxDefaultRows={5}
                       title={

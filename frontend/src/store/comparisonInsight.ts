@@ -1,6 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { InsightMetric } from "../common/types";
 
+const csvHeader = [
+  "columns",
+  "column_values",
+  "base_period_size",
+  "comparison_period_size",
+  "previous_value",
+  "comparison_value",
+  "impact",
+];
+
 export type RowStatus = {
   key: string[];
   keyComponents: string[];
@@ -17,9 +27,13 @@ export interface ComparisonInsightState {
   tableRowStatus: {
     [key: string]: RowStatus;
   };
+  tableRowCSV: (number | string)[][];
   tableRowStatusByDimension: {
     [key: string]: {
-      [key: string]: RowStatus;
+      rowStatus: {
+        [key: string]: RowStatus;
+      };
+      rowCSV: (number | string)[][];
     };
   };
   isLoading: boolean;
@@ -62,10 +76,14 @@ function helper(
 function buildRowStatusMap(
   metric: InsightMetric,
   groupRows: boolean
-): {
-  [key: string]: RowStatus;
-} {
+): [
+  {
+    [key: string]: RowStatus;
+  },
+  (number | string)[][]
+] {
   const result: { [key: string]: RowStatus } = {};
+  const resultInCSV: (number | string)[][] = [csvHeader];
 
   if (!groupRows) {
     metric.topDriverSliceKeys.forEach((key) => {
@@ -76,37 +94,59 @@ function buildRowStatusMap(
         children: {},
       };
     });
-    return result;
-  }
+  } else {
+    metric.topDriverSliceKeys.forEach((key) => {
+      const keyComponents = key.split("|");
+      let hasMatching = false;
 
-  metric.topDriverSliceKeys.forEach((key) => {
-    const keyComponents = key.split("|");
-    let hasMatching = false;
+      Object.values(result).forEach((child) => {
+        if (helper(child, key, keyComponents)) {
+          hasMatching = true;
+        }
+      });
 
-    Object.values(result).forEach((child) => {
-      if (helper(child, key, keyComponents)) {
-        hasMatching = true;
+      if (!hasMatching) {
+        result[key] = {
+          key: [key],
+          keyComponents: keyComponents,
+          isExpanded: false,
+          children: {},
+        };
       }
     });
+  }
 
-    if (!hasMatching) {
-      result[key] = {
-        key: [key],
-        keyComponents: keyComponents,
-        isExpanded: false,
-        children: {},
-      };
-    }
+  Object.keys(result).forEach((sliceKey) => {
+    const sliceInfo = metric.dimensionSliceInfo[sliceKey];
+    resultInCSV.push([
+      sliceInfo.key.map((keyPart) => keyPart.dimension).join("|"),
+      sliceInfo.key.map((keyPart) => keyPart.value).join("|"),
+      sliceInfo.baselineValue.sliceSize,
+      sliceInfo.comparisonValue.sliceSize,
+      sliceInfo.baselineValue.sliceValue,
+      sliceInfo.comparisonValue.sliceValue,
+      sliceInfo.impact,
+    ]);
   });
-  return result;
+  return [result, resultInCSV];
 }
 
 function buildRowStatusByDimensionMap(metric: InsightMetric): {
   [key: string]: {
-    [key: string]: RowStatus;
+    rowStatus: {
+      [key: string]: RowStatus;
+    };
+    rowCSV: (number | string)[][];
   };
 } {
-  const result: { [key: string]: { [key: string]: RowStatus } } = {};
+  const result: {
+    [key: string]: {
+      rowStatus: {
+        [key: string]: RowStatus;
+      };
+      rowCSV: (number | string)[][];
+    };
+  } = {};
 
   metric.topDriverSliceKeys.forEach((key) => {
     const keyComponents = key.split("|");
@@ -117,15 +157,29 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
     const [dimension] = keyComponents[0].split(":");
 
     if (!result[dimension]) {
-      result[dimension] = {};
+      result[dimension] = {
+        rowCSV: [csvHeader],
+        rowStatus: {},
+      };
     }
 
-    result[dimension][key] = {
+    result[dimension].rowStatus[key] = {
       key: [key],
       keyComponents,
       isExpanded: false,
       children: {},
     };
+
+    const sliceInfo = metric.dimensionSliceInfo[key];
+    result[dimension].rowCSV.push([
+      sliceInfo.key.map((keyPart) => keyPart.dimension).join("|"),
+      sliceInfo.key.map((keyPart) => keyPart.value).join("|"),
+      sliceInfo.baselineValue.sliceSize,
+      sliceInfo.comparisonValue.sliceSize,
+      sliceInfo.baselineValue.sliceValue,
+      sliceInfo.comparisonValue.sliceValue,
+      sliceInfo.impact,
+    ]);
   });
 
   metric.topDriverSliceKeys.forEach((key) => {
@@ -137,7 +191,7 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
     keyComponents.forEach((keyComponent) => {
       const [dimension] = keyComponent.split(":");
 
-      Object.values(result[dimension]).forEach((child) => {
+      Object.values(result[dimension].rowStatus).forEach((child) => {
         helper(child, key, keyComponents);
       });
     });
@@ -150,6 +204,7 @@ const initialState: ComparisonInsightState = {
   analyzingMetrics: {} as InsightMetric,
   relatedMetrics: [],
   tableRowStatus: {},
+  tableRowCSV: [],
   tableRowStatusByDimension: {},
   isLoading: true,
   groupRows: true,
@@ -177,7 +232,10 @@ export const comparisonMetricsSlice = createSlice({
         })
         .filter((metric) => metric !== undefined) as InsightMetric[];
 
-      state.tableRowStatus = buildRowStatusMap(state.analyzingMetrics, true);
+      [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
+        state.analyzingMetrics,
+        true
+      );
       state.tableRowStatusByDimension = buildRowStatusByDimensionMap(
         state.analyzingMetrics
       );
@@ -198,7 +256,8 @@ export const comparisonMetricsSlice = createSlice({
         if (!rowStatus) {
           if (!initialized) {
             if (dimension) {
-              rowStatus = state.tableRowStatusByDimension[dimension][key];
+              rowStatus =
+                state.tableRowStatusByDimension[dimension].rowStatus[key];
             } else {
               rowStatus = state.tableRowStatus[key];
             }
@@ -219,7 +278,7 @@ export const comparisonMetricsSlice = createSlice({
     },
     toggleGroupRows: (state, action: PayloadAction<void>) => {
       state.groupRows = !state.groupRows;
-      state.tableRowStatus = buildRowStatusMap(
+      [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
         state.analyzingMetrics,
         state.groupRows
       );

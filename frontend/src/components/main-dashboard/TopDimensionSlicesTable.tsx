@@ -10,6 +10,7 @@ import {
   Title,
 } from "@tremor/react";
 import { ReactNode, useState } from "react";
+import { CSVLink } from "react-csv";
 import { useDispatch } from "react-redux";
 import { TooltipIcon } from "../../common/TooltipIcon";
 import { InsightMetric } from "../../common/types";
@@ -19,6 +20,7 @@ import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 type Props = {
   metric: InsightMetric;
   rowStatusMap: { [key: string]: RowStatus };
+  rowCSV: (number | string)[][];
   maxDefaultRows?: number;
   dimension?: string;
   title?: ReactNode;
@@ -28,6 +30,7 @@ type Props = {
 export default function TopDimensionSlicesTable({
   metric,
   rowStatusMap,
+  rowCSV,
   maxDefaultRows,
   dimension,
   title,
@@ -81,26 +84,39 @@ export default function TopDimensionSlicesTable({
   return (
     <Card className="overflow-overlay">
       {title}
-      <Flex justifyContent="start" className="gap-2">
-        <Text>
-          Showing {rowStatusKeysToRender.length} of {rowStatusKeys.length} rows.
-        </Text>
-        {renderExpandControl()}
-        {enableGroupToggle && (
-          <>
-            <Title>|</Title>
-            <label className="label cursor-pointer content-center">
-              <input
-                type="checkbox"
-                className="toggle"
-                onChange={() => {
-                  dispatch(toggleGroupRows());
-                }}
-              />
-              <Text className="pl-2">Group Related Slices Together</Text>
-            </label>
-          </>
-        )}
+      <Flex justifyContent="between">
+        <Flex justifyContent="start" className="gap-2">
+          <Text>
+            Showing {rowStatusKeysToRender.length} of {rowStatusKeys.length}{" "}
+            rows.
+          </Text>
+          {renderExpandControl()}
+          {enableGroupToggle && (
+            <>
+              <Title>|</Title>
+              <label className="label cursor-pointer content-center">
+                <input
+                  type="checkbox"
+                  className="toggle"
+                  onChange={() => {
+                    dispatch(toggleGroupRows());
+                  }}
+                />
+                <Text className="pl-2">Group Related Slices Together</Text>
+              </label>
+            </>
+          )}
+        </Flex>
+        <Flex justifyContent="end">
+          <CSVLink
+            data={rowCSV}
+            filename={"output.csv"}
+            className="btn-link text-sky-800"
+            target="_blank"
+          >
+            Export as CSV
+          </CSVLink>
+        </Flex>
       </Flex>
       <Table className="overflow-visible">
         <TableHead>
