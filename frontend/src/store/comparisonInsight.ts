@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { InsightMetric } from "../common/types";
+import { DimensionSliceKey, InsightMetric } from "../common/types";
 
-const csvHeader = [
+export const csvHeader = [
   "columns",
   "column_values",
   "base_period_size",
@@ -36,6 +36,10 @@ export interface ComparisonInsightState {
       rowCSV: (number | string)[][];
     };
   };
+  waterfallRows: {
+    key: DimensionSliceKey;
+    impact: number;
+  }[];
   isLoading: boolean;
   groupRows: boolean;
 }
@@ -71,6 +75,68 @@ function helper(
     row.children[checkingKey] = newRow;
   }
   return true;
+}
+
+function buildWaterfall(metric: InsightMetric): {
+  key: DimensionSliceKey;
+  impact: number;
+}[] {
+  const initialKey = metric.topDriverSliceKeys[0];
+  const initialSlice = metric.dimensionSliceInfo[initialKey];
+  const result = [
+    {
+      key: initialSlice.key,
+      impact: initialSlice.impact,
+    },
+  ];
+
+  const excludeKeys = [initialSlice.key];
+
+  const excludeValues: {
+    [key: string]: (number | string)[];
+  } = {};
+
+  initialSlice.key.forEach((keyPart) => {
+    if (!excludeValues[keyPart.dimension]) {
+      excludeValues[keyPart.dimension] = [];
+    }
+
+    excludeValues[keyPart.dimension].push(keyPart.value);
+  });
+
+  metric.topDriverSliceKeys.forEach((key) => {
+    const sliceInfo = metric.dimensionSliceInfo[key];
+
+    const shouldAdd = excludeKeys.every((excludeKey) => {
+      return (
+        excludeKey
+          .map((k) => k.dimension)
+          .every((d) => sliceInfo.key.map((k) => k.dimension).includes(d)) &&
+        excludeKey.find((k) =>
+          sliceInfo.key.find(
+            (kk) => kk.dimension === k.dimension && kk.value !== k.value
+          )
+        )
+      );
+    });
+
+    if (shouldAdd) {
+      sliceInfo.key.forEach((keyPart) => {
+        if (!excludeValues[keyPart.dimension]) {
+          excludeValues[keyPart.dimension] = [];
+        }
+        excludeValues[keyPart.dimension].push(keyPart.value);
+        excludeKeys.push(sliceInfo.key);
+      });
+
+      result.push({
+        key: sliceInfo.key,
+        impact: sliceInfo.impact,
+      });
+    }
+  });
+
+  return result;
 }
 
 function buildRowStatusMap(
@@ -206,6 +272,7 @@ const initialState: ComparisonInsightState = {
   tableRowStatus: {},
   tableRowCSV: [],
   tableRowStatusByDimension: {},
+  waterfallRows: [],
   isLoading: true,
   groupRows: true,
 };
@@ -239,6 +306,7 @@ export const comparisonMetricsSlice = createSlice({
       state.tableRowStatusByDimension = buildRowStatusByDimensionMap(
         state.analyzingMetrics
       );
+      state.waterfallRows = buildWaterfall(state.analyzingMetrics);
       state.isLoading = false;
     },
 

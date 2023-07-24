@@ -26,6 +26,7 @@ import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
 import { MetricCard } from "./MetricCard";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
+import { WaterfallPanel } from "./panels/waterfall/WaterfallPanel";
 
 export default function MainDashboard() {
   const dispatch = useDispatch();
@@ -69,6 +70,7 @@ export default function MainDashboard() {
     tableRowStatusByDimension,
     isLoading,
     groupRows,
+    waterfallRows,
   } = useSelector((state: RootState) => state.comparisonInsight);
 
   if (isLoading) {
@@ -164,6 +166,7 @@ export default function MainDashboard() {
       <TabGroup className="mt-6">
         <TabList>
           <Tab>Top Dimension Slices</Tab>
+          <Tab>Waterfall</Tab>
           <Tab>Dimensions</Tab>
         </TabList>
         <TabPanels>
@@ -176,9 +179,24 @@ export default function MainDashboard() {
                 maxDefaultRows={100}
                 groupRows={groupRows}
                 enableGroupToggle={true}
+                title={
+                  <>
+                    <Flex flexDirection="col">
+                      <Title>
+                        Top Dimension Slices Driving the Overall Change
+                      </Title>
+                      <Text>Slices could have overlap</Text>
+                    </Flex>
+                    <Divider />
+                  </>
+                }
               />
             </div>
           </TabPanel>
+          <WaterfallPanel
+            waterfallRows={waterfallRows}
+            metric={analyzingMetrics}
+          />
           <TabPanel>
             <div className="mt-6 flex">
               <Card className="overflow-overlay">

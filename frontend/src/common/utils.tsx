@@ -25,6 +25,16 @@ export function serializeDimensionSliceKey(key: DimensionSliceKey): string {
     .join("|");
 }
 
+export function deSerializeDimensionSliceKey(key: string): DimensionSliceKey {
+  return key.split("|").map((keyPart) => {
+    const [dimension, ...reset] = keyPart.split(":");
+    return {
+      dimension,
+      value: reset.join(""),
+    };
+  });
+}
+
 export function formatDimensionSliceKeyForRendering(
   key: DimensionSliceKey,
   parentKey?: DimensionSliceKey,
