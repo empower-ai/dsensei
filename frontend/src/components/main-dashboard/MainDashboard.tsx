@@ -68,6 +68,7 @@ export default function MainDashboard() {
     tableRowCSV,
     tableRowStatusByDimension,
     isLoading,
+    groupRows,
   } = useSelector((state: RootState) => state.comparisonInsight);
 
   if (isLoading) {
@@ -173,6 +174,7 @@ export default function MainDashboard() {
                 rowCSV={tableRowCSV}
                 metric={analyzingMetrics}
                 maxDefaultRows={100}
+                groupRows={groupRows}
                 enableGroupToggle={true}
               />
             </div>

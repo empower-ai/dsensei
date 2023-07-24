@@ -24,6 +24,7 @@ type Props = {
   maxDefaultRows?: number;
   dimension?: string;
   title?: ReactNode;
+  groupRows?: boolean;
   enableGroupToggle?: boolean;
 };
 
@@ -34,6 +35,7 @@ export default function TopDimensionSlicesTable({
   maxDefaultRows,
   dimension,
   title,
+  groupRows,
   enableGroupToggle,
 }: Props) {
   const dispatch = useDispatch();
@@ -101,6 +103,7 @@ export default function TopDimensionSlicesTable({
                   onChange={() => {
                     dispatch(toggleGroupRows());
                   }}
+                  checked={groupRows}
                 />
                 <Text className="pl-2">Group Related Slices Together</Text>
               </label>
