@@ -37,7 +37,7 @@ export default function MainDashboard() {
 
   useEffect(() => {
     dispatch(setLoadingStatus(true));
-    fetch("http://127.0.0.1:5001/insight", {
+    fetch(process.env.NODE_ENV === "development" ? "http://127.0.0.1:5001/insight" : "/insight", {
       mode: "cors",
       method: "POST",
       body: JSON.stringify({
