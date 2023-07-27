@@ -184,6 +184,7 @@ export default function MainDashboard() {
                 maxDefaultRows={100}
                 groupRows={groupRows}
                 enableGroupToggle={true}
+                showDimensionSelector={true}
                 title={
                   <>
                     <Flex flexDirection="col">
@@ -213,6 +214,7 @@ export default function MainDashboard() {
                       rowCSV={tableRowStatusByDimension[dimension].rowCSV}
                       dimension={dimension}
                       maxDefaultRows={5}
+                      showDimensionSelector={false}
                       title={
                         <>
                           <Title>Dimension: {dimension}</Title>

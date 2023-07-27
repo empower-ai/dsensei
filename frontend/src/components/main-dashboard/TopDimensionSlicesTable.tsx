@@ -1,6 +1,8 @@
 import {
   Card,
   Flex,
+  MultiSelect,
+  MultiSelectItem,
   Table,
   TableBody,
   TableHead,
@@ -9,7 +11,7 @@ import {
   Text,
   Title,
 } from "@tremor/react";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { CSVLink } from "react-csv";
 import { useDispatch } from "react-redux";
 import { TooltipIcon } from "../../common/TooltipIcon";
@@ -26,6 +28,7 @@ type Props = {
   title?: ReactNode;
   groupRows?: boolean;
   enableGroupToggle?: boolean;
+  showDimensionSelector: boolean;
 };
 
 export default function TopDimensionSlicesTable({
@@ -37,15 +40,35 @@ export default function TopDimensionSlicesTable({
   title,
   groupRows,
   enableGroupToggle,
+  showDimensionSelector,
 }: Props) {
   const dispatch = useDispatch();
+  const [selectedDimensions, setSelectedDimensions] = useState<string[]>(
+    Object.values(metric.dimensions).map((dimension) => dimension.name)
+  );
+  const [isCollapsed, setIsCollapse] = useState(true);
+
+  const [filteredRowStatus, setFilteredRowStatus] = useState(rowStatusMap);
+  useEffect(() => {
+    const filteredRowStatusMapEntries = Object.entries(rowStatusMap).filter(
+      (entry) => {
+        const rowStatus = entry[1];
+
+        return rowStatus.keyComponents.every((keyComponent) => {
+          const [dimension] = keyComponent.split(":");
+          return selectedDimensions.includes(dimension);
+        });
+      }
+    );
+    setFilteredRowStatus(Object.fromEntries(filteredRowStatusMapEntries));
+  }, [selectedDimensions, rowStatusMap]);
+
   const overallChange =
     metric.baselineValue === 0
       ? 0
       : (metric.comparisonValue - metric.baselineValue) / metric.baselineValue;
 
-  const [isCollapsed, setIsCollapse] = useState(true);
-  const rowStatusKeys = Object.keys(rowStatusMap);
+  const rowStatusKeys = Object.keys(filteredRowStatus);
 
   let rowStatusKeysToRender = rowStatusKeys;
   const haveRowsToExpand =
@@ -93,6 +116,25 @@ export default function TopDimensionSlicesTable({
             segments.
           </Text>
           {renderExpandControl()}
+          {showDimensionSelector && (
+            <>
+              <Text>|</Text>
+              <Text>Select dimensions:</Text>
+              <MultiSelect
+                className="w-auto min-w-[250px]"
+                value={selectedDimensions}
+                onValueChange={(value) => {
+                  setSelectedDimensions(value);
+                }}
+              >
+                {Object.values(metric.dimensions).map((dimension) => (
+                  <MultiSelectItem value={dimension.name} key={dimension.name}>
+                    {dimension.name}
+                  </MultiSelectItem>
+                ))}
+              </MultiSelect>
+            </>
+          )}
           {enableGroupToggle && (
             <>
               <Title>|</Title>
@@ -162,10 +204,11 @@ export default function TopDimensionSlicesTable({
 
             return (
               <TopDimensionSlicesTableRow
-                rowStatus={rowStatusMap[key]!}
+                rowStatus={filteredRowStatus[key]!}
                 dimensionSlice={dimensionSlice}
                 overallChange={overallChange}
                 dimension={dimension}
+                selectedDimensions={selectedDimensions}
               />
             );
           })}

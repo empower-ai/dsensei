@@ -62,6 +62,7 @@ export function WaterfallPanel({ metric, waterfallRows }: Props) {
           metric={metric}
           maxDefaultRows={100}
           enableGroupToggle={false}
+          showDimensionSelector={true}
           title={
             <>
               <Flex flexDirection="col">
