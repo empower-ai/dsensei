@@ -4,6 +4,7 @@ import {
   BarChart,
   Cell,
   LabelList,
+  ReferenceLine,
   Tooltip,
   XAxis,
   YAxis,
@@ -24,6 +25,47 @@ interface Props {
   totalImpact: number;
 }
 
+const CustomizedGroupTick = (props: any) => {
+  const { x, y, payload } = props;
+
+  const numberOfCharsPerRow = 15;
+  const strParts = (payload.value as string).split(" ");
+
+  const rows: string[] = [];
+  let row = "";
+  strParts.forEach((strPart, idx) => {
+    if (row.length + strPart.length < numberOfCharsPerRow) {
+      row = `${row} ${strPart}`;
+    } else {
+      rows.push(row);
+      if (strPart.length < numberOfCharsPerRow) {
+        row = strPart;
+      } else {
+        if (strPart.at(strPart.length - 1) === ":") {
+          row = `${strPart.substring(0, numberOfCharsPerRow - 4)}...:`;
+        } else {
+          row = row = strPart.substring(0, numberOfCharsPerRow - 3);
+        }
+      }
+    }
+
+    if (row.length > numberOfCharsPerRow || idx === strParts.length - 1) {
+      rows.push(row);
+      row = "";
+    }
+  });
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {rows.map((row, idx) => (
+        <text x={0} y={0} dy={18 * (idx + 1)} textAnchor="middle" fill="#666">
+          {row}
+        </text>
+      ))}
+    </g>
+  );
+};
+
 export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
   let pv = 0;
 
@@ -31,7 +73,7 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
     .slice(0, 8)
     .map((row) => {
       const result = {
-        name: serializeDimensionSliceKey(row.key),
+        name: serializeDimensionSliceKey(row.key, ": ", " AND "),
         impact: row.impact,
         pv,
       };
@@ -62,12 +104,12 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
     >
       <XAxis
         dataKey="name"
-        includeHidden={true}
-        allowDataOverflow={true}
-        tickLine={false}
-        tickFormatter={(v, i) => (v === "Total" || v === "All Others" ? v : "")}
+        tick={CustomizedGroupTick}
+        height={100}
+        interval={0}
+        type="category"
       />
-      <YAxis />
+      <YAxis label={{ value: "Impact", angle: -90, position: "insideLeft" }} />
       <Tooltip
         formatter={formatNumber}
         labelFormatter={(label) => {
@@ -84,6 +126,27 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
           );
         }}
       />
+      {data.map((row, idx) => {
+        if (idx === data.length - 1) {
+          return null;
+        }
+        return (
+          <ReferenceLine
+            segment={[
+              {
+                x: data[idx].name,
+                y: data[idx].pv + data[idx].impact,
+              },
+              {
+                x: data[idx + 1].name,
+                y: data[idx].pv + data[idx].impact,
+              },
+            ]}
+            stroke="gray"
+            strokeDasharray="2 2"
+          />
+        );
+      })}
       <Bar dataKey="pv" stackId="a" fill="transparent" />
       <Bar dataKey="impact" stackId="a">
         <LabelList dataKey="impact" position="top" formatter={formatNumber} />

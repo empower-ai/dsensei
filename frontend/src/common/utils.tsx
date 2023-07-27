@@ -18,11 +18,15 @@ export function sortDimension(
     : -1;
 }
 
-export function serializeDimensionSliceKey(key: DimensionSliceKey): string {
+export function serializeDimensionSliceKey(
+  key: DimensionSliceKey,
+  valueSplitter: string = ":",
+  dimensionSplitter: string = "|"
+): string {
   return [...key]
     .sort(sortDimension)
-    .map((k) => `${k.dimension}:${k.value}`)
-    .join("|");
+    .map((k) => `${k.dimension}${valueSplitter}${k.value}`)
+    .join(dimensionSplitter);
 }
 
 export function deSerializeDimensionSliceKey(key: string): DimensionSliceKey {
