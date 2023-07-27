@@ -204,7 +204,7 @@ export default function MainDashboard() {
           <TabPanel>
             <div className="mt-6 flex">
               <Card className="overflow-overlay">
-                {Object.keys(analyzingMetrics.dimensions).map((dimension) => (
+                {/* {Object.keys(analyzingMetrics.dimensions).map((dimension) => (
                   <div className="mb-6">
                     <TopDimensionSlicesTable
                       metric={analyzingMetrics}
@@ -223,7 +223,7 @@ export default function MainDashboard() {
                       }
                     />
                   </div>
-                ))}
+                ))} */}
               </Card>
             </div>
           </TabPanel>

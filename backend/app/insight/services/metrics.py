@@ -187,11 +187,9 @@ class MetricsController(object):
         for sliceInfo in all_dimension_slices:
             sliceInfo.changePercentage = 0.05 if sliceInfo.baselineValue.sliceValue == 0 else (sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
         changeStdDev = np.std([sliceInfo.changePercentage for sliceInfo in all_dimension_slices])
-        # changeAvg = np.median([sliceInfo.changePercentage for sliceInfo in all_dimension_slices])
         for sliceInfo in all_dimension_slices:
             sliceInfo.changeDev = abs((sliceInfo.changePercentage - self.expected_value) / changeStdDev)
 
-        # topDrivers = filter(lambda slice: slice.changeDev > 0.5, all_dimension_slices[:1000])
         metrics.topDriverSliceKeys = list(map(
             lambda slice: slice.serializedKey,
             [dimension_slice for dimension_slice in all_dimension_slices[:1000] if dimension_slice.changeDev > 0.5]))

@@ -214,6 +214,8 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
     };
   } = {};
 
+  return result;
+
   metric.topDriverSliceKeys.forEach((key) => {
     const keyComponents = key.split("|");
     if (keyComponents.length > 1) {
@@ -249,6 +251,7 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
   });
 
   metric.topDriverSliceKeys.forEach((key) => {
+    console.log(key);
     const keyComponents = key.split("|");
     if (keyComponents.length === 1) {
       return;
@@ -256,6 +259,8 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
 
     keyComponents.forEach((keyComponent) => {
       const [dimension] = keyComponent.split(":");
+      console.log(result);
+      console.log(dimension);
 
       Object.values(result[dimension].rowStatus).forEach((child) => {
         helper(child, key, keyComponents);
@@ -290,6 +295,12 @@ export const comparisonMetricsSlice = createSlice({
     ) => {
       const keys = Object.keys(action.payload);
       state.analyzingMetrics = action.payload[keys[0]] as InsightMetric;
+//
+      // state.analyzingMetrics.topDriverSliceKeys = state.analyzingMetrics.topDriverSliceKeys.filter(
+      //   (key) => {
+      //     return state.analyzingMetrics.dimensionSliceInfo[key].changeDev > 0.5;
+      // });
+//
       state.relatedMetrics = keys
         .map((key, index) => {
           if (index === 0) {
