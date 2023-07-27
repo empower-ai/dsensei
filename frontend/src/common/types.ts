@@ -54,4 +54,6 @@ export interface DimensionSliceInfo {
     sliceValue: number;
   };
   impact: number;
+  changePercentage: number;
+  changeDev: number;
 }

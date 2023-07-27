@@ -1,10 +1,13 @@
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Tuple
-import pandas as pd
-from itertools import combinations
-import json
-import numpy as np
 import datetime
+import json
+from dataclasses import asdict, dataclass
+from itertools import combinations
+from typing import Dict, List, Tuple
+
+import numpy as np
+import pandas as pd
+
+
 @dataclass
 class Dimension:
     name: str = None
@@ -33,6 +36,8 @@ class DimensionSliceInfo:
     baselineValue: PeriodValue = None
     comparisonValue: PeriodValue = None
     impact: float = None
+    changePercentage: float = None
+    changeDev: float = None
 
 @dataclass
 class Metrics:
@@ -92,7 +97,19 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
             currentPeriodValue.sliceValue - lastPeriodValue.sliceValue)
         return sliceInfo
     # print(df)
-    return df.apply(lambda row: mapToObj(row.name, row), axis=1).tolist()
+    dimensionSliceInfos = df.apply(lambda row: mapToObj(row.name, row), axis=1).tolist()
+    return dimensionSliceInfos
+    # for sliceInfo in dimensionSliceInfos:
+    #     sliceInfo.changePercentage = (sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
+    # changeStdDev = np.std([sliceInfo.changePercentage for sliceInfo in dimensionSliceInfos])
+    # changeAvg = np.average([sliceInfo.changePercentage for sliceInfo in dimensionSliceInfos])
+    # for sliceInfo in dimensionSliceInfos:
+    #     sliceInfo.changeDev = abs((sliceInfo.changePercentage - changeAvg) / changeStdDev)
+
+    # print('changeStdDev', changeStdDev)
+    # print('changeAvg', changeAvg)
+
+    # return dimensionSliceInfos
 
 
 class NpEncoder(json.JSONEncoder):
@@ -176,6 +193,13 @@ class MetricsController(object):
             all_dimension_slices.extend(ret)
 
         all_dimension_slices.sort(key=lambda slice: abs(slice.impact), reverse=True)
+        for sliceInfo in all_dimension_slices:
+            sliceInfo.changePercentage = (sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
+        changeStdDev = np.std([sliceInfo.changePercentage for sliceInfo in all_dimension_slices])
+        changeAvg = np.average([sliceInfo.changePercentage for sliceInfo in all_dimension_slices])
+        for sliceInfo in all_dimension_slices:
+            sliceInfo.changeDev = abs((sliceInfo.changePercentage - changeAvg) / changeStdDev)
+
         metrics.topDriverSliceKeys = list(map(lambda slice: slice.serializedKey, all_dimension_slices[:1000]))
         metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices

@@ -49,7 +49,7 @@ def getInsight():
     comparisonEnd = datetime.strptime(comparisonDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
 
 
-    date_column = list(filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0]
+    date_column = list(filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0].strip()
 
     agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]['type'] == 'supporting_metric', selectedColumns.items()))
     metrics_name = {k: k for k, v in agg_method}
@@ -61,7 +61,7 @@ def getInsight():
     dimensions = [k for k, v in dimensions]
 
     df = pd.read_csv(StringIO(csvContent))
-    df[date_column] = pd.to_datetime(df[date_column])
+    df[date_column] = pd.to_datetime(df[date_column], utc=True)
     df['date'] = df[date_column].dt.date
 
     metrics = MetricsController(
