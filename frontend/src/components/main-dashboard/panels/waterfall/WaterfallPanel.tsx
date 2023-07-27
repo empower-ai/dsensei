@@ -54,7 +54,7 @@ export function WaterfallPanel({ metric, waterfallRows }: Props) {
             totalImpact={metric.comparisonValue - metric.baselineValue}
           />
           <Title>Waterfall Chart</Title>
-          <Subtitle>Showing top 10 slices</Subtitle>
+          <Subtitle>Showing top 8 slices</Subtitle>
         </Flex>
         <TopDimensionSlicesTable
           rowStatusMap={rowStatus}
@@ -66,7 +66,7 @@ export function WaterfallPanel({ metric, waterfallRows }: Props) {
             <>
               <Flex flexDirection="col">
                 <Title>
-                  Top Dimension Slices Driving the Overall Change (No Overlap)
+                  Top Segments Driving the Overall Change (No Overlap)
                 </Title>
               </Flex>
               <Divider />

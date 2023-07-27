@@ -37,19 +37,24 @@ export default function MainDashboard() {
 
   useEffect(() => {
     dispatch(setLoadingStatus(true));
-    fetch(process.env.NODE_ENV === "development" ? "http://127.0.0.1:5001/insight" : "/insight", {
-      mode: "cors",
-      method: "POST",
-      body: JSON.stringify({
-        csvContent,
-        baseDateRange,
-        comparisonDateRange,
-        selectedColumns,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }).then((res) => {
+    fetch(
+      process.env.NODE_ENV === "development"
+        ? "http://127.0.0.1:5001/insight"
+        : "/insight",
+      {
+        mode: "cors",
+        method: "POST",
+        body: JSON.stringify({
+          csvContent,
+          baseDateRange,
+          comparisonDateRange,
+          selectedColumns,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    ).then((res) => {
       res.json().then((json) => {
         dispatch(updateMetrics(json));
       });
@@ -105,13 +110,13 @@ export default function MainDashboard() {
           <Bold>
             {formatNumber(analyzingMetrics.topDriverSliceKeys.length)}
           </Bold>{" "}
-          top slices. Total of{" "}
+          top segments. Total of{" "}
           <Bold>
             {formatNumber(
               Object.keys(analyzingMetrics.dimensionSliceInfo).length
             )}
           </Bold>{" "}
-          slices analyzed.
+          segments analyzed.
         </Text>
       </Flex>
       <Grid
@@ -165,7 +170,7 @@ export default function MainDashboard() {
       </Grid>
       <TabGroup className="mt-6">
         <TabList>
-          <Tab>Top Dimension Slices</Tab>
+          <Tab>Top Driving Segments</Tab>
           <Tab>Waterfall</Tab>
           <Tab>Dimensions</Tab>
         </TabList>
@@ -182,10 +187,8 @@ export default function MainDashboard() {
                 title={
                   <>
                     <Flex flexDirection="col">
-                      <Title>
-                        Top Dimension Slices Driving the Overall Change
-                      </Title>
-                      <Text>Slices could have overlap</Text>
+                      <Title>Top Segments Driving the Overall Change</Title>
+                      <Text>Segments could have overlap</Text>
                     </Flex>
                     <Divider />
                   </>

@@ -90,7 +90,7 @@ export default function TopDimensionSlicesTable({
         <Flex justifyContent="start" className="gap-2">
           <Text>
             Showing {rowStatusKeysToRender.length} of {rowStatusKeys.length}{" "}
-            rows.
+            segments.
           </Text>
           {renderExpandControl()}
           {enableGroupToggle && (
@@ -105,7 +105,7 @@ export default function TopDimensionSlicesTable({
                   }}
                   checked={groupRows}
                 />
-                <Text className="pl-2">Group Related Slices Together</Text>
+                <Text className="pl-2">Group Related Segments Together</Text>
               </label>
             </>
           )}
@@ -126,32 +126,32 @@ export default function TopDimensionSlicesTable({
           <TableRow>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Dimension Slice{" "}
-                <TooltipIcon text="Dimension slice is a defined by a set of dimension and value pairs." />
+                Segment{" "}
+                <TooltipIcon text="Segment is a defined by a set of dimension and value pairs." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Slice Size
-                <TooltipIcon text="Size of the slice, calculated by: total_rows_in_slice / total_rows" />
+                Segment Size
+                <TooltipIcon text="Size of the segment, calculated by: total_rows_in_segment / total_rows" />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Slice Value
-                <TooltipIcon text="Metric value aggregated to the slice." />
+                Segment Value
+                <TooltipIcon text="Metric value aggregated to the segment." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
                 Impact
-                <TooltipIcon text="Impact of the slice to the overall metric movement, calculated by: slice_value_of_comparison_period - slice_value_of_base_period." />
+                <TooltipIcon text="Impact of the segment to the overall metric movement, calculated by: segment_value_of_comparison_period - segment_value_of_base_period." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
                 Performance Compared with Average
-                <TooltipIcon text="Performance of the slice compared with average performance, calculated by: change_pct_of_slice - avg_change_pct" />
+                <TooltipIcon text="Performance of the segment compared with average performance, calculated by: change_pct_of_segment - avg_change_pct" />
               </Flex>
             </TableHeaderCell>
           </TableRow>
