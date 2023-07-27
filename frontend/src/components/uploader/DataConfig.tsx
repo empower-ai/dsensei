@@ -25,7 +25,11 @@ type DataConfigProps = {
 
 function DataConfig({ header, data, csvContent }: DataConfigProps) {
   const [selectedColumns, setSelectedColumns] = useState<{
-    [k: string]: { type: string; aggregationOption: string | null, expectedValue: number | null };
+    [k: string]: {
+      type: string;
+      aggregationOption: string | null;
+      expectedValue: number | null;
+    };
   }>({});
   const [comparisonDateRange, setComparisonDateRange] =
     useState<DateRangePickerValue>({});
@@ -42,7 +46,11 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
     );
     addedMetrics.map(
       (m) =>
-        (selectedColumnsClone[m] = { type: type, aggregationOption: "sum", expectedValue: null })
+        (selectedColumnsClone[m] = {
+          type: type,
+          aggregationOption: "sum",
+          expectedValue: null,
+        })
     );
     const removedMetrics = Object.keys(selectedColumnsClone).filter(
       (m) => selectedColumnsClone[m]["type"] === type && !metrics.includes(m)
@@ -78,7 +86,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
     }
     selectedColumnsClone[metric]["expectedValue"] = defaultValue;
     setSelectedColumns(selectedColumnsClone);
-  }
+  };
 
   const onSelectDimension = (dimensions: string[]) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
@@ -93,7 +101,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
         (selectedColumnsClone[d] = {
           type: "dimension",
           aggregationOption: null,
-          expectedValue: null
+          expectedValue: null,
         })
     );
     const removedDimension = Object.keys(selectedColumnsClone).filter(
@@ -114,7 +122,11 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
       throw new Error("Found more than 1 date columns.");
     }
     prevDateColumns.map((d) => delete selectedColumnsClone[d]);
-    selectedColumnsClone[dateCol] = { type: "date", aggregationOption: null, expectedValue: null };
+    selectedColumnsClone[dateCol] = {
+      type: "date",
+      aggregationOption: null,
+      expectedValue: null,
+    };
     setSelectedColumns(selectedColumnsClone);
   };
 
@@ -239,9 +251,20 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
                 instruction={<Text>How to aggregation the metric.</Text>}
               />
               <SingleLineTextInput
-                title={<Subtitle className="pr-4">{"Expected value"}</Subtitle>}
-                instruction={<Text>The expected value of the metric.</Text>}
-                onValueChange={(v) => onSelectMetricDefaultValue(m, parseFloat(v))}
+                title={
+                  <Text className="pr-4 text-black">{"Expected change %"}</Text>
+                }
+                instruction={
+                  <Text>
+                    The expected percentage of the change. This is used by
+                    DSensei to calculate outlier segments. For instance if you
+                    are analyzing a recent drop for a metric that used to have
+                    5% growth, put 5%.
+                  </Text>
+                }
+                onValueChange={(v) =>
+                  onSelectMetricDefaultValue(m, parseFloat(v))
+                }
               />
             </>
           ))}
