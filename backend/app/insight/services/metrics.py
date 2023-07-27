@@ -99,17 +99,6 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
     # print(df)
     dimensionSliceInfos = df.apply(lambda row: mapToObj(row.name, row), axis=1).tolist()
     return dimensionSliceInfos
-    # for sliceInfo in dimensionSliceInfos:
-    #     sliceInfo.changePercentage = (sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
-    # changeStdDev = np.std([sliceInfo.changePercentage for sliceInfo in dimensionSliceInfos])
-    # changeAvg = np.average([sliceInfo.changePercentage for sliceInfo in dimensionSliceInfos])
-    # for sliceInfo in dimensionSliceInfos:
-    #     sliceInfo.changeDev = abs((sliceInfo.changePercentage - changeAvg) / changeStdDev)
-
-    # print('changeStdDev', changeStdDev)
-    # print('changeAvg', changeAvg)
-
-    # return dimensionSliceInfos
 
 
 class NpEncoder(json.JSONEncoder):
@@ -130,7 +119,8 @@ class MetricsController(object):
                  date_column: str,
                  columns_of_interest: List[str],
                  agg_method: Dict[str, str],
-                 metrics_name: Dict[str, str]):
+                 metrics_name: Dict[str, str],
+                 expected_value: float):
         self.df = data
         self.columns_of_interest = columns_of_interest
         self.agg_method = agg_method
@@ -139,6 +129,7 @@ class MetricsController(object):
         self.baseline_date_range = baseline_date_range
         self.comparison_date_range = comparison_date_range
         self.aggs = analyze(self.df, baseline_date_range, comparison_date_range, date_column, self.columns_of_interest, agg_method, metrics_name)
+        self.expected_value = expected_value
 
         self.slices = []
         self.slice(baseline_date_range, comparison_date_range)
@@ -194,13 +185,16 @@ class MetricsController(object):
 
         all_dimension_slices.sort(key=lambda slice: abs(slice.impact), reverse=True)
         for sliceInfo in all_dimension_slices:
-            sliceInfo.changePercentage = (sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
+            sliceInfo.changePercentage = 0.05 if sliceInfo.baselineValue.sliceValue == 0 else (sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
         changeStdDev = np.std([sliceInfo.changePercentage for sliceInfo in all_dimension_slices])
-        changeAvg = np.average([sliceInfo.changePercentage for sliceInfo in all_dimension_slices])
+        # changeAvg = np.median([sliceInfo.changePercentage for sliceInfo in all_dimension_slices])
         for sliceInfo in all_dimension_slices:
-            sliceInfo.changeDev = abs((sliceInfo.changePercentage - changeAvg) / changeStdDev)
+            sliceInfo.changeDev = abs((sliceInfo.changePercentage - self.expected_value) / changeStdDev)
 
-        metrics.topDriverSliceKeys = list(map(lambda slice: slice.serializedKey, all_dimension_slices[:1000]))
+        # topDrivers = filter(lambda slice: slice.changeDev > 0.5, all_dimension_slices[:1000])
+        metrics.topDriverSliceKeys = list(map(
+            lambda slice: slice.serializedKey,
+            [dimension_slice for dimension_slice in all_dimension_slices[:1000] if dimension_slice.changeDev > 0.5]))
         metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices
         }

@@ -52,6 +52,8 @@ def getInsight():
     date_column = list(filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0].strip()
 
     agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]['type'] == 'supporting_metric', selectedColumns.items()))
+    expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))[0][1]['expectedValue']
+
     metrics_name = {k: k for k, v in agg_method}
     metrics_name.update({date_column: 'count'})
     agg_method = {k: agg_method_map[v['aggregationOption']] for k, v in agg_method}
@@ -72,6 +74,7 @@ def getInsight():
         dimensions,
         agg_method,
         metrics_name,
+        expected_value
     )
 
     return metrics.getMetrics()

@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import DatePicker from "./DatePicker";
 import MultiSelector from "./MultiSelector";
 import SingleSelector from "./SingleSelector";
+import { SingleLineTextInput } from "./TextInput";
 
 type DataConfigProps = {
   header: string[];
@@ -24,7 +25,7 @@ type DataConfigProps = {
 
 function DataConfig({ header, data, csvContent }: DataConfigProps) {
   const [selectedColumns, setSelectedColumns] = useState<{
-    [k: string]: { type: string; aggregationOption: string | null };
+    [k: string]: { type: string; aggregationOption: string | null, expectedValue: number | null };
   }>({});
   const [comparisonDateRange, setComparisonDateRange] =
     useState<DateRangePickerValue>({});
@@ -41,7 +42,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
     );
     addedMetrics.map(
       (m) =>
-        (selectedColumnsClone[m] = { type: type, aggregationOption: "sum" })
+        (selectedColumnsClone[m] = { type: type, aggregationOption: "sum", expectedValue: null })
     );
     const removedMetrics = Object.keys(selectedColumnsClone).filter(
       (m) => selectedColumnsClone[m]["type"] === type && !metrics.includes(m)
@@ -67,6 +68,18 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
     setSelectedColumns(selectedColumnsClone);
   };
 
+  const onSelectMetricDefaultValue = (metric: string, defaultValue: number) => {
+    const selectedColumnsClone = Object.assign({}, selectedColumns);
+    if (
+      selectedColumnsClone[metric]["type"] !== "metric" &&
+      selectedColumnsClone[metric]["type"] !== "supporting_metric"
+    ) {
+      throw new Error("Invalid default value update on non-metric columns.");
+    }
+    selectedColumnsClone[metric]["expectedValue"] = defaultValue;
+    setSelectedColumns(selectedColumnsClone);
+  }
+
   const onSelectDimension = (dimensions: string[]) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
     const addedDimensions = dimensions.filter(
@@ -80,6 +93,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
         (selectedColumnsClone[d] = {
           type: "dimension",
           aggregationOption: null,
+          expectedValue: null
         })
     );
     const removedDimension = Object.keys(selectedColumnsClone).filter(
@@ -100,7 +114,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
       throw new Error("Found more than 1 date columns.");
     }
     prevDateColumns.map((d) => delete selectedColumnsClone[d]);
-    selectedColumnsClone[dateCol] = { type: "date", aggregationOption: null };
+    selectedColumnsClone[dateCol] = { type: "date", aggregationOption: null, expectedValue: null };
     setSelectedColumns(selectedColumnsClone);
   };
 
@@ -214,15 +228,22 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
         {Object.keys(selectedColumns)
           .filter((c) => selectedColumns[c]["type"] === "metric")
           .map((m) => (
-            <SingleSelector
-              title={<Subtitle className="pr-4">{m}</Subtitle>}
-              labels={["Sum", "Count", "Distinct Count"]}
-              values={["sum", "count", "distinct"]}
-              selectedValue={selectedColumns[m]["aggregationOption"]!}
-              onValueChange={(v) => onSelectMetricAggregationOption(m, v)}
-              key={m}
-              instruction={<Text>How to aggregation the metric.</Text>}
-            />
+            <>
+              <SingleSelector
+                title={<Subtitle className="pr-4">{m}</Subtitle>}
+                labels={["Sum", "Count", "Distinct Count"]}
+                values={["sum", "count", "distinct"]}
+                selectedValue={selectedColumns[m]["aggregationOption"]!}
+                onValueChange={(v) => onSelectMetricAggregationOption(m, v)}
+                key={m}
+                instruction={<Text>How to aggregation the metric.</Text>}
+              />
+              <SingleLineTextInput
+                title={<Subtitle className="pr-4">{"Expected value"}</Subtitle>}
+                instruction={<Text>The expected value of the metric.</Text>}
+                onValueChange={(v) => onSelectMetricDefaultValue(m, parseFloat(v))}
+              />
+            </>
           ))}
         {/* Supporting metrics multi selector */}
         <MultiSelector
