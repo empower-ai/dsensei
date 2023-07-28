@@ -42,6 +42,7 @@ export interface ComparisonInsightState {
   }[];
   isLoading: boolean;
   groupRows: boolean;
+  mode: "impact" | "outlier";
 }
 
 function helper(
@@ -141,7 +142,8 @@ function buildWaterfall(metric: InsightMetric): {
 
 function buildRowStatusMap(
   metric: InsightMetric,
-  groupRows: boolean
+  groupRows: boolean,
+  mode: "impact" | "outlier" = "impact",
 ): [
   {
     [key: string]: RowStatus;
@@ -151,8 +153,13 @@ function buildRowStatusMap(
   const result: { [key: string]: RowStatus } = {};
   const resultInCSV: (number | string)[][] = [csvHeader];
 
+  const topDriverSliceKeys = metric.topDriverSliceKeys.filter((key) => {
+    const sliceInfo = metric.dimensionSliceInfo[key];
+    return mode === "impact" || sliceInfo.changeDev > 0.5;
+  });
+
   if (!groupRows) {
-    metric.topDriverSliceKeys.forEach((key) => {
+    topDriverSliceKeys.forEach((key) => {
       result[key] = {
         key: [key],
         keyComponents: key.split("|"),
@@ -161,7 +168,7 @@ function buildRowStatusMap(
       };
     });
   } else {
-    metric.topDriverSliceKeys.forEach((key) => {
+    topDriverSliceKeys.forEach((key) => {
       const keyComponents = key.split("|");
       let hasMatching = false;
 
@@ -280,6 +287,7 @@ const initialState: ComparisonInsightState = {
   waterfallRows: [],
   isLoading: true,
   groupRows: true,
+  mode: "impact",
 };
 
 export const comparisonMetricsSlice = createSlice({
@@ -295,12 +303,6 @@ export const comparisonMetricsSlice = createSlice({
     ) => {
       const keys = Object.keys(action.payload);
       state.analyzingMetrics = action.payload[keys[0]] as InsightMetric;
-//
-      // state.analyzingMetrics.topDriverSliceKeys = state.analyzingMetrics.topDriverSliceKeys.filter(
-      //   (key) => {
-      //     return state.analyzingMetrics.dimensionSliceInfo[key].changeDev > 0.5;
-      // });
-//
       state.relatedMetrics = keys
         .map((key, index) => {
           if (index === 0) {
@@ -312,13 +314,23 @@ export const comparisonMetricsSlice = createSlice({
 
       [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
         state.analyzingMetrics,
-        true
+        true,
+        state.mode
       );
       state.tableRowStatusByDimension = buildRowStatusByDimensionMap(
         state.analyzingMetrics
       );
       state.waterfallRows = buildWaterfall(state.analyzingMetrics);
       state.isLoading = false;
+    },
+
+    setMode: (state, action: PayloadAction<"impact" | "outlier">) => {
+      state.mode = action.payload;
+      [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
+        state.analyzingMetrics,
+        true,
+        state.mode
+      );
     },
 
     toggleRow: (
@@ -371,6 +383,7 @@ export const {
   updateMetrics,
   setLoadingStatus,
   toggleGroupRows,
+  setMode
 } = comparisonMetricsSlice.actions;
 
 export default comparisonMetricsSlice.reducer;

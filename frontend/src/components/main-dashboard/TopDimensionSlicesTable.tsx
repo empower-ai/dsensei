@@ -3,6 +3,8 @@ import {
   Flex,
   MultiSelect,
   MultiSelectItem,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableHead,
@@ -13,10 +15,11 @@ import {
 } from "@tremor/react";
 import { ReactNode, useEffect, useState } from "react";
 import { CSVLink } from "react-csv";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { TooltipIcon } from "../../common/TooltipIcon";
 import { InsightMetric } from "../../common/types";
-import { RowStatus, toggleGroupRows } from "../../store/comparisonInsight";
+import { RootState } from "../../store";
+import { RowStatus, setMode, toggleGroupRows } from "../../store/comparisonInsight";
 import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 
 type Props = {
@@ -47,6 +50,11 @@ export default function TopDimensionSlicesTable({
     Object.values(metric.dimensions).map((dimension) => dimension.name)
   );
   const [isCollapsed, setIsCollapse] = useState(true);
+
+  const mode = useSelector((state: RootState) => state.comparisonInsight.mode);
+  const setTopDriverMode = (mode: "impact" | "outlier") => {
+    dispatch(setMode(mode));
+  }
 
   const [filteredRowStatus, setFilteredRowStatus] = useState(rowStatusMap);
   useEffect(() => {
@@ -149,6 +157,23 @@ export default function TopDimensionSlicesTable({
                 />
                 <Text className="pl-2">Group Related Segments Together</Text>
               </label>
+            </>
+          )}
+          {(
+            <>
+              <Title>|</Title>
+              <Select
+                  className="w-auto min-w-[150px]"
+                  value={mode}
+                  onValueChange={e => {
+                    console.log(e)
+                    setTopDriverMode(e as any)
+                  }}>
+                <SelectItem value="impact">Impact Mode</SelectItem>
+                <SelectItem value="outlier">Outlier Mode</SelectItem>
+              </Select>
+              <TooltipIcon text="Impact Mode: Show segments with the highest impact on the metric.
+              Outlier Mode: Show segments with the highest outlier score." />
             </>
           )}
         </Flex>

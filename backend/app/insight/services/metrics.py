@@ -192,7 +192,7 @@ class MetricsController(object):
 
         metrics.topDriverSliceKeys = list(map(
             lambda slice: slice.serializedKey,
-            [dimension_slice for dimension_slice in all_dimension_slices[:1000] if dimension_slice.changeDev > 0.5]))
+            [dimension_slice for dimension_slice in all_dimension_slices[:1000]]))
         metrics.dimensionSliceInfo = { dimension_slice.serializedKey: dimension_slice
                                   for dimension_slice in all_dimension_slices
         }
