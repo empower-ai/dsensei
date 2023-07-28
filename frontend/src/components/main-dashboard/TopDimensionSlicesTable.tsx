@@ -11,7 +11,6 @@ import {
   TableHeaderCell,
   TableRow,
   Text,
-  Title,
 } from "@tremor/react";
 import { ReactNode, useEffect, useState } from "react";
 import { CSVLink } from "react-csv";
@@ -19,7 +18,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { TooltipIcon } from "../../common/TooltipIcon";
 import { InsightMetric } from "../../common/types";
 import { RootState } from "../../store";
-import { RowStatus, setMode, toggleGroupRows } from "../../store/comparisonInsight";
+import {
+  RowStatus,
+  setMode,
+  toggleGroupRows,
+} from "../../store/comparisonInsight";
 import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 
 type Props = {
@@ -54,7 +57,7 @@ export default function TopDimensionSlicesTable({
   const mode = useSelector((state: RootState) => state.comparisonInsight.mode);
   const setTopDriverMode = (mode: "impact" | "outlier") => {
     dispatch(setMode(mode));
-  }
+  };
 
   const [filteredRowStatus, setFilteredRowStatus] = useState(rowStatusMap);
   useEffect(() => {
@@ -118,16 +121,10 @@ export default function TopDimensionSlicesTable({
     <Card className="overflow-overlay">
       {title}
       <Flex justifyContent="between">
-        <Flex justifyContent="start" className="gap-2">
-          <Text>
-            Showing {rowStatusKeysToRender.length} of {rowStatusKeys.length}{" "}
-            segments.
-          </Text>
-          {renderExpandControl()}
+        <Flex justifyContent="start" className="gap-2 w-[1800px]">
           {showDimensionSelector && (
             <>
-              <Text>|</Text>
-              <Text>Select dimensions:</Text>
+              <Text>Dimensions:</Text>
               <MultiSelect
                 className="w-auto min-w-[250px]"
                 value={selectedDimensions}
@@ -143,9 +140,30 @@ export default function TopDimensionSlicesTable({
               </MultiSelect>
             </>
           )}
+          {
+            <>
+              <Text>|</Text>
+              <Text>Calculation Mode:</Text>
+              <Select
+                className="w-[150px] min-w-[160px]"
+                value={mode}
+                onValueChange={(e) => {
+                  setTopDriverMode(e as any);
+                }}
+              >
+                <SelectItem value="impact">Impact Mode</SelectItem>
+                <SelectItem value="outlier">Outlier Mode</SelectItem>
+              </Select>
+              <TooltipIcon
+                text="Impact Mode: Show segments with the highest impact on the metric.
+              Outlier Mode: Show segments with the highest outlier score."
+              />
+            </>
+          }
           {enableGroupToggle && (
             <>
-              <Title>|</Title>
+              <Text>|</Text>
+              <Text>Group Segments:</Text>
               <label className="label cursor-pointer content-center">
                 <input
                   type="checkbox"
@@ -155,29 +173,18 @@ export default function TopDimensionSlicesTable({
                   }}
                   checked={groupRows}
                 />
-                <Text className="pl-2">Group Related Segments Together</Text>
+                <TooltipIcon text="Group related segments together." />
               </label>
             </>
           )}
-          {(
-            <>
-              <Title>|</Title>
-              <Select
-                  className="w-auto min-w-[150px]"
-                  value={mode}
-                  onValueChange={e => {
-                    console.log(e)
-                    setTopDriverMode(e as any)
-                  }}>
-                <SelectItem value="impact">Impact Mode</SelectItem>
-                <SelectItem value="outlier">Outlier Mode</SelectItem>
-              </Select>
-              <TooltipIcon text="Impact Mode: Show segments with the highest impact on the metric.
-              Outlier Mode: Show segments with the highest outlier score." />
-            </>
-          )}
         </Flex>
-        <Flex justifyContent="end">
+        <Flex className="w-auto gap-2" justifyContent="end">
+          <Text>
+            Showing {rowStatusKeysToRender.length} of {rowStatusKeys.length}{" "}
+            segments.
+          </Text>
+          {renderExpandControl()}
+          <Text>|</Text>
           <CSVLink
             data={rowCSV}
             filename={"output.csv"}
