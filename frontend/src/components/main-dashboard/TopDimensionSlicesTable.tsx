@@ -1,8 +1,6 @@
 import {
   Card,
   Flex,
-  MultiSelect,
-  MultiSelectItem,
   Select,
   SelectItem,
   Table,
@@ -12,7 +10,7 @@ import {
   TableRow,
   Text,
 } from "@tremor/react";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { CSVLink } from "react-csv";
 import { useDispatch, useSelector } from "react-redux";
 import { TooltipIcon } from "../../common/TooltipIcon";
@@ -47,13 +45,9 @@ export default function TopDimensionSlicesTable({
   title,
   groupRows,
   enableGroupToggle,
-  showDimensionSelector,
   showCalculationMode,
 }: Props) {
   const dispatch = useDispatch();
-  const [selectedDimensions, setSelectedDimensions] = useState<string[]>(
-    Object.values(metric.dimensions).map((dimension) => dimension.name)
-  );
   const [isCollapsed, setIsCollapse] = useState(true);
 
   const mode = useSelector((state: RootState) => state.comparisonInsight.mode);
@@ -61,27 +55,12 @@ export default function TopDimensionSlicesTable({
     dispatch(setMode(mode));
   };
 
-  const [filteredRowStatus, setFilteredRowStatus] = useState(rowStatusMap);
-  useEffect(() => {
-    const filteredRowStatusMapEntries = Object.entries(rowStatusMap).filter(
-      (entry) => {
-        const rowStatus = entry[1];
-
-        return rowStatus.keyComponents.every((keyComponent) => {
-          const [dimension] = keyComponent.split(":");
-          return selectedDimensions.includes(dimension);
-        });
-      }
-    );
-    setFilteredRowStatus(Object.fromEntries(filteredRowStatusMapEntries));
-  }, [selectedDimensions, rowStatusMap]);
-
   const overallChange =
     metric.baselineValue === 0
       ? 0
       : (metric.comparisonValue - metric.baselineValue) / metric.baselineValue;
 
-  const rowStatusKeys = Object.keys(filteredRowStatus);
+  const rowStatusKeys = Object.keys(rowStatusMap);
 
   let rowStatusKeysToRender = rowStatusKeys;
   const haveRowsToExpand =
@@ -124,27 +103,8 @@ export default function TopDimensionSlicesTable({
       {title}
       <Flex justifyContent="between">
         <Flex justifyContent="start" className="gap-2 w-[1800px]">
-          {showDimensionSelector && (
-            <>
-              <Text>Dimensions:</Text>
-              <MultiSelect
-                className="w-auto min-w-[250px]"
-                value={selectedDimensions}
-                onValueChange={(value) => {
-                  setSelectedDimensions(value);
-                }}
-              >
-                {Object.values(metric.dimensions).map((dimension) => (
-                  <MultiSelectItem value={dimension.name} key={dimension.name}>
-                    {dimension.name}
-                  </MultiSelectItem>
-                ))}
-              </MultiSelect>
-            </>
-          )}
           {showCalculationMode && (
             <>
-              <Text>|</Text>
               <Text>Calculation Mode:</Text>
               <Select
                 className="w-[150px] min-w-[160px]"
@@ -238,11 +198,10 @@ export default function TopDimensionSlicesTable({
 
             return (
               <TopDimensionSlicesTableRow
-                rowStatus={filteredRowStatus[key]!}
+                rowStatus={rowStatusMap[key]!}
                 dimensionSlice={dimensionSlice}
                 overallChange={overallChange}
                 dimension={dimension}
-                selectedDimensions={selectedDimensions}
               />
             );
           })}

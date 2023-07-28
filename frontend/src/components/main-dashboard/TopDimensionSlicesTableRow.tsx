@@ -32,7 +32,6 @@ type Props = {
   rowStatus: RowStatus;
   parentDimensionSliceKey?: DimensionSliceKey;
   dimension?: string;
-  selectedDimensions: string[];
   overallChange: number;
 };
 
@@ -81,7 +80,6 @@ export default function TopDimensionSlicesTableRow({
   parentDimensionSliceKey,
   overallChange,
   dimension,
-  selectedDimensions,
 }: Props) {
   const allDimensionSliceInfo = useSelector(
     (state: RootState) =>
@@ -91,26 +89,17 @@ export default function TopDimensionSlicesTableRow({
   const serializedKey = serializeDimensionSliceKey(dimensionSlice.key);
 
   function renderSubSlices() {
-    return Object.keys(rowStatus.children)
-      .filter((subKey) => {
-        const sliceInfo = allDimensionSliceInfo[subKey];
-
-        return sliceInfo.key.every((k) =>
-          selectedDimensions.includes(k.dimension)
-        );
-      })
-      .map((subKey) => {
-        return (
-          <TopDimensionSlicesTableRow
-            rowStatus={rowStatus.children[subKey]!}
-            dimensionSlice={allDimensionSliceInfo[subKey]!}
-            parentDimensionSliceKey={dimensionSlice.key}
-            overallChange={overallChange}
-            dimension={dimension}
-            selectedDimensions={selectedDimensions}
-          />
-        );
-      });
+    return Object.keys(rowStatus.children).map((subKey) => {
+      return (
+        <TopDimensionSlicesTableRow
+          rowStatus={rowStatus.children[subKey]!}
+          dimensionSlice={allDimensionSliceInfo[subKey]!}
+          parentDimensionSliceKey={dimensionSlice.key}
+          overallChange={overallChange}
+          dimension={dimension}
+        />
+      );
+    });
   }
 
   function toggleSliceDetailModal(key: string) {

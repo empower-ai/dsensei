@@ -5,6 +5,8 @@ import {
   Flex,
   Grid,
   LineChart,
+  MultiSelect,
+  MultiSelectItem,
   Tab,
   TabGroup,
   TabList,
@@ -22,7 +24,11 @@ import {
   formatNumber,
 } from "../../common/utils";
 import { RootState } from "../../store";
-import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
+import {
+  setLoadingStatus,
+  updateMetrics,
+  updateSelectedDimensions,
+} from "../../store/comparisonInsight";
 import { MetricCard } from "./MetricCard";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
@@ -72,6 +78,7 @@ export default function MainDashboard() {
     isLoading,
     groupRows,
     waterfallRows,
+    selectedDimensions,
   } = useSelector((state: RootState) => state.comparisonInsight);
 
   if (isLoading) {
@@ -100,27 +107,54 @@ export default function MainDashboard() {
 
   return (
     <main className="px-12 pt-20">
-      <Flex justifyContent="end">
-        <Text>
-          Showing{" "}
-          <Bold>
-            {formatNumber(analyzingMetrics.topDriverSliceKeys.length)}
-          </Bold>{" "}
-          top segments. Total of{" "}
-          <Bold>
-            {formatNumber(
-              Object.keys(analyzingMetrics.dimensionSliceInfo).length
-            )}
-          </Bold>{" "}
-          segments analyzed.
-        </Text>
+      <Flex className="pt-2">
+        <Flex justifyContent="start" className="content-center gap-2">
+          <Text>Dimensions:</Text>
+          <MultiSelect
+            className="w-auto min-w-[250px]"
+            value={selectedDimensions}
+            onValueChange={(value) => {
+              dispatch(updateSelectedDimensions(value));
+            }}
+          >
+            {Object.values(analyzingMetrics.dimensions).map((dimension) => (
+              <MultiSelectItem
+                className={
+                  selectedDimensions.length === 1 &&
+                  selectedDimensions[0] === dimension.name
+                    ? "cursor-pointer"
+                    : "cursor-default"
+                }
+                value={dimension.name}
+                key={dimension.name}
+              >
+                {dimension.name}
+              </MultiSelectItem>
+            ))}
+          </MultiSelect>
+        </Flex>
+        <Flex justifyContent="end">
+          <Text>
+            Showing{" "}
+            <Bold>
+              {formatNumber(analyzingMetrics.topDriverSliceKeys.length)}
+            </Bold>{" "}
+            top segments. Total of{" "}
+            <Bold>
+              {formatNumber(
+                Object.keys(analyzingMetrics.dimensionSliceInfo).length
+              )}
+            </Bold>{" "}
+            segments analyzed.
+          </Text>
+        </Flex>
       </Flex>
       <Grid
         numItems={4}
         numItemsLg={4}
         numItemsMd={2}
         numItemsSm={1}
-        className="gap-6 mt-6"
+        className="gap-6 pt-4"
       >
         <MetricCard
           baseDateRange={analyzingMetrics.baselineDateRange}
@@ -201,7 +235,7 @@ export default function MainDashboard() {
           <TabPanel>
             <div className="mt-6 flex">
               <Card className="overflow-overlay">
-                {Object.keys(analyzingMetrics.dimensions).map((dimension) => (
+                {selectedDimensions.map((dimension) => (
                   <div className="mb-6">
                     <TopDimensionSlicesTable
                       metric={analyzingMetrics}
