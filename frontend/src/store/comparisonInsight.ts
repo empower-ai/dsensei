@@ -245,7 +245,7 @@ function buildRowStatusByDimensionMap(
 
   const dimensionSliceInfoSorted = Object.values(
     getFilteredDimensionSliceInfo(metric, selectedDimensions)
-  ).sort((i1, i2) => i1.impact - i2.impact);
+  ).sort((i1, i2) => Math.abs(i2.impact) - Math.abs(i1.impact));
 
   dimensionSliceInfoSorted.forEach((sliceInfo) => {
     if (sliceInfo.key.length > 1) {
