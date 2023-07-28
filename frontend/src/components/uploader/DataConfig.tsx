@@ -263,7 +263,7 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
                   </Text>
                 }
                 onValueChange={(v) =>
-                  onSelectMetricDefaultValue(m, parseFloat(v))
+                  onSelectMetricDefaultValue(m, parseFloat(v) / 100)
                 }
               />
             </>
