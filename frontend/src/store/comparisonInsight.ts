@@ -268,8 +268,6 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
     );
     keyComponents.forEach((keyComponent) => {
       const [dimension] = keyComponent.split(":");
-      console.log(result);
-      console.log(dimension);
 
       Object.values(result[dimension].rowStatus).forEach((child) => {
         helper(child, sliceInfo.serializedKey, keyComponents);
