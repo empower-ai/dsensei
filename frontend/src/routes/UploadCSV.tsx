@@ -16,7 +16,7 @@ import DataConfig from "../components/uploader/DataConfig";
 import DataPreviewer from "../components/uploader/DataPreviewer";
 
 function CsvUploader() {
-  const [file, setFile] = useState<File | null>();
+  const [file, setFile] = useState<File>();
   const [header, setHeader] = useState<string[]>([]);
   const [data, setData] = useState<{ [k: string]: string }[]>([]);
   const [content, setContent] = useState<string>("");
@@ -125,13 +125,18 @@ function CsvUploader() {
         </>
       )}
       {header.length > 0 && data.length > 0 && (
-        <DataConfig header={header} data={data} csvContent={content} />
+        <DataConfig
+          header={header}
+          data={data}
+          csvContent={content}
+          file={file}
+        />
       )}
       {header.length > 0 && (
         <DataPreviewer
           fileName={file?.name}
           onReset={() => {
-            setFile(null);
+            setFile(undefined);
             setData([]);
             setHeader([]);
             setContent("");

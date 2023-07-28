@@ -32,20 +32,22 @@ export default function MainDashboard() {
   const dispatch = useDispatch();
   const routerState = useLocation().state;
 
-  const { csvContent, baseDateRange, comparisonDateRange, selectedColumns } =
+  const { fileId, baseDateRange, comparisonDateRange, selectedColumns } =
     routerState;
 
   useEffect(() => {
+    const apiPath = `/api/insight`;
+
     dispatch(setLoadingStatus(true));
     fetch(
       process.env.NODE_ENV === "development"
-        ? "http://127.0.0.1:5001/insight"
-        : "/insight",
+        ? `http://127.0.0.1:5001${apiPath}`
+        : apiPath,
       {
         mode: "cors",
         method: "POST",
         body: JSON.stringify({
-          csvContent,
+          fileId,
           baseDateRange,
           comparisonDateRange,
           selectedColumns,
@@ -59,13 +61,7 @@ export default function MainDashboard() {
         dispatch(updateMetrics(json));
       });
     });
-  }, [
-    baseDateRange,
-    comparisonDateRange,
-    csvContent,
-    dispatch,
-    selectedColumns,
-  ]);
+  }, [baseDateRange, comparisonDateRange, fileId, dispatch, selectedColumns]);
 
   const {
     analyzingMetrics,

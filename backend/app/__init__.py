@@ -5,9 +5,11 @@ from io import StringIO
 import pandas as pd
 from app.insight.datasource.csvSource import CsvSource
 from app.insight.services.metrics import MetricsController
+from app.file_upload.services.file_upload import FileUploadService
 from config import Config
 from flask import Flask, request
 from flask_cors import CORS
+import json
 
 app = Flask(__name__, static_url_path='')
 CORS(app)
@@ -35,10 +37,10 @@ def main():
 def dashboard():
     return app.send_static_file('index.html')
 
-@app.route('/insight', methods=['POST'])
+@app.route('/api/insight', methods=['POST'])
 def getInsight():
     data = request.get_json()
-    csvContent = data['csvContent']
+    fileId = data['fileId']
     baseDateRange = data['baseDateRange']
     comparisonDateRange = data['comparisonDateRange']
     selectedColumns = data['selectedColumns']
@@ -62,7 +64,7 @@ def getInsight():
     dimensions = list(filter(lambda x: x[1]['type'] == 'dimension', selectedColumns.items()))
     dimensions = [k for k, v in dimensions]
 
-    df = pd.read_csv(StringIO(csvContent))
+    df = pd.read_csv(f'/tmp/dsensei/{fileId}')
     df[date_column] = pd.to_datetime(df[date_column], utc=True)
     df['date'] = df[date_column].dt.date
 
@@ -78,11 +80,29 @@ def getInsight():
     )
 
     return metrics.getMetrics()
-        # return 'test'
-    # except Exception as e:
-    #     e.with_traceback()
-    #     print('error')
-    #     return 'error'
+
+@app.route('/api/file_upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return "No file part in the request", 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
+
+    try:
+        file_data = file.read()
+        output_dir = "/tmp/dsensei"  # Change the output directory if needed
+
+        # Create an instance of FileProcessor and use its methods
+        file_processor = FileUploadService()
+        md5 = file_processor.save_file_with_md5(file_data, output_dir)
+        return json.dumps({'id': md5}), 200
+    except FileExistsError as e:
+        return str(e), 409
+    except Exception as e:
+        print(e)
+        return str(e), 500
 
 if __name__ == '__main__':
    app.run(processes=4, port=5001)

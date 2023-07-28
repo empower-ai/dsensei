@@ -20,10 +20,11 @@ type DataConfigProps = {
   data: {
     [k: string]: string;
   }[];
+  file: File | undefined;
   csvContent: string;
 };
 
-function DataConfig({ header, data, csvContent }: DataConfigProps) {
+function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: {
       type: string;
@@ -169,12 +170,26 @@ function DataConfig({ header, data, csvContent }: DataConfigProps) {
     );
   }
 
-  const handleOnSubmit = (
+  const handleOnSubmit = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
+    const formData = new FormData();
+    formData.append("file", file!);
+    const res = await fetch(
+      process.env.NODE_ENV === "development"
+        ? "http://127.0.0.1:5001/api/file_upload"
+        : "/api/file_upload",
+      {
+        mode: "cors",
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const { id } = await res.json();
     navigate("/dashboard", {
       state: {
-        csvContent,
+        fileId: id,
         selectedColumns,
         baseDateRange,
         comparisonDateRange,
