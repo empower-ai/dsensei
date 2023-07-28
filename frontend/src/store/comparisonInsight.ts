@@ -143,7 +143,7 @@ function buildWaterfall(metric: InsightMetric): {
 function buildRowStatusMap(
   metric: InsightMetric,
   groupRows: boolean,
-  mode: "impact" | "outlier" = "impact",
+  mode: "impact" | "outlier" = "impact"
 ): [
   {
     [key: string]: RowStatus;
@@ -221,16 +221,16 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
     };
   } = {};
 
-  return result;
+  const dimensionSliceInfoSorted = Object.values(
+    metric.dimensionSliceInfo
+  ).sort((i1, i2) => i1.impact - i2.impact);
 
-  metric.topDriverSliceKeys.forEach((key) => {
-    const keyComponents = key.split("|");
-    if (keyComponents.length > 1) {
+  dimensionSliceInfoSorted.forEach((sliceInfo) => {
+    if (sliceInfo.key.length > 1) {
       return;
     }
 
-    const [dimension] = keyComponents[0].split(":");
-
+    const dimension = sliceInfo.key[0].dimension;
     if (!result[dimension]) {
       result[dimension] = {
         rowCSV: [csvHeader],
@@ -238,14 +238,15 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
       };
     }
 
-    result[dimension].rowStatus[key] = {
-      key: [key],
-      keyComponents,
+    result[dimension].rowStatus[sliceInfo.serializedKey] = {
+      key: [sliceInfo.serializedKey],
+      keyComponents: sliceInfo.key.map(
+        (keyPart) => `${keyPart.dimension}:${keyPart.value}`
+      ),
       isExpanded: false,
       children: {},
     };
 
-    const sliceInfo = metric.dimensionSliceInfo[key];
     result[dimension].rowCSV.push([
       sliceInfo.key.map((keyPart) => keyPart.dimension).join("|"),
       sliceInfo.key.map((keyPart) => keyPart.value).join("|"),
@@ -257,20 +258,21 @@ function buildRowStatusByDimensionMap(metric: InsightMetric): {
     ]);
   });
 
-  metric.topDriverSliceKeys.forEach((key) => {
-    console.log(key);
-    const keyComponents = key.split("|");
-    if (keyComponents.length === 1) {
+  dimensionSliceInfoSorted.forEach((sliceInfo) => {
+    if (sliceInfo.key.length === 1) {
       return;
     }
 
+    const keyComponents = sliceInfo.key.map(
+      (keyPart) => `${keyPart.dimension}:${keyPart.value}`
+    );
     keyComponents.forEach((keyComponent) => {
       const [dimension] = keyComponent.split(":");
       console.log(result);
       console.log(dimension);
 
       Object.values(result[dimension].rowStatus).forEach((child) => {
-        helper(child, key, keyComponents);
+        helper(child, sliceInfo.serializedKey, keyComponents);
       });
     });
   });
@@ -383,7 +385,7 @@ export const {
   updateMetrics,
   setLoadingStatus,
   toggleGroupRows,
-  setMode
+  setMode,
 } = comparisonMetricsSlice.actions;
 
 export default comparisonMetricsSlice.reducer;
