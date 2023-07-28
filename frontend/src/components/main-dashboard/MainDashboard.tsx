@@ -181,6 +181,7 @@ export default function MainDashboard() {
                 groupRows={groupRows}
                 enableGroupToggle={true}
                 showDimensionSelector={true}
+                showCalculationMode={true}
                 title={
                   <>
                     <Flex flexDirection="col">

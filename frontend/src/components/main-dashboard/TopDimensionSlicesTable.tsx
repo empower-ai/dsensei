@@ -35,6 +35,7 @@ type Props = {
   groupRows?: boolean;
   enableGroupToggle?: boolean;
   showDimensionSelector: boolean;
+  showCalculationMode: boolean;
 };
 
 export default function TopDimensionSlicesTable({
@@ -47,6 +48,7 @@ export default function TopDimensionSlicesTable({
   groupRows,
   enableGroupToggle,
   showDimensionSelector,
+  showCalculationMode,
 }: Props) {
   const dispatch = useDispatch();
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>(
@@ -140,7 +142,7 @@ export default function TopDimensionSlicesTable({
               </MultiSelect>
             </>
           )}
-          {
+          {showCalculationMode && (
             <>
               <Text>|</Text>
               <Text>Calculation Mode:</Text>
@@ -159,7 +161,7 @@ export default function TopDimensionSlicesTable({
               Outlier Mode: Show segments with the highest outlier score."
               />
             </>
-          }
+          )}
           {enableGroupToggle && (
             <>
               <Text>|</Text>
