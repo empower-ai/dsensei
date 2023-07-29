@@ -263,22 +263,23 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
         {Object.keys(selectedColumns)
           .filter((c) => selectedColumns[c]["type"] === "metric")
           .map((m) => (
-            <>
+            <div key={m}>
               <SingleSelector
                 title={<Subtitle className="pr-4">{m}</Subtitle>}
                 labels={["Sum", "Count", "Distinct Count"]}
                 values={["sum", "count", "distinct"]}
                 selectedValue={selectedColumns[m]["aggregationOption"]!}
                 onValueChange={(v) => onSelectMetricAggregationOption(m, v)}
-                key={m}
+                key={`${m}-selector`}
                 instruction={<Text>How to aggregation the metric.</Text>}
               />
               <ExpectedChangeInput
+                key={`${m}-change-input`}
                 onValueChange={(v) =>
                   onSelectMetricDefaultValue(m, parseFloat(v) / 100)
                 }
               />
-            </>
+            </div>
           ))}
         {/* Supporting metrics multi selector */}
         <MultiSelector
