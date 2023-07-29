@@ -2,16 +2,16 @@ import {
   Bold,
   Button,
   Card,
-  DateRangePickerValue,
   Divider,
   Flex,
   Subtitle,
   Text,
   Title,
 } from "@tremor/react";
+import moment from "moment";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import DatePicker from "./DatePicker";
+import DatePicker, { DateRangeData } from "./DatePicker";
 import MultiSelector from "./MultiSelector";
 import { ExpectedChangeInput } from "./NumberInput";
 import SingleSelector from "./SingleSelector";
@@ -33,10 +33,20 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
       expectedValue: number | null;
     };
   }>({});
-  const [comparisonDateRange, setComparisonDateRange] =
-    useState<DateRangePickerValue>({});
-  const [baseDateRange, setBaseDateRange] = useState<DateRangePickerValue>({});
+  const [comparisonDateRangeData, setComparisonDateRangeData] =
+    useState<DateRangeData>({
+      range: {},
+      stats: {},
+    });
+  const [baseDateRangeData, setBaseDateRangeData] = useState<DateRangeData>({
+    range: {},
+    stats: {},
+  });
+
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [countByDate, setCountByDate] = useState<{
+    [key: string]: number;
+  }>({});
   const navigate = useNavigate();
 
   const onSelectMetrics = (metrics: string[], type: string) => {
@@ -134,6 +144,21 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
       expectedValue: null,
     };
     setSelectedColumns(selectedColumnsClone);
+
+    const countByDate: {
+      [key: string]: number;
+    } = {};
+    data.forEach((row) => {
+      const dateStr = moment(new Date(Date.parse(row[dateCol]))).format(
+        "YYYY-MM-DD"
+      );
+      if (!countByDate[dateStr]) {
+        countByDate[dateStr] = 1;
+      } else {
+        countByDate[dateStr] = countByDate[dateStr] + 1;
+      }
+    });
+    setCountByDate(countByDate);
   };
 
   const selectedDateCol = Object.keys(selectedColumns).find(
@@ -166,10 +191,12 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
 
     return (
       csvContent.length > 0 &&
-      comparisonDateRange.from &&
-      comparisonDateRange.to &&
-      baseDateRange.from &&
-      baseDateRange.to &&
+      comparisonDateRangeData.range.from &&
+      comparisonDateRangeData.range.to &&
+      (comparisonDateRangeData.stats.numRows ?? 0) > 0 &&
+      baseDateRangeData.range.from &&
+      baseDateRangeData.range.to &&
+      (baseDateRangeData.stats.numRows ?? 0) > 0 &&
       hasMetricColumn &&
       hasDimensionColumn
     );
@@ -198,8 +225,8 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
       state: {
         fileId: id,
         selectedColumns,
-        baseDateRange,
-        comparisonDateRange,
+        baseDateRange: baseDateRangeData.range,
+        comparisonDateRange: comparisonDateRangeData.range,
       },
     });
   };
@@ -235,13 +262,16 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
           }
         />
         {/* Date pickers */}
-        <DatePicker
-          title={"Select date ranges"}
-          comparisonDateRange={comparisonDateRange}
-          setComparisonDateRange={setComparisonDateRange}
-          baseDateRange={baseDateRange}
-          setBaseDateRange={setBaseDateRange}
-        />
+        {selectedDateCol && (
+          <DatePicker
+            title={"Select date ranges"}
+            countByDate={countByDate}
+            comparisonDateRangeData={comparisonDateRangeData}
+            setComparisonDateRangeData={setComparisonDateRangeData}
+            baseDateRangeData={baseDateRangeData}
+            setBaseDateRangeData={setBaseDateRangeData}
+          />
+        )}
         {/* Analysing metric single selector */}
         <SingleSelector
           title={

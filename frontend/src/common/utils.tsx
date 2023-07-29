@@ -98,7 +98,7 @@ export function formatNumber(num: number) {
 }
 
 export function formatDateString(dateString: string): string {
-  return moment(new Date(dateString)).utc().format("MMM D, YYYY");
+  return moment(new Date(dateString)).format("MMM D, YYYY");
 }
 
 export function formatMetricName(metric: InsightMetric): string {
