@@ -47,6 +47,12 @@ function DatePicker({
   const [baseDateRangeMode, setBaseDateRangeMode] =
     useState<BaseDateMode>("previous");
 
+  const dates = Object.keys(countByDate).sort(
+    (d1, d2) => new Date(d1).getTime() - new Date(d2).getTime()
+  );
+  const minDate = new Date(dates[0]);
+  const maxDate = new Date(dates[dates.length - 1]);
+
   function getComparisonDateRangePreviousPeriodDateRange(
     comparisonDateRange: DateRangePickerValue
   ): DateRangePickerValue {
@@ -194,6 +200,8 @@ function DatePicker({
             value={comparisonDateRangeData.range}
             onValueChange={onComparisonDateRangeChange}
             enableSelect={false}
+            minDate={minDate}
+            maxDate={maxDate}
             placeholder={"Comparison Date range"}
           />
         </Flex>
@@ -218,6 +226,8 @@ function DatePicker({
             value={baseDateRangeData.range}
             onValueChange={onBaseDateRangeChange}
             enableSelect={false}
+            minDate={minDate}
+            maxDate={maxDate}
             placeholder={"Base Date range"}
           />
         </Flex>

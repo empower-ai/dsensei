@@ -149,13 +149,19 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
       [key: string]: number;
     } = {};
     data.forEach((row) => {
+      if (Number.isNaN(Date.parse(row[dateCol]))) {
+        return;
+      }
+
       const dateStr = moment(new Date(Date.parse(row[dateCol]))).format(
         "YYYY-MM-DD"
       );
-      if (!countByDate[dateStr]) {
-        countByDate[dateStr] = 1;
-      } else {
-        countByDate[dateStr] = countByDate[dateStr] + 1;
+      if (dateStr !== "Invalid date") {
+        if (!countByDate[dateStr]) {
+          countByDate[dateStr] = 1;
+        } else {
+          countByDate[dateStr] = countByDate[dateStr] + 1;
+        }
       }
     });
     setCountByDate(countByDate);
