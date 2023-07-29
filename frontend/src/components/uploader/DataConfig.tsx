@@ -238,9 +238,9 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
         <DatePicker
           title={"Select date ranges"}
           comparisonDateRange={comparisonDateRange}
-          onComparisonDateRangeChange={setComparisonDateRange}
+          setComparisonDateRange={setComparisonDateRange}
           baseDateRange={baseDateRange}
-          onBaseDateRangeChange={setBaseDateRange}
+          setBaseDateRange={setBaseDateRange}
         />
         {/* Analysing metric single selector */}
         <SingleSelector
