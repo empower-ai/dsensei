@@ -153,6 +153,14 @@ function buildWaterfall(
   return result;
 }
 
+function getStandardDeviation(changes: number[]): number {
+  const n = changes.length;
+  const mean = changes.reduce((a, b) => a + b) / n;
+  return Math.sqrt(
+    changes.map((x) => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n
+  );
+}
+
 function buildRowStatusMap(
   metric: InsightMetric,
   groupRows: boolean,
@@ -166,13 +174,23 @@ function buildRowStatusMap(
 ] {
   const result: { [key: string]: RowStatus } = {};
   const resultInCSV: (number | string)[][] = [csvHeader];
-
-  const topDriverSliceKeys = getFilteredTopDriverSliceKeys(
+  const filteredTopDriverSliceKeys = getFilteredTopDriverSliceKeys(
     metric,
     selectedDimensions
-  ).filter((key) => {
+  );
+  const changeStd = getStandardDeviation(
+    filteredTopDriverSliceKeys.map(
+      (key) => metric.dimensionSliceInfo[key].changePercentage
+    )
+  );
+
+  const topDriverSliceKeys = filteredTopDriverSliceKeys.filter((key) => {
     const sliceInfo = metric.dimensionSliceInfo[key];
-    return mode === "impact" || sliceInfo.changeDev > 0.5;
+
+    const changeDev = Math.abs(
+      (sliceInfo.changePercentage - metric.expectedChangePercentage) / changeStd
+    );
+    return mode === "impact" || changeDev > 0.5;
   });
 
   if (!groupRows) {

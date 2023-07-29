@@ -42,6 +42,7 @@ class DimensionSliceInfo:
 @dataclass
 class Metrics:
     name: str = None
+    expectedChangePercentage: float = None
     aggregationMethod: str = None
     baselineNumRows: int = None
     comparisonNumRows: int = None
@@ -209,6 +210,7 @@ class MetricsController(object):
         ].groupby('date').agg(self.agg_method)
 
         metrics.aggregationMethod = self.agg_method[metricsName]
+        metrics.expectedChangePercentage = self.expected_value
         metrics.baselineValueByDate = [
             {
                 "date": index.strftime("%Y-%m-%d"),
