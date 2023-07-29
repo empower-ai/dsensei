@@ -1,21 +1,14 @@
-import { Col, Grid, NumberInput } from "@tremor/react";
-import { ReactElement } from "react";
+import { Col, Grid, NumberInput, Text } from "@tremor/react";
 
 type Props = {
-  title: ReactElement | null;
   onValueChange: (value: string) => void;
-  instruction?: ReactElement;
 };
 
-export function SingleLineTextInput({
-  title,
-  onValueChange,
-  instruction,
-}: Props) {
+export function ExpectedChangeInput({ onValueChange }: Props) {
   return (
     <Grid numItems={5}>
       <Col className="flex items-center justify-end" numColSpan={2}>
-        {title}
+        <Text className="pr-4 text-black">{"Expected change %"}</Text>
       </Col>
       <Col className="items-center flex gap-1" numColSpan={3}>
         <NumberInput
@@ -28,7 +21,11 @@ export function SingleLineTextInput({
         %
       </Col>
       <Col className="items-center col-start-3 pt-2 pl-2" numColSpan={3}>
-        {instruction}
+        <Text>
+          The expected percentage of the change. This is used by DSensei to
+          calculate outlier segments. For instance if you are analyzing a recent
+          drop for a metric that used to have 5% growth, put 5%.
+        </Text>
       </Col>
     </Grid>
   );

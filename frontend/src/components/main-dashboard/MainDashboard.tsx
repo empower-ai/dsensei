@@ -84,7 +84,7 @@ export default function MainDashboard() {
   if (isLoading) {
     return (
       <Flex className="h-screen	gap-3" justifyContent="center">
-        <p>Loading</p>
+        <p>Processing</p>
         <span className="loading loading-bars loading-lg"></span>
       </Flex>
     );
@@ -119,12 +119,7 @@ export default function MainDashboard() {
           >
             {Object.values(analyzingMetrics.dimensions).map((dimension) => (
               <MultiSelectItem
-                className={
-                  selectedDimensions.length === 1 &&
-                  selectedDimensions[0] === dimension.name
-                    ? "cursor-pointer"
-                    : "cursor-default"
-                }
+                className="cursor-pointer"
                 value={dimension.name}
                 key={dimension.name}
               >

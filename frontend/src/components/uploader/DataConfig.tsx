@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   DateRangePickerValue,
+  Divider,
   Flex,
   Subtitle,
   Text,
@@ -12,8 +13,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "./DatePicker";
 import MultiSelector from "./MultiSelector";
+import { ExpectedChangeInput } from "./NumberInput";
 import SingleSelector from "./SingleSelector";
-import { SingleLineTextInput } from "./TextInput";
 
 type DataConfigProps = {
   header: string[];
@@ -51,7 +52,7 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
         (selectedColumnsClone[m] = {
           type: type,
           aggregationOption: "sum",
-          expectedValue: null,
+          expectedValue: 0.0,
         })
     );
     const removedMetrics = Object.keys(selectedColumnsClone).filter(
@@ -78,7 +79,10 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
     setSelectedColumns(selectedColumnsClone);
   };
 
-  const onSelectMetricDefaultValue = (metric: string, defaultValue: number) => {
+  const onSelectMetricDefaultValue = (
+    metric: string,
+    expectedValue: number
+  ) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
     if (
       selectedColumnsClone[metric]["type"] !== "metric" &&
@@ -86,7 +90,7 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
     ) {
       throw new Error("Invalid default value update on non-metric columns.");
     }
-    selectedColumnsClone[metric]["expectedValue"] = defaultValue;
+    selectedColumnsClone[metric]["expectedValue"] = expectedValue;
     setSelectedColumns(selectedColumnsClone);
   };
 
@@ -203,6 +207,7 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
   return (
     <Card className="max-w-6xl mx-auto">
       <Title>Report Config</Title>
+      <Divider />
       <div className="flex flex-col gap-4">
         {/* Date column selector */}
         <SingleSelector
@@ -268,18 +273,7 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
                 key={m}
                 instruction={<Text>How to aggregation the metric.</Text>}
               />
-              <SingleLineTextInput
-                title={
-                  <Text className="pr-4 text-black">{"Expected change %"}</Text>
-                }
-                instruction={
-                  <Text>
-                    The expected percentage of the change. This is used by
-                    DSensei to calculate outlier segments. For instance if you
-                    are analyzing a recent drop for a metric that used to have
-                    5% growth, put 5%.
-                  </Text>
-                }
+              <ExpectedChangeInput
                 onValueChange={(v) =>
                   onSelectMetricDefaultValue(m, parseFloat(v) / 100)
                 }
@@ -362,9 +356,9 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
           }
         />
       </div>
-      <Flex justifyContent="center">
+      <Flex justifyContent="center" className="flex-col">
+        <Divider />
         <Button
-          className="mt-4"
           onClick={(e) => {
             handleOnSubmit(e);
           }}
