@@ -35,6 +35,7 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
   const [comparisonDateRange, setComparisonDateRange] =
     useState<DateRangePickerValue>({});
   const [baseDateRange, setBaseDateRange] = useState<DateRangePickerValue>({});
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const onSelectMetrics = (metrics: string[], type: string) => {
@@ -173,6 +174,8 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
   const handleOnSubmit = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
+    setIsUploading(true);
+
     const formData = new FormData();
     formData.append("file", file!);
     const res = await fetch(
@@ -365,9 +368,10 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
           onClick={(e) => {
             handleOnSubmit(e);
           }}
+          loading={isUploading}
           disabled={!canSubmit()}
         >
-          Submit
+          {isUploading ? "Uploading" : "Submit"}
         </Button>
       </Flex>
     </Card>
