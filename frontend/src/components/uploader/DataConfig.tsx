@@ -165,6 +165,8 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
       }
     });
     setCountByDate(countByDate);
+    setBaseDateRangeData({ range: {}, stats: {} });
+    setComparisonDateRangeData({ range: {}, stats: {} });
   };
 
   const selectedDateCol = Object.keys(selectedColumns).find(
