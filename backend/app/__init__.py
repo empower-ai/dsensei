@@ -1,15 +1,15 @@
+import json
 import os
 from datetime import datetime
 from io import StringIO
 
 import pandas as pd
+from app.file_upload.services.file_upload import FileUploadService
 from app.insight.datasource.csvSource import CsvSource
 from app.insight.services.metrics import MetricsController
-from app.file_upload.services.file_upload import FileUploadService
 from config import Config
 from flask import Flask, request
 from flask_cors import CORS
-import json
 
 app = Flask(__name__, static_url_path='')
 CORS(app)
@@ -49,7 +49,6 @@ def getInsight():
     baselineEnd = datetime.strptime(baseDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
     comparisonStart = datetime.strptime(comparisonDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
     comparisonEnd = datetime.strptime(comparisonDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-
 
     date_column = list(filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0].strip()
 

@@ -80,7 +80,7 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
     def mapToObj(index, row):
         index = index if (isinstance(index, list) or isinstance(index, tuple)) else [index]
 
-        key = tuple([DimensionValuePair(dimensions[i], index[i]) for i in range(len(dimensions))])
+        key = tuple([DimensionValuePair(dimensions[i], str(index[i])) for i in range(len(dimensions))])
 
         sorted_key = sorted(key, key=lambda x: x.dimension)
         serializedKey = '|'.join([f'{dimensionValuePair.dimension}:{dimensionValuePair.value}' for dimensionValuePair in sorted_key])
@@ -239,8 +239,4 @@ class MetricsController(object):
             if k != self.date_column
         }
 
-        # revenue = asdict(self.buildMetrics('revenue'))
-        # unique_user = asdict(self.buildMetrics('unique_user'))
-        # unique_order = asdict(self.buildMetrics('unique_order'))
-        # ret = { 'revenue': revenue, 'unique_user': unique_user, 'unique_order': unique_order }
         return json.dumps(ret, cls=NpEncoder)
