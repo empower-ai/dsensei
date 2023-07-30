@@ -190,7 +190,7 @@ function buildRowStatusMap(
     const changeDev = Math.abs(
       (sliceInfo.changePercentage - metric.expectedChangePercentage) / changeStd
     );
-    return mode === "impact" || changeDev > 0.5;
+    return mode === "impact" || changeDev > 0.3;
   });
 
   if (!groupRows) {

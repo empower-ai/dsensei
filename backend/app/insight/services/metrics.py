@@ -186,8 +186,11 @@ class MetricsController(object):
 
         all_dimension_slices.sort(key=lambda slice: abs(slice.impact), reverse=True)
         for sliceInfo in all_dimension_slices:
-            sliceInfo.changePercentage = 0.05 if sliceInfo.baselineValue.sliceValue == 0 else (sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
-        changeStdDev = np.std([sliceInfo.changePercentage for sliceInfo in all_dimension_slices])
+            sliceInfo.changePercentage = 0.2 if sliceInfo.baselineValue.sliceValue == 0 else (sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
+        lower = np.percentile([sliceInfo.changePercentage for sliceInfo in all_dimension_slices], 20)
+        upper = np.percentile([sliceInfo.changePercentage for sliceInfo in all_dimension_slices], 80)
+        changes = [sliceInfo.changePercentage for sliceInfo in all_dimension_slices if sliceInfo.changePercentage >= lower and sliceInfo.changePercentage <= upper]
+        changeStdDev = np.std(changes)
         for sliceInfo in all_dimension_slices:
             sliceInfo.changeDev = abs((sliceInfo.changePercentage - self.expected_value) / changeStdDev)
 
