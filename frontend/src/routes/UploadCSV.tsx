@@ -1,4 +1,6 @@
-import { useCallback, useState } from "react";
+import * as rd from "@duckdb/react-duckdb";
+import * as arrow from "apache-arrow";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import {
@@ -21,6 +23,41 @@ function CsvUploader() {
   const [data, setData] = useState<{ [k: string]: string }[]>([]);
   const [content, setContent] = useState<string>("");
   const [error, setError] = useState<string>("");
+
+  const db = rd.useDuckDB();
+  const resolveDB = rd.useDuckDBResolver();
+  // Launch DuckDB
+  useEffect(() => {
+    async function test() {
+      if (!db.resolving()) {
+        await resolveDB();
+      }
+
+      const actualDB = db.value;
+      const conn = await db.value?.connect();
+      await actualDB?.registerFileText(`data.csv`, "10|daiyi\n11|yang\n");
+      await conn?.insertCSVFromPath("data.csv", {
+        schema: "main",
+        name: "foo",
+        detect: false,
+        header: true,
+        delimiter: "|",
+        columns: {
+          col1: new arrow.Int32(),
+          col2: new arrow.Utf8(),
+        },
+      });
+
+      const res = await conn?.query("select * from foo");
+      // console.log(res?.numRows);
+      res?.data.forEach((d) => {
+        console.log(d);
+        console.log(d.children.forEach((a) => console.log(a.values)));
+      });
+    }
+
+    test();
+  }, [db]);
 
   const csvFileToArray = (raw_string: string) => {
     const csvHeader = raw_string.slice(0, raw_string.indexOf("\n")).split(",");
