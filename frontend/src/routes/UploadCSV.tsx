@@ -32,10 +32,50 @@ function CsvUploader() {
   }, [db, resolveDB]);
 
   const csvFileToArray = async (raw_string: string) => {
+    const preparedDB = db.value!;
     const csvHeader = raw_string.slice(0, raw_string.indexOf("\n")).split(",");
+
+    const conn = await preparedDB.connect();
+    const time = new Date().getTime();
+    console.log("1");
+    console.log(new Date().getTime() - time);
+    await preparedDB.registerFileText(`data.csv`, raw_string);
+    console.log("2");
+    console.log(new Date().getTime() - time);
+    await conn?.insertCSVFromPath("data.csv", {
+      schema: "main",
+      name: "upload_content",
+      detect: true,
+      header: true,
+      delimiter: ",",
+    });
+    console.log("3");
+    console.log(new Date().getTime() - time);
+
+    const res = await conn?.query(
+      `SELECT ${csvHeader
+        .map((header) => `COUNT(DISTINCT ${header})`)
+        .join(",")} from upload_content`
+    );
+    console.log(res);
+    // console.log(res?.numRows);
+    res?.toArray().forEach((d) => {
+      console.log(d.toJSON());
+      // console.log(d.children.forEach((a) => console.log(a.values)));
+    });
+    console.log(new Date().getTime() - time);
+
+    const res1 = await conn?.query("describe upload_content");
+    console.log(res1);
+    // console.log(res?.numRows);
+    res1?.toArray().forEach((d) => {
+      console.log(d.toJSON());
+      // console.log(d.children.forEach((a) => console.log(a.values)));
+    });
+
     const csvRows = raw_string.slice(raw_string.indexOf("\n") + 1).split("\n");
 
-    const array = csvRows.map((i) => {
+    const array = csvRows.slice(0, 10).map((i) => {
       const values = i.split(",");
       const obj = csvHeader.reduce(
         (object: { [k: string]: string }, header, index) => {
@@ -49,25 +89,6 @@ function CsvUploader() {
 
     setData(array);
     setHeader(csvHeader);
-
-    const preparedDB = db.value!;
-    const conn = await preparedDB.connect();
-    await preparedDB.registerFileText(`data.csv`, raw_string);
-    await conn?.insertCSVFromPath("data.csv", {
-      schema: "main",
-      name: "upload_content",
-      detect: true,
-      header: true,
-      delimiter: ",",
-    });
-
-    const res1 = await conn?.query("describe upload_content");
-    console.log(res1);
-    // console.log(res?.numRows);
-    res1?.toArray().forEach((d) => {
-      console.log(d.toJSON());
-      // console.log(d.children.forEach((a) => console.log(a.values)));
-    });
   };
 
   const onDrop = async <T extends File>(acceptedFiles: T[]) => {
