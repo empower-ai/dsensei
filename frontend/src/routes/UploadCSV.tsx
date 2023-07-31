@@ -1,6 +1,5 @@
 import * as rd from "@duckdb/react-duckdb";
-import * as arrow from "apache-arrow";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import {
@@ -21,45 +20,18 @@ function CsvUploader() {
   const [file, setFile] = useState<File>();
   const [header, setHeader] = useState<string[]>([]);
   const [data, setData] = useState<{ [k: string]: string }[]>([]);
-  const [content, setContent] = useState<string>("");
   const [error, setError] = useState<string>("");
 
   const db = rd.useDuckDB();
   const resolveDB = rd.useDuckDBResolver();
   // Launch DuckDB
   useEffect(() => {
-    async function test() {
-      if (!db.resolving()) {
-        await resolveDB();
-      }
-
-      const actualDB = db.value;
-      const conn = await db.value?.connect();
-      await actualDB?.registerFileText(`data.csv`, "10|daiyi\n11|yang\n");
-      await conn?.insertCSVFromPath("data.csv", {
-        schema: "main",
-        name: "foo",
-        detect: false,
-        header: true,
-        delimiter: "|",
-        columns: {
-          col1: new arrow.Int32(),
-          col2: new arrow.Utf8(),
-        },
-      });
-
-      const res = await conn?.query("select * from foo");
-      // console.log(res?.numRows);
-      res?.data.forEach((d) => {
-        console.log(d);
-        console.log(d.children.forEach((a) => console.log(a.values)));
-      });
+    if (!db.resolving()) {
+      resolveDB();
     }
+  }, [db, resolveDB]);
 
-    test();
-  }, [db]);
-
-  const csvFileToArray = (raw_string: string) => {
+  const csvFileToArray = async (raw_string: string) => {
     const csvHeader = raw_string.slice(0, raw_string.indexOf("\n")).split(",");
     const csvRows = raw_string.slice(raw_string.indexOf("\n") + 1).split("\n");
 
@@ -75,20 +47,38 @@ function CsvUploader() {
       return obj;
     });
 
-    setContent(raw_string);
     setData(array);
     setHeader(csvHeader);
+
+    const preparedDB = db.value!;
+    const conn = await preparedDB.connect();
+    await preparedDB.registerFileText(`data.csv`, raw_string);
+    await conn?.insertCSVFromPath("data.csv", {
+      schema: "main",
+      name: "upload_content",
+      detect: true,
+      header: true,
+      delimiter: ",",
+    });
+
+    const res1 = await conn?.query("describe upload_content");
+    console.log(res1);
+    // console.log(res?.numRows);
+    res1?.toArray().forEach((d) => {
+      console.log(d.toJSON());
+      // console.log(d.children.forEach((a) => console.log(a.values)));
+    });
   };
 
-  const onDrop = useCallback(<T extends File>(acceptedFiles: T[]) => {
+  const onDrop = async <T extends File>(acceptedFiles: T[]) => {
     const fileReader = new FileReader();
 
-    fileReader.onload = function (event) {
+    fileReader.onload = async function (event) {
       const text = event.target?.result;
       if (!text || typeof text !== "string") {
         throw new Error("failed to load CSV file");
       }
-      csvFileToArray(text);
+      await csvFileToArray(text);
     };
 
     try {
@@ -97,7 +87,7 @@ function CsvUploader() {
     } catch (e) {
       setError("Cannot load the file. Please upload a valid CSV file.");
     }
-  }, []);
+  };
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     multiple: false,
@@ -162,12 +152,7 @@ function CsvUploader() {
         </>
       )}
       {header.length > 0 && data.length > 0 && (
-        <DataConfig
-          header={header}
-          data={data}
-          csvContent={content}
-          file={file}
-        />
+        <DataConfig header={header} data={data} file={file} />
       )}
       {header.length > 0 && (
         <DataPreviewer
@@ -176,7 +161,6 @@ function CsvUploader() {
             setFile(undefined);
             setData([]);
             setHeader([]);
-            setContent("");
           }}
           header={header}
           data={data}

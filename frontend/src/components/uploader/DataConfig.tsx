@@ -22,10 +22,9 @@ type DataConfigProps = {
     [k: string]: string;
   }[];
   file: File | undefined;
-  csvContent: string;
 };
 
-function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
+function DataConfig({ header, data, file }: DataConfigProps) {
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: {
       type: string;
@@ -198,7 +197,6 @@ function DataConfig({ header, data, csvContent, file }: DataConfigProps) {
       ).length > 0;
 
     return (
-      csvContent.length > 0 &&
       comparisonDateRangeData.range.from &&
       comparisonDateRangeData.range.to &&
       (comparisonDateRangeData.stats.numRows ?? 0) > 0 &&
