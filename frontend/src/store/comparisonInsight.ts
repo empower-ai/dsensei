@@ -225,9 +225,7 @@ function buildRowStatusMap(
   }
 
   Object.keys(result).forEach((sliceKey) => {
-    const sliceInfo = getFilteredDimensionSliceInfo(metric, selectedDimensions)[
-      sliceKey
-    ];
+    const sliceInfo = metric.dimensionSliceInfo[sliceKey];
     resultInCSV.push([
       sliceInfo.key.map((keyPart) => keyPart.dimension).join("|"),
       sliceInfo.key.map((keyPart) => keyPart.value).join("|"),
