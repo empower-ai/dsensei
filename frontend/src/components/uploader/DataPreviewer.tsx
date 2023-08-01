@@ -14,19 +14,22 @@ import {
 } from "@tremor/react";
 
 type DataPreviewerProps = {
-  header: string[];
-  data: { [k: string]: string }[];
+  header: {
+    name: string;
+    type: string;
+  }[];
+  previewData: { [k: string]: string }[];
   fileName?: string;
   onReset: () => void;
 };
 
 function DataPreviewer({
   header,
-  data,
+  previewData,
   fileName,
   onReset,
 }: DataPreviewerProps) {
-  if (data.length === 0) {
+  if (previewData.length === 0) {
     return (
       <Card className="max-w-6xl mx-auto">
         <Title>Empty CSV file received</Title>
@@ -35,13 +38,13 @@ function DataPreviewer({
   }
 
   const tableHeader = header.map((h) => (
-    <TableHeaderCell key={h}>{h}</TableHeaderCell>
+    <TableHeaderCell key={h.name}>{h.name}</TableHeaderCell>
   ));
-  const tableBody = data.slice(0, 10).map((item, row_index) => (
+  const tableBody = previewData.slice(0, 10).map((item, row_index) => (
     <TableRow key={row_index}>
       {header.map((h, col_index) => (
         <TableCell key={row_index + "-" + col_index}>
-          <Text>{item[h]}</Text>
+          <Text>{item[h.name]}</Text>
         </TableCell>
       ))}
     </TableRow>

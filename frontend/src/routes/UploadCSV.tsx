@@ -18,9 +18,10 @@ import DataPreviewer from "../components/uploader/DataPreviewer";
 
 function CsvUploader() {
   const [file, setFile] = useState<File>();
-  const [header, setHeader] = useState<string[]>([]);
-  const [data, setData] = useState<{ [k: string]: string }[]>([]);
+  const [header, setHeader] = useState<{ name: string; type: string }[]>([]);
+  const [previewData, setPreviewData] = useState<{ [k: string]: string }[]>([]);
   const [error, setError] = useState<string>("");
+  const [fileLoaded, setFileLoaded] = useState<boolean>(false);
 
   const db = rd.useDuckDB();
   const resolveDB = rd.useDuckDBResolver();
@@ -36,45 +37,28 @@ function CsvUploader() {
     const csvHeader = raw_string.slice(0, raw_string.indexOf("\n")).split(",");
 
     const conn = await preparedDB.connect();
-    const time = new Date().getTime();
-    console.log("1");
-    console.log(new Date().getTime() - time);
     await preparedDB.registerFileText(`data.csv`, raw_string);
-    console.log("2");
-    console.log(new Date().getTime() - time);
-    await conn?.insertCSVFromPath("data.csv", {
+    await conn.insertCSVFromPath("data.csv", {
       schema: "main",
-      name: "upload_content",
+      name: "uploaded_content",
       detect: true,
       header: true,
       delimiter: ",",
     });
-    console.log("3");
-    console.log(new Date().getTime() - time);
+    setFileLoaded(true);
 
-    const res = await conn?.query(
-      `SELECT ${csvHeader
-        .map((header) => `COUNT(DISTINCT ${header})`)
-        .join(",")} from upload_content`
-    );
-    console.log(res);
-    // console.log(res?.numRows);
-    res?.toArray().forEach((d) => {
-      console.log(d.toJSON());
-      // console.log(d.children.forEach((a) => console.log(a.values)));
+    const res = await conn.query("DESCRIBE uploaded_content");
+    const parsedHeaders = res.toArray().map((row) => {
+      const rowInJson = row.toJSON();
+      return {
+        name: rowInJson.column_name,
+        type: rowInJson.column_type,
+      };
     });
-    console.log(new Date().getTime() - time);
+    setHeader(parsedHeaders);
 
-    const res1 = await conn?.query("describe upload_content");
-    console.log(res1);
-    // console.log(res?.numRows);
-    res1?.toArray().forEach((d) => {
-      console.log(d.toJSON());
-      // console.log(d.children.forEach((a) => console.log(a.values)));
-    });
-
+    // @TODO: get rid of this to load directly from duckdb
     const csvRows = raw_string.slice(raw_string.indexOf("\n") + 1).split("\n");
-
     const array = csvRows.slice(0, 10).map((i) => {
       const values = i.split(",");
       const obj = csvHeader.reduce(
@@ -87,8 +71,7 @@ function CsvUploader() {
       return obj;
     });
 
-    setData(array);
-    setHeader(csvHeader);
+    setPreviewData(array);
   };
 
   const onDrop = async <T extends File>(acceptedFiles: T[]) => {
@@ -121,7 +104,7 @@ function CsvUploader() {
   return (
     <div className="flex flex-col gap-2 justify-center items-center pt-20">
       <Title>New Report</Title>
-      {header.length === 0 && (
+      {!fileLoaded && (
         <>
           <Text>
             Please Upload a CSV file to start (
@@ -172,19 +155,17 @@ function CsvUploader() {
           </Card>
         </>
       )}
-      {header.length > 0 && data.length > 0 && (
-        <DataConfig header={header} data={data} file={file} />
-      )}
-      {header.length > 0 && (
+      {fileLoaded && <DataConfig header={header} file={file} />}
+      {fileLoaded && (
         <DataPreviewer
           fileName={file?.name}
           onReset={() => {
             setFile(undefined);
-            setData([]);
+            setPreviewData([]);
             setHeader([]);
           }}
           header={header}
-          data={data}
+          previewData={previewData}
         />
       )}
       <Card className="max-w-6xl p-3">

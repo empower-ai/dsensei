@@ -1,3 +1,4 @@
+import * as rd from "@duckdb/react-duckdb";
 import {
   Bold,
   Button,
@@ -8,8 +9,7 @@ import {
   Text,
   Title,
 } from "@tremor/react";
-import moment from "moment";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker, { DateRangeData } from "./DatePicker";
 import MultiSelector from "./MultiSelector";
@@ -17,14 +17,15 @@ import { ExpectedChangeInput } from "./NumberInput";
 import SingleSelector from "./SingleSelector";
 
 type DataConfigProps = {
-  header: string[];
-  data: {
-    [k: string]: string;
+  header: {
+    name: string;
+    type: string;
   }[];
   file: File | undefined;
 };
 
-function DataConfig({ header, data, file }: DataConfigProps) {
+function DataConfig({ header, file }: DataConfigProps) {
+  const db = rd.useDuckDB().value!;
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: {
       type: string;
@@ -43,10 +44,40 @@ function DataConfig({ header, data, file }: DataConfigProps) {
   });
 
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [countByDate, setCountByDate] = useState<{
-    [key: string]: number;
+  const [countByDateByColumn, setCountByDateByColumn] = useState<{
+    [key: string]: {
+      [key: string]: number;
+    };
   }>({});
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function calculateCountByDateByColumn() {
+      const conn = await db.connect();
+
+      const res = await Promise.all(
+        header
+          .filter((h) => h.type === "TIMESTAMP" || h.type === "DATE")
+          .map(async (h) => {
+            const query = `SELECT COUNT(1) as count, strftime(${h.name}, '%Y-%m-%d') as date from uploaded_content group by strftime(${h.name}, '%Y-%m-%d')`;
+            const res = await conn.query(query);
+
+            return [
+              h.name,
+              Object.fromEntries(
+                res.toArray().map((row) => {
+                  const rowInJson = row.toJSON();
+                  return [rowInJson.date, parseInt(rowInJson.count)];
+                })
+              ),
+            ];
+          })
+      );
+      setCountByDateByColumn(Object.fromEntries(res));
+    }
+
+    calculateCountByDateByColumn();
+  }, [db, header]);
 
   const onSelectMetrics = (metrics: string[], type: string) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
@@ -144,26 +175,6 @@ function DataConfig({ header, data, file }: DataConfigProps) {
     };
     setSelectedColumns(selectedColumnsClone);
 
-    const countByDate: {
-      [key: string]: number;
-    } = {};
-    data.forEach((row) => {
-      if (Number.isNaN(Date.parse(row[dateCol]))) {
-        return;
-      }
-
-      const dateStr = moment(new Date(Date.parse(row[dateCol]))).format(
-        "YYYY-MM-DD"
-      );
-      if (dateStr !== "Invalid date") {
-        if (!countByDate[dateStr]) {
-          countByDate[dateStr] = 1;
-        } else {
-          countByDate[dateStr] = countByDate[dateStr] + 1;
-        }
-      }
-    });
-    setCountByDate(countByDate);
     setBaseDateRangeData({ range: {}, stats: {} });
     setComparisonDateRangeData({ range: {}, stats: {} });
   };
@@ -173,16 +184,7 @@ function DataConfig({ header, data, file }: DataConfigProps) {
   );
 
   const potentialDateCols = header.filter((h) => {
-    const value = data[0][h];
-    if (Number.isNaN(Number(value))) {
-      // parse non number string
-      return !Number.isNaN(Date.parse(value));
-    } else if (Number(value) > 631152000) {
-      // Timestamp larger than 1990/1/1
-      return true;
-    } else {
-      return false;
-    }
+    return h.type === "TIMESTAMP" || h.type === "DATE";
   });
 
   function canSubmit() {
@@ -247,8 +249,16 @@ function DataConfig({ header, data, file }: DataConfigProps) {
           title={
             <Text className="pr-4 text-black">{"Select date column"}</Text>
           }
-          labels={potentialDateCols.length === 0 ? header : potentialDateCols}
-          values={potentialDateCols.length === 0 ? header : potentialDateCols}
+          labels={
+            potentialDateCols.length === 0
+              ? header.map((h) => h.name)
+              : potentialDateCols.map((h) => h.name)
+          }
+          values={
+            potentialDateCols.length === 0
+              ? header.map((h) => h.name)
+              : potentialDateCols.map((h) => h.name)
+          }
           selectedValue={selectedDateCol ? selectedDateCol : ""}
           onValueChange={onSelectDateColumn}
           instruction={
@@ -271,7 +281,7 @@ function DataConfig({ header, data, file }: DataConfigProps) {
         {selectedDateCol && (
           <DatePicker
             title={"Select date ranges"}
-            countByDate={countByDate}
+            countByDate={countByDateByColumn[selectedDateCol]}
             comparisonDateRangeData={comparisonDateRangeData}
             setComparisonDateRangeData={setComparisonDateRangeData}
             baseDateRangeData={baseDateRangeData}
@@ -283,8 +293,8 @@ function DataConfig({ header, data, file }: DataConfigProps) {
           title={
             <Text className="pr-4 text-black">{"Select metric columns"}</Text>
           }
-          labels={header}
-          values={header}
+          labels={header.map((h) => h.name)}
+          values={header.map((h) => h.name)}
           selectedValue={
             Object.keys(selectedColumns).filter(
               (c) => selectedColumns[c]["type"] === "metric"
@@ -320,20 +330,24 @@ function DataConfig({ header, data, file }: DataConfigProps) {
         {/* Supporting metrics multi selector */}
         <MultiSelector
           title={"Select supporting metric columns (optional)"}
-          labels={header.filter(
-            (h) =>
-              !(
-                selectedColumns.hasOwnProperty(h) &&
-                selectedColumns[h]["type"] === "metric"
-              )
-          )}
-          values={header.filter(
-            (h) =>
-              !(
-                selectedColumns.hasOwnProperty(h) &&
-                selectedColumns[h]["type"] === "metric"
-              )
-          )}
+          labels={header
+            .map((h) => h.name)
+            .filter(
+              (h) =>
+                !(
+                  selectedColumns.hasOwnProperty(h) &&
+                  selectedColumns[h]["type"] === "metric"
+                )
+            )}
+          values={header
+            .map((h) => h.name)
+            .filter(
+              (h) =>
+                !(
+                  selectedColumns.hasOwnProperty(h) &&
+                  selectedColumns[h]["type"] === "metric"
+                )
+            )}
           selectedValues={Object.keys(selectedColumns).filter(
             (c) => selectedColumns[c]["type"] === "supporting_metric"
           )}
@@ -364,22 +378,26 @@ function DataConfig({ header, data, file }: DataConfigProps) {
         {/* Dimension columns multi selector */}
         <MultiSelector
           title={"Select dimension columns"}
-          labels={header.filter(
-            (h) =>
-              !(
-                selectedColumns.hasOwnProperty(h) &&
-                (selectedColumns[h]["type"] === "metric" ||
-                  selectedColumns[h]["type"] === "supporting_metric")
-              )
-          )}
-          values={header.filter(
-            (h) =>
-              !(
-                selectedColumns.hasOwnProperty(h) &&
-                (selectedColumns[h]["type"] === "metric" ||
-                  selectedColumns[h]["type"] === "supporting_metric")
-              )
-          )}
+          labels={header
+            .map((h) => h.name)
+            .filter(
+              (h) =>
+                !(
+                  selectedColumns.hasOwnProperty(h) &&
+                  (selectedColumns[h]["type"] === "metric" ||
+                    selectedColumns[h]["type"] === "supporting_metric")
+                )
+            )}
+          values={header
+            .map((h) => h.name)
+            .filter(
+              (h) =>
+                !(
+                  selectedColumns.hasOwnProperty(h) &&
+                  (selectedColumns[h]["type"] === "metric" ||
+                    selectedColumns[h]["type"] === "supporting_metric")
+                )
+            )}
           selectedValues={Object.keys(selectedColumns).filter(
             (c) => selectedColumns[c]["type"] === "dimension"
           )}
