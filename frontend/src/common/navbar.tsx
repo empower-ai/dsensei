@@ -14,7 +14,7 @@ export function NavBar() {
       </Flex>
       <Flex justifyContent="end" className="items-center gap-2">
         <h1>Contact Us:</h1>
-        <a href="https://discord.gg/5yUtntbw" target="_blank" rel="noreferrer">
+        <a href="https://discord.gg/B96nhQzX" target="_blank" rel="noreferrer">
           <img className="h-6 w-6" src={discord} alt="discord group" />{" "}
         </a>
         |

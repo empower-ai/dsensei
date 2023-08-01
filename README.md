@@ -1,13 +1,10 @@
 # <img valign="middle" src="https://github.com/logunify/dsensei/blob/main/docs/images/logo.png" width="65" height="65"/> DSensei
 
-[![Discord](https://img.shields.io/badge/discord-@DSensei-blue.svg?logo=discord)](https://discord.gg/fRzNUEugRU)
+[![Discord](https://img.shields.io/badge/discord-@DSensei-blue.svg?logo=discord)](https://discord.gg/B96nhQzX)
 
 ## Introduction
 
-
-
 https://github.com/dsensei/dsensei-insight/assets/1261809/0b252900-b7e6-462e-9b94-d1c84732be4f
-
 
 The video is muted by default, 🎧 Unmute for audio explanations and improve your viewing experience!
 
@@ -83,4 +80,4 @@ To run the application locally without Docker, you need to have `python3` and `n
 
 ## Contact
 
-Please submit your bug report or feature request directly on github or in our [discord group](https://discord.gg/fRzNUEugRU). We appreciate all your feedback!
+Please submit your bug report or feature request directly on github or in our [discord group](https://discord.gg/B96nhQzX). We appreciate all your feedback!

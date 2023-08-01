@@ -263,7 +263,7 @@ function CsvUploader() {
             </a>{" "}
             or{" "}
             <a
-              href="https://discord.gg/5yUtntbw"
+              href="https://discord.gg/B96nhQzX"
               target="_blank"
               rel="noreferrer"
               className="text-blue-500"
@@ -286,7 +286,7 @@ function CsvUploader() {
             </a>{" "}
             or{" "}
             <a
-              href="https://discord.gg/5yUtntbw"
+              href="https://discord.gg/B96nhQzX"
               target="_blank"
               rel="noreferrer"
               className="text-blue-500"
