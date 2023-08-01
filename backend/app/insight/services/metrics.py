@@ -1,5 +1,7 @@
 import datetime
+import itertools
 import json
+import multiprocessing as mp
 from dataclasses import asdict, dataclass
 from functools import partial
 from itertools import combinations
@@ -67,11 +69,6 @@ def analyze(df,
             metrics_name: Dict[str, str],
             columns: List[str]):
     columns = list(columns)
-    # logger.info(f'Analyzing {columns}...')
-    # logger.info(f'Baseline period: {baseline_period}')
-    # logger.info(f'Comparison period: {comparison_period}')
-    # logger.info(f'Aggregation method: {agg_method}')
-    # logger.info(f'Metrics name: {metrics_name}')
 
     baseline = df.loc[df[date_column].between(
         pd.to_datetime(baseline_period[0], utc=True),
@@ -86,7 +83,7 @@ def analyze(df,
     joined.fillna(0, inplace=True)
     return joined
 
-def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, comparisonCount) -> Dict[frozenset, DimensionSliceInfo]:
+def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, comparisonCount):
     dimensions = [df.index.name] if df.index.name else list(df.index.names)
     def mapToObj(index, row):
         index = index if (isinstance(index, list) or isinstance(index, tuple)) else [index]
@@ -111,7 +108,6 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
     dimensionSliceInfos = df.apply(lambda row: mapToObj(row.name, row), axis=1).tolist()
     return dimensionSliceInfos
 
-
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -129,38 +125,40 @@ def parAnalyze(df: pd.DataFrame,
                columns: List[List[str]],
                agg_method: Dict[str, str],
                metrics_name: Dict[str, str]):
+
+    baseline_df = df.loc[df[date_column].between(
+        pd.to_datetime(baseline_period[0], utc=True),
+        pd.to_datetime(baseline_period[1], utc=True))
+    ]
+    comparison_df = df.loc[df[date_column].between(
+        pd.to_datetime(comparison_period[0], utc=True),
+        pd.to_datetime(comparison_period[1], utc=True))
+    ]
+
     def func(columns: List[str]):
         columns = list(columns)
-        # logger.info(f'Analyzing {columns}...')
-        # logger.info(f'Baseline period: {baseline_period}')
-        # logger.info(f'Comparison period: {comparison_period}')
-        # logger.info(f'Aggregation method: {agg_method}')
-        # logger.info(f'Metrics name: {metrics_name}')
 
-        baseline = df.loc[df[date_column].between(
-            pd.to_datetime(baseline_period[0], utc=True),
-            pd.to_datetime(baseline_period[1], utc=True))
-        ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
-        comparison = df.loc[df[date_column].between(
-            pd.to_datetime(comparison_period[0], utc=True),
-            pd.to_datetime(comparison_period[1], utc=True))
-        ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
+        baseline = baseline_df.groupby(columns).agg(agg_method).rename(columns = metrics_name)
+        comparison = comparison_df.groupby(columns).agg(agg_method).rename(columns = metrics_name)
 
         joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
         joined.fillna(0, inplace=True)
         return joined
 
-    # func = partial(analyze, df, baseline_period, comparison_period, date_column, agg_method, metrics_name)
-
-    # logger.info(f'parallel Analyzing {columns}...')
-    # logger.info(f'Baseline period: {baseline_period}')
-    # logger.info(f'Comparison period: {comparison_period}')
-    # logger.info(f'Aggregation method: {agg_method}')
-    # logger.info(f'Metrics name: {metrics_name}')
     return list(map(func, columns))
-    # with Pool(16) as p:
-    #     results = p.map(func, columns)
-    #     return results
+
+
+def flatten(list_of_lists):
+    return list(itertools.chain.from_iterable(list_of_lists))
+
+
+def parToDimensionSliceInfo(slices, metrics_name, baselineCount: int, comparisonCount) -> List[DimensionSliceInfo]:
+    func = partial(toDimensionSliceInfo, metrics_name=metrics_name, baselineCount=baselineCount, comparisonCount=comparisonCount)
+    all_dimension_slices = map(
+        func,
+        slices
+    )
+    return flatten(all_dimension_slices)
 
 class MetricsController(object):
     def __init__(self,
@@ -230,13 +228,10 @@ class MetricsController(object):
         metrics.baselineNumRows = self.aggs['count_baseline'].sum()
         metrics.comparisonNumRows = self.aggs['count'].sum()
         metrics.dimensions = self.getDimensions()
-
-        all_dimension_slices = []
         # Build dimension slice info
         logger.info(f'Building dimension slice info for {metricsName}')
-        for dimension_slice in self.slices:
-            ret = toDimensionSliceInfo(dimension_slice, metricsName, metrics.baselineNumRows, metrics.comparisonNumRows)
-            all_dimension_slices.extend(ret)
+
+        all_dimension_slices = parToDimensionSliceInfo(self.slices, metricsName, metrics.baselineNumRows, metrics.comparisonNumRows)
 
         all_dimension_slices.sort(key=lambda slice: abs(slice.impact), reverse=True)
         for sliceInfo in all_dimension_slices:
@@ -257,6 +252,7 @@ class MetricsController(object):
         }
         metrics.baselineValue = self.aggs[f'{metricsName}_baseline'].sum()
         metrics.comparisonValue = self.aggs[metricsName].sum()
+        logger.info('Building baseline value by date')
 
         baseline = self.df.loc[self.df[self.date_column].between(
             pd.to_datetime(self.baseline_date_range[0], utc=True),
@@ -287,6 +283,7 @@ class MetricsController(object):
         metrics.baselineDateRange = [self.baseline_date_range[0].strftime("%Y-%m-%d"), self.baseline_date_range[1].strftime("%Y-%m-%d")]
         metrics.comparisonDateRange = [self.comparison_date_range[0].strftime("%Y-%m-%d"), self.comparison_date_range[1].strftime("%Y-%m-%d")]
 
+        logger.info('Finished building metrics')
         return metrics
 
     def getSlices(self):

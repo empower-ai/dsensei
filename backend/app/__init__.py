@@ -10,6 +10,7 @@ from app.insight.services.metrics import MetricsController
 from config import Config
 from flask import Flask, request
 from flask_cors import CORS
+from loguru import logger
 
 app = Flask(__name__, static_url_path='')
 CORS(app)
@@ -63,7 +64,9 @@ def getInsight():
     dimensions = list(filter(lambda x: x[1]['type'] == 'dimension', selectedColumns.items()))
     dimensions = [k for k, v in dimensions]
 
+    logger.info('Reading file')
     df = pd.read_csv(f'/tmp/dsensei/{fileId}')
+    logger.info('File loaded')
     df[date_column] = pd.to_datetime(df[date_column], utc=True)
     df['date'] = df[date_column].dt.date
 
