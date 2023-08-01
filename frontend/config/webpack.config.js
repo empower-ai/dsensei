@@ -343,7 +343,7 @@ module.exports = function (webpackEnv) {
         // Handle node_modules packages that contain sourcemaps
         shouldUseSourceMap && {
           enforce: "pre",
-          exclude: /@babel(?:\/|\\{1,2})runtime/,
+          exclude: [/@babel(?:\/|\\{1,2})runtime/, /node_modules\/@duckdb/],
           test: /\.(js|mjs|jsx|ts|tsx|css)$/,
           loader: require.resolve("source-map-loader"),
         },
@@ -365,9 +365,16 @@ module.exports = function (webpackEnv) {
               },
             },
             {
+              test: /.*\.wasm$/,
+              type: "asset/resource",
+              generator: {
+                filename: "static/wasm/[name].[contenthash][ext]",
+              },
+            },
+            {
               test: /\.tsx?$/,
               loader: "ts-loader",
-              // exclude: /node_modules/,
+              // exclude: [/node_modules/],
             },
             // "url" loader works like "file" loader except that it embeds assets
             // smaller than specified limit in bytes as data URLs to avoid requests.
@@ -453,7 +460,7 @@ module.exports = function (webpackEnv) {
                 presets: [
                   [
                     require.resolve("babel-preset-react-app/dependencies"),
-                    { helpers: true },
+                    { helpers: false },
                   ],
                 ],
                 cacheDirectory: true,
