@@ -25,6 +25,7 @@ export function WaterfallPanel({ metric, waterfallRows }: Props) {
           keyComponents: serializedKey.split("|"),
           isExpanded: false,
           children: {},
+          hasCalculatedChildren: true,
         },
       ];
     })

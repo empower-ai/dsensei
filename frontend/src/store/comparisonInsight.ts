@@ -15,6 +15,7 @@ export type RowStatus = {
   key: string[];
   keyComponents: string[];
   isExpanded: boolean;
+  hasCalculatedChildren: boolean;
   children: {
     [key: string]: RowStatus;
   };
@@ -49,7 +50,8 @@ export interface ComparisonInsightState {
 function helper(
   row: RowStatus,
   checkingKey: string,
-  checkingKeyComponents: string[]
+  checkingKeyComponents: string[],
+  maxNumChildren?: number
 ) {
   if (
     !row.keyComponents.every((component) =>
@@ -64,16 +66,20 @@ function helper(
     keyComponents: checkingKeyComponents,
     isExpanded: false,
     children: {},
+    hasCalculatedChildren: true,
   };
 
   let hasMatching = false;
   Object.values(row.children).forEach((child) => {
-    if (helper(child, checkingKey, checkingKeyComponents)) {
+    if (helper(child, checkingKey, checkingKeyComponents, maxNumChildren)) {
       hasMatching = true;
     }
   });
 
-  if (!hasMatching) {
+  if (
+    !hasMatching &&
+    (!maxNumChildren || Object.keys(row.children).length < maxNumChildren)
+  ) {
     row.children[checkingKey] = newRow;
   }
   return true;
@@ -200,6 +206,7 @@ function buildRowStatusMap(
         keyComponents: key.split("|"),
         isExpanded: false,
         children: {},
+        hasCalculatedChildren: true,
       };
     });
   } else {
@@ -219,6 +226,7 @@ function buildRowStatusMap(
           keyComponents: keyComponents,
           isExpanded: false,
           children: {},
+          hasCalculatedChildren: true,
         };
       }
     });
@@ -283,6 +291,7 @@ function buildRowStatusByDimensionMap(
       ),
       isExpanded: false,
       children: {},
+      hasCalculatedChildren: false,
     };
 
     result[dimension].rowCSV.push([
@@ -294,23 +303,6 @@ function buildRowStatusByDimensionMap(
       sliceInfo.comparisonValue.sliceValue,
       sliceInfo.impact,
     ]);
-  });
-
-  dimensionSliceInfoSorted.forEach((sliceInfo) => {
-    if (sliceInfo.key.length === 1) {
-      return;
-    }
-
-    const keyComponents = sliceInfo.key.map(
-      (keyPart) => `${keyPart.dimension}:${keyPart.value}`
-    );
-    keyComponents.forEach((keyComponent) => {
-      const [dimension] = keyComponent.split(":");
-
-      Object.values(result[dimension].rowStatus).forEach((child) => {
-        helper(child, sliceInfo.serializedKey, keyComponents);
-      });
-    });
   });
 
   return result;
@@ -416,19 +408,38 @@ export const comparisonMetricsSlice = createSlice({
       }>
     ) => {
       let rowStatus: RowStatus | undefined;
-      let initialized = false;
       const { keyPath, dimension } = action.payload;
       keyPath.forEach((key) => {
         if (!rowStatus) {
-          if (!initialized) {
-            if (dimension) {
-              rowStatus =
-                state.tableRowStatusByDimension[dimension].rowStatus[key];
-            } else {
-              rowStatus = state.tableRowStatus[key];
+          if (dimension) {
+            rowStatus =
+              state.tableRowStatusByDimension[dimension].rowStatus[key];
+
+            if (!rowStatus.hasCalculatedChildren) {
+              const dimensionSliceInfoSorted = Object.values(
+                getFilteredDimensionSliceInfo(
+                  state.analyzingMetrics,
+                  state.selectedDimensions
+                )
+              )
+                .filter((sliceInfo) =>
+                  sliceInfo.key.find((k) => k.dimension === dimension)
+                )
+                .sort((i1, i2) => Math.abs(i2.impact) - Math.abs(i1.impact));
+
+              dimensionSliceInfoSorted.forEach((sliceInfo) => {
+                if (sliceInfo.key.length === 1) {
+                  return;
+                }
+
+                const keyComponents = sliceInfo.key.map(
+                  (keyPart) => `${keyPart.dimension}:${keyPart.value}`
+                );
+                helper(rowStatus!, sliceInfo.serializedKey, keyComponents, 10);
+              });
             }
           } else {
-            rowStatus = undefined;
+            rowStatus = state.tableRowStatus[key];
           }
         } else {
           rowStatus = rowStatus.children[key];

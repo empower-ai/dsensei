@@ -115,11 +115,15 @@ export default function TopDimensionSlicesTableRow({
             style={{
               width: `${
                 (rowStatus.key.length - 1) * 25 +
-                (Object.keys(rowStatus.children).length > 0 ? 0 : 15)
+                (Object.keys(rowStatus.children).length > 0 ||
+                !rowStatus.hasCalculatedChildren
+                  ? 0
+                  : 15)
               }px`,
             }}
           ></p>
-          {Object.keys(rowStatus.children).length > 0 && (
+          {(Object.keys(rowStatus.children).length > 0 ||
+            !rowStatus.hasCalculatedChildren) && (
             <span
               className="w-4 cursor-pointer"
               onClick={() => {
