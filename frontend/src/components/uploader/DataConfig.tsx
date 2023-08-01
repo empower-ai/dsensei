@@ -280,7 +280,10 @@ function DataConfig({ header, file }: DataConfigProps) {
           return true;
         }
 
-        return countByColumn[h] / countByColumn["totalRowsReserved"] < 0.1;
+        return (
+          countByColumn[h] < 100 ||
+          countByColumn[h] / countByColumn["totalRowsReserved"] < 0.01
+        );
       });
   }
 
