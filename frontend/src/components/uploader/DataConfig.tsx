@@ -42,13 +42,16 @@ function DataConfig({ header, file }: DataConfigProps) {
     range: {},
     stats: {},
   });
-
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [countByDateByColumn, setCountByDateByColumn] = useState<{
     [key: string]: {
       [key: string]: number;
     };
   }>({});
+  const [countByColumn, setCountByColumn] = useState<{ [key: string]: number }>(
+    {}
+  );
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,7 +79,29 @@ function DataConfig({ header, file }: DataConfigProps) {
       setCountByDateByColumn(Object.fromEntries(res));
     }
 
+    async function calculateDistinctCountByColumn() {
+      if (header.length > 0) {
+        const conn = await db.connect();
+
+        const res = await conn.query(
+          `SELECT ${header
+            .map((h) => `COUNT(DISTINCT ${h.name}) as ${h.name}`)
+            .join(",")}, COUNT(1) as totalRowsReserved from uploaded_content`
+        );
+
+        setCountByColumn(
+          Object.fromEntries(
+            Object.entries(res?.toArray()[0].toJSON()).map((entry) => {
+              const [column_name, count] = entry;
+              return [column_name, parseInt(count as string)];
+            })
+          )
+        );
+      }
+    }
+
     calculateCountByDateByColumn();
+    calculateDistinctCountByColumn();
   }, [db, header]);
 
   const onSelectMetrics = (metrics: string[], type: string) => {
@@ -239,6 +264,26 @@ function DataConfig({ header, file }: DataConfigProps) {
     });
   };
 
+  function getValidDimensionColumns() {
+    return header
+      .map((h) => h.name)
+      .filter(
+        (h) =>
+          !(
+            selectedColumns.hasOwnProperty(h) &&
+            (selectedColumns[h]["type"] === "metric" ||
+              selectedColumns[h]["type"] === "supporting_metric")
+          )
+      )
+      .filter((h) => {
+        if (Object.keys(countByColumn).length === 0) {
+          return true;
+        }
+
+        return countByColumn[h] / countByColumn["totalRowsReserved"] < 0.1;
+      });
+  }
+
   return (
     <Card className="max-w-6xl mx-auto">
       <Title>Report Config</Title>
@@ -378,26 +423,10 @@ function DataConfig({ header, file }: DataConfigProps) {
         {/* Dimension columns multi selector */}
         <MultiSelector
           title={"Select dimension columns"}
-          labels={header
-            .map((h) => h.name)
-            .filter(
-              (h) =>
-                !(
-                  selectedColumns.hasOwnProperty(h) &&
-                  (selectedColumns[h]["type"] === "metric" ||
-                    selectedColumns[h]["type"] === "supporting_metric")
-                )
-            )}
-          values={header
-            .map((h) => h.name)
-            .filter(
-              (h) =>
-                !(
-                  selectedColumns.hasOwnProperty(h) &&
-                  (selectedColumns[h]["type"] === "metric" ||
-                    selectedColumns[h]["type"] === "supporting_metric")
-                )
-            )}
+          labels={getValidDimensionColumns().map(
+            (h) => `${h} - ${countByColumn[h]} distinct values`
+          )}
+          values={getValidDimensionColumns()}
           selectedValues={Object.keys(selectedColumns).filter(
             (c) => selectedColumns[c]["type"] === "dimension"
           )}
