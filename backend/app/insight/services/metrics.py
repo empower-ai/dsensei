@@ -1,11 +1,14 @@
 import datetime
 import json
 from dataclasses import asdict, dataclass
+from functools import partial
 from itertools import combinations
+from multiprocessing import Pool
 from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 
 @dataclass
@@ -60,9 +63,16 @@ def analyze(df,
             baseline_period: Tuple[datetime.date, datetime.date],
             comparison_period: Tuple[datetime.date, datetime.date],
             date_column,
-            columns: List[str],
             agg_method: Dict[str, str],
-            metrics_name: Dict[str, str]):
+            metrics_name: Dict[str, str],
+            columns: List[str]):
+    columns = list(columns)
+    # logger.info(f'Analyzing {columns}...')
+    # logger.info(f'Baseline period: {baseline_period}')
+    # logger.info(f'Comparison period: {comparison_period}')
+    # logger.info(f'Aggregation method: {agg_method}')
+    # logger.info(f'Metrics name: {metrics_name}')
+
     baseline = df.loc[df[date_column].between(
         pd.to_datetime(baseline_period[0], utc=True),
         pd.to_datetime(baseline_period[1], utc=True))
@@ -112,6 +122,46 @@ class NpEncoder(json.JSONEncoder):
             return obj.tolist()
         return super(NpEncoder, self).default(obj)
 
+def parAnalyze(df: pd.DataFrame,
+               baseline_period: Tuple[datetime.date, datetime.date],
+               comparison_period: Tuple[datetime.date, datetime.date],
+               date_column: str,
+               columns: List[List[str]],
+               agg_method: Dict[str, str],
+               metrics_name: Dict[str, str]):
+    def func(columns: List[str]):
+        columns = list(columns)
+        # logger.info(f'Analyzing {columns}...')
+        # logger.info(f'Baseline period: {baseline_period}')
+        # logger.info(f'Comparison period: {comparison_period}')
+        # logger.info(f'Aggregation method: {agg_method}')
+        # logger.info(f'Metrics name: {metrics_name}')
+
+        baseline = df.loc[df[date_column].between(
+            pd.to_datetime(baseline_period[0], utc=True),
+            pd.to_datetime(baseline_period[1], utc=True))
+        ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
+        comparison = df.loc[df[date_column].between(
+            pd.to_datetime(comparison_period[0], utc=True),
+            pd.to_datetime(comparison_period[1], utc=True))
+        ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
+
+        joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
+        joined.fillna(0, inplace=True)
+        return joined
+
+    # func = partial(analyze, df, baseline_period, comparison_period, date_column, agg_method, metrics_name)
+
+    # logger.info(f'parallel Analyzing {columns}...')
+    # logger.info(f'Baseline period: {baseline_period}')
+    # logger.info(f'Comparison period: {comparison_period}')
+    # logger.info(f'Aggregation method: {agg_method}')
+    # logger.info(f'Metrics name: {metrics_name}')
+    return list(map(func, columns))
+    # with Pool(16) as p:
+    #     results = p.map(func, columns)
+    #     return results
+
 class MetricsController(object):
     def __init__(self,
                  data: pd.DataFrame,
@@ -129,17 +179,20 @@ class MetricsController(object):
         self.date_column = date_column
         self.baseline_date_range = baseline_date_range
         self.comparison_date_range = comparison_date_range
-        self.aggs = analyze(self.df, baseline_date_range, comparison_date_range, date_column, self.columns_of_interest, agg_method, metrics_name)
+
+        self.aggs = analyze(self.df, baseline_date_range, comparison_date_range, date_column, agg_method, metrics_name, self.columns_of_interest)
         self.expected_value = expected_value
 
         self.slices = []
+        logger.info('init')
         self.slice(baseline_date_range, comparison_date_range)
+        logger.info('init done')
 
     def slice(self, baseline_period, comparison_period):
+        columnsList = []
         for i in range(1, len(self.columns_of_interest) + 1):
-            for columns in combinations(self.columns_of_interest, i):
-                dimension_slice = analyze(self.df, baseline_period, comparison_period, self.date_column, list(columns), self.agg_method, self.metrics_name)
-                self.slices.append(dimension_slice)
+            columnsList.extend(list(combinations(self.columns_of_interest, i)))
+        self.slices = parAnalyze(self.df, baseline_period, comparison_period, self.date_column, columnsList, self.agg_method, self.metrics_name)
 
     def getDimensions(self) -> Dict[str, Dimension]:
         dimensions = {}
@@ -180,6 +233,7 @@ class MetricsController(object):
 
         all_dimension_slices = []
         # Build dimension slice info
+        logger.info(f'Building dimension slice info for {metricsName}')
         for dimension_slice in self.slices:
             ret = toDimensionSliceInfo(dimension_slice, metricsName, metrics.baselineNumRows, metrics.comparisonNumRows)
             all_dimension_slices.extend(ret)
@@ -194,6 +248,7 @@ class MetricsController(object):
         for sliceInfo in all_dimension_slices:
             sliceInfo.changeDev = abs((sliceInfo.changePercentage - self.expected_value) / changeStdDev)
 
+        logger.info('Building top driver slice keys')
         metrics.topDriverSliceKeys = list(map(
             lambda slice: slice.serializedKey,
             [dimension_slice for dimension_slice in all_dimension_slices[:1000]]))
@@ -238,10 +293,14 @@ class MetricsController(object):
         return self.slices
 
     def getMetrics(self) -> str:
+        logger.info(f'Building metrics for {self.metrics_name}')
         ret = {
             k: asdict(self.buildMetrics(k))
             for k, v in self.metrics_name.items()
             if k != self.date_column
         }
 
-        return json.dumps(ret, cls=NpEncoder)
+        logger.info(f'Finished building metrics for {self.metrics_name}')
+        ret =  json.dumps(ret, cls=NpEncoder)
+        logger.info(f'Finished dumping metrics for {self.metrics_name}')
+        return ret
