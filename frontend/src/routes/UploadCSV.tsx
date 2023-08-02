@@ -213,7 +213,7 @@ function CsvUploader() {
             <br />
             DSensei overcome the limitation of existing BI tools to empower you
             to understand the "why" behind metric fluctuations to inform better
-            business decision more effectively. Checkout{" "}
+            business decisions more effectively. Checkout our{" "}
             <a
               href="https://www.dsensei.app/article/why-do-you-need-a-key-driver-analysis-engine"
               target="_blank"
