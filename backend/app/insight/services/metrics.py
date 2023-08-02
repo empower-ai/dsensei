@@ -188,7 +188,7 @@ class MetricsController(object):
 
     def slice(self, baseline_period, comparison_period):
         columnsList = []
-        for i in range(1, len(self.columns_of_interest) + 1):
+        for i in range(1, min(4, len(self.columns_of_interest) + 1)):
             columnsList.extend(list(combinations(self.columns_of_interest, i)))
         self.slices = parAnalyze(self.df, baseline_period, comparison_period, self.date_column, columnsList, self.agg_method, self.metrics_name)
 
