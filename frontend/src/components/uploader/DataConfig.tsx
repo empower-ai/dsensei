@@ -377,7 +377,11 @@ function DataConfig({ header, file }: DataConfigProps) {
           ))}
         {/* Supporting metrics multi selector */}
         <MultiSelector
-          title={"Select supporting metric columns (optional)"}
+          title={
+            <Text className="pr-4 text-black">
+              Select related metric columns <Bold>[optional]</Bold>
+            </Text>
+          }
           labels={header
             .map((h) => h.name)
             .filter(

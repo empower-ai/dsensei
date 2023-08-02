@@ -2,7 +2,7 @@ import { Col, Grid, MultiSelect, MultiSelectItem, Text } from "@tremor/react";
 import { ReactElement } from "react";
 
 type MultiSelectorProps = {
-  title: string | null;
+  title: string | ReactElement;
   labels: string[];
   values: string[];
   selectedValues: string[];
@@ -27,7 +27,11 @@ function MultiSelector({
   return (
     <Grid numItems={5}>
       <Col className="flex items-center justify-end" numColSpan={2}>
-        <Text className="pr-4 text-black">{title}</Text>
+        {typeof title === "string" ? (
+          <Text className="pr-4 text-black">{title}</Text>
+        ) : (
+          title
+        )}
       </Col>
       <Col className="flex items-center" numColSpan={3}>
         <MultiSelect value={selectedValues} onValueChange={onValueChange}>
