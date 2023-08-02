@@ -30,30 +30,16 @@ Open [http://localhost:5001](http://localhost:5001)
 
 ## What is DSensei
 
-DSensei is an open-source insight discovery engine that goes beyond
-traditional BI dashboards by uncovering patterns and revelations in
-datasets. While BI dashboards can answer the question of "what,"
-they fall short of explaining the "why." As a result, when facing movements
-in metrics, it often requires significant manual effort to explore
-various combinations and identify the underlying causes.
+DSensei is an AI-powered key driver analysis engine that can
+pinpoint the root cause of metric fluctuations within one minute. We
+save data teams hours to days of manual work on root cause analysis
+and help organizations uncover critical drivers and segments that
+are otherwise easy to overlook.
 
-For example, consider an e-commerce platform experiencing a recent
-surge in return orders. To pinpoint the reason, one would need to
-generate multiple hypotheses (E.g: Is the rise in returns limited to
-specific brands, product categories, regions, or some specific
-combinations? Is there a global phenomenon influenced by a general
-increase in the number of orders.) and conduct extensive slicing and
-dicing to uncover potential factors. This process can be arduous and
-time-consuming.
-
-We built DSensei to address this. By autonomously exploring all
-possible combinations over a specified time period, DSensei offers a
-holistic view of the data and presents the top drivers in a
-user-friendly interface. This empowers users to establish a holistic
-view of all the key drivers and delve into each factor effortlessly
-and gain intuitive insights into the reasons behind specific
-movements in their datasets. As a result, users can get the answer
-to the “why” more effectively.
+DSensei overcome the limitation of existing BI tools to empower you
+to understand the "why" behind metric fluctuations to inform better
+business decisions more effectively. Checkout our [blog](https://www.dsensei.app/article/why-do-you-need-a-key-driver-analysis-engine) 
+for more details.
 
 ## Setup
 
