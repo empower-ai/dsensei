@@ -80,7 +80,6 @@ function CsvUploader() {
   const onDrop = async <T extends File>(acceptedFiles: T[]) => {
     setIsProcessingFile(true);
     const fileReader = new FileReader();
-
     fileReader.onload = async function (event) {
       const text = event.target?.result;
       if (!text || typeof text !== "string") {
@@ -155,9 +154,9 @@ function CsvUploader() {
                           or drag and drop the csv file here.
                         </p>
                       </div>
-                      <input type="file" {...getInputProps()} />
                     </label>
                   </div>
+                  <input type="file" {...getInputProps()} />
                 </div>
                 {error && (
                   <Flex justifyContent="center" className="pt-5">
