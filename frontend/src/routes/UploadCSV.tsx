@@ -33,8 +33,9 @@ function CsvUploader() {
     }
   }, [db, resolveDB]);
 
-  const csvFileToArray = async (raw_string: string) => {
+  const loadCSVFile = async (raw_string: string) => {
     const preparedDB = db.value!;
+    preparedDB.reset();
     const csvHeader = raw_string.slice(0, raw_string.indexOf("\n")).split(",");
 
     const conn = await preparedDB.connect();
@@ -85,7 +86,7 @@ function CsvUploader() {
       if (!text || typeof text !== "string") {
         throw new Error("failed to load CSV file");
       }
-      await csvFileToArray(text);
+      await loadCSVFile(text);
     };
 
     try {
