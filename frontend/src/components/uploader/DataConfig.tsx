@@ -3,6 +3,7 @@ import {
   Bold,
   Button,
   Card,
+  DateRangePickerValue,
   Divider,
   Flex,
   Subtitle,
@@ -11,6 +12,7 @@ import {
 } from "@tremor/react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { createNewDateWithBrowserTimeZone } from "../../common/utils";
 import DatePicker, { DateRangeData } from "./DatePicker";
 import MultiSelector from "./MultiSelector";
 import { ExpectedChangeInput } from "./NumberInput";
@@ -24,13 +26,16 @@ type DataConfigProps = {
   file: File | undefined;
 };
 
+type ColumnType = "metric" | "supporting_metric" | "dimension" | "date";
+type AggregationType = "sum" | "count" | "distinct";
+
 function DataConfig({ header, file }: DataConfigProps) {
   const db = rd.useDuckDB().value!;
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: {
-      type: string;
-      aggregationOption: string | null;
-      expectedValue: number | null;
+      type: ColumnType;
+      aggregationOption?: AggregationType;
+      expectedValue?: number;
     };
   }>({});
   const [comparisonDateRangeData, setComparisonDateRangeData] =
@@ -51,6 +56,10 @@ function DataConfig({ header, file }: DataConfigProps) {
   const [countByColumn, setCountByColumn] = useState<{ [key: string]: number }>(
     {}
   );
+  const [defaultBaseDateRange, setDefaultBaseDateRange] =
+    useState<DateRangePickerValue>();
+  const [defaultComparisonDateRange, setDefaultComparisonDateRange] =
+    useState<DateRangePickerValue>();
 
   const navigate = useNavigate();
 
@@ -77,6 +86,37 @@ function DataConfig({ header, file }: DataConfigProps) {
           })
       );
       setCountByDateByColumn(Object.fromEntries(res));
+
+      setSelectedColumns({
+        userId: {
+          type: "metric",
+          aggregationOption: "distinct",
+          expectedValue: 0.03,
+        },
+        eventTime: {
+          type: "date",
+        },
+        country: {
+          type: "dimension",
+        },
+        gender: {
+          type: "dimension",
+        },
+        majorOsVersion: {
+          type: "dimension",
+        },
+        phoneBrand: {
+          type: "dimension",
+        },
+      });
+      setDefaultBaseDateRange({
+        from: createNewDateWithBrowserTimeZone("2022-07-01"),
+        to: createNewDateWithBrowserTimeZone("2022-07-31"),
+      });
+      setDefaultComparisonDateRange({
+        from: createNewDateWithBrowserTimeZone("2022-08-01"),
+        to: createNewDateWithBrowserTimeZone("2022-08-31"),
+      });
     }
 
     async function calculateDistinctCountByColumn() {
@@ -104,7 +144,7 @@ function DataConfig({ header, file }: DataConfigProps) {
     calculateDistinctCountByColumn();
   }, [db, header]);
 
-  const onSelectMetrics = (metrics: string[], type: string) => {
+  const onSelectMetrics = (metrics: string[], type: ColumnType) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
     const addedMetrics = metrics.filter(
       (m) =>
@@ -115,7 +155,7 @@ function DataConfig({ header, file }: DataConfigProps) {
     addedMetrics.map(
       (m) =>
         (selectedColumnsClone[m] = {
-          type: type,
+          type,
           aggregationOption: "sum",
           expectedValue: 0.0,
         })
@@ -129,7 +169,7 @@ function DataConfig({ header, file }: DataConfigProps) {
 
   const onSelectMetricAggregationOption = (
     metric: string,
-    aggregationOption: string
+    aggregationOption: AggregationType
   ) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
     if (
@@ -144,7 +184,7 @@ function DataConfig({ header, file }: DataConfigProps) {
     setSelectedColumns(selectedColumnsClone);
   };
 
-  const onSelectMetricDefaultValue = (
+  const onSelectMetricExpectedChange = (
     metric: string,
     expectedValue: number
   ) => {
@@ -171,8 +211,6 @@ function DataConfig({ header, file }: DataConfigProps) {
       (d) =>
         (selectedColumnsClone[d] = {
           type: "dimension",
-          aggregationOption: null,
-          expectedValue: null,
         })
     );
     const removedDimension = Object.keys(selectedColumnsClone).filter(
@@ -195,8 +233,6 @@ function DataConfig({ header, file }: DataConfigProps) {
     prevDateColumns.map((d) => delete selectedColumnsClone[d]);
     selectedColumnsClone[dateCol] = {
       type: "date",
-      aggregationOption: null,
-      expectedValue: null,
     };
     setSelectedColumns(selectedColumnsClone);
 
@@ -326,7 +362,7 @@ function DataConfig({ header, file }: DataConfigProps) {
           }
         />
         {/* Date pickers */}
-        {selectedDateCol && (
+        {selectedDateCol && countByDateByColumn[selectedDateCol] && (
           <DatePicker
             title={"Select date ranges"}
             countByDate={countByDateByColumn[selectedDateCol]}
@@ -334,12 +370,14 @@ function DataConfig({ header, file }: DataConfigProps) {
             setComparisonDateRangeData={setComparisonDateRangeData}
             baseDateRangeData={baseDateRangeData}
             setBaseDateRangeData={setBaseDateRangeData}
+            defaultBaseDateRange={defaultBaseDateRange}
+            defaultComparisonDateRange={defaultComparisonDateRange}
           />
         )}
         {/* Analysing metric single selector */}
         <SingleSelector
           title={
-            <Text className="pr-4 text-black">{"Select metric columns"}</Text>
+            <Text className="pr-4 text-black">{"Select metric column"}</Text>
           }
           labels={header.map((h) => h.name)}
           values={header.map((h) => h.name)}
@@ -363,14 +401,17 @@ function DataConfig({ header, file }: DataConfigProps) {
                 labels={["Sum", "Count", "Distinct Count"]}
                 values={["sum", "count", "distinct"]}
                 selectedValue={selectedColumns[m]["aggregationOption"]!}
-                onValueChange={(v) => onSelectMetricAggregationOption(m, v)}
+                onValueChange={(v) =>
+                  onSelectMetricAggregationOption(m, v as AggregationType)
+                }
                 key={`${m}-selector`}
                 instruction={<Text>How to aggregation the metric.</Text>}
               />
               <ExpectedChangeInput
                 key={`${m}-change-input`}
+                defaultValue={selectedColumns[m].expectedValue}
                 onValueChange={(v) =>
-                  onSelectMetricDefaultValue(m, parseFloat(v) / 100)
+                  onSelectMetricExpectedChange(m, parseFloat(v) / 100)
                 }
               />
             </div>
@@ -422,7 +463,9 @@ function DataConfig({ header, file }: DataConfigProps) {
               labels={["Sum", "Count", "Distinct Count"]}
               values={["sum", "count", "distinct"]}
               selectedValue={selectedColumns[m]["aggregationOption"]!}
-              onValueChange={(v) => onSelectMetricAggregationOption(m, v)}
+              onValueChange={(v) =>
+                onSelectMetricAggregationOption(m, v as AggregationType)
+              }
               key={m}
               instruction={<Text>How to aggregation the metric.</Text>}
             />

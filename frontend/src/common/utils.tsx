@@ -108,3 +108,24 @@ export function formatMetricName(metric: InsightMetric): string {
       : metric.aggregationMethod;
   return `${aggregationMethod.toUpperCase()}(${metric.name})`;
 }
+
+function getBrowserTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+export function createNewDateWithBrowserTimeZone(targetDate: string): Date {
+  const browserTimeZone = getBrowserTimeZone();
+  const targetTime = new Date(targetDate).getTime(); // Convert target date to milliseconds since Jan 1, 1970 (UTC)
+
+  // Calculate the local time for the target date using the browser's timezone offset
+  const localTime = new Date(
+    targetTime + new Date().getTimezoneOffset() * 60 * 1000
+  );
+
+  // Calculate the time in the browser's timezone by adjusting the local time
+  const browserTime = new Date(
+    localTime.toLocaleString("en-US", { timeZone: browserTimeZone })
+  );
+
+  return browserTime;
+}

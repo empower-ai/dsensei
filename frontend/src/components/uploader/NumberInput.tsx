@@ -1,10 +1,11 @@
 import { Col, Grid, NumberInput, Text } from "@tremor/react";
 
 type Props = {
+  defaultValue?: number;
   onValueChange: (value: string) => void;
 };
 
-export function ExpectedChangeInput({ onValueChange }: Props) {
+export function ExpectedChangeInput({ defaultValue, onValueChange }: Props) {
   return (
     <Grid numItems={5}>
       <Col className="flex items-center justify-end" numColSpan={2}>
@@ -14,7 +15,7 @@ export function ExpectedChangeInput({ onValueChange }: Props) {
         <NumberInput
           className="w-[100px]"
           placeholder="Expected change"
-          defaultValue={0}
+          defaultValue={defaultValue ? defaultValue * 100 : 0}
           onChange={(e) => onValueChange(e.target.value)}
           enableStepper={false}
         />

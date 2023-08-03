@@ -9,7 +9,7 @@ import {
   Text,
 } from "@tremor/react";
 import moment from "moment";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface DateRangeStats {
   numDays?: number;
@@ -30,6 +30,8 @@ type DatePickerProps = {
   countByDate: {
     [key: string]: number;
   };
+  defaultBaseDateRange?: DateRangePickerValue;
+  defaultComparisonDateRange?: DateRangePickerValue;
 };
 
 type BaseDateMode = "previous" | "custom";
@@ -38,12 +40,25 @@ const oneDayMs = 24 * 60 * 60 * 1000;
 
 function DatePicker({
   title,
+
   comparisonDateRangeData,
   setComparisonDateRangeData,
   baseDateRangeData,
   setBaseDateRangeData,
   countByDate,
+  defaultBaseDateRange,
+  defaultComparisonDateRange,
 }: DatePickerProps) {
+  useEffect(() => {
+    if (defaultBaseDateRange) {
+      onBaseDateRangeChange(defaultBaseDateRange);
+    }
+
+    if (defaultComparisonDateRange) {
+      onComparisonDateRangeChange(defaultComparisonDateRange);
+    }
+  }, [defaultBaseDateRange, defaultComparisonDateRange]);
+
   const [baseDateRangeMode, setBaseDateRangeMode] =
     useState<BaseDateMode>("previous");
 
@@ -93,7 +108,7 @@ function DatePicker({
     const { from: fromDate, to: toDate } = dateRange;
     if (fromDate && toDate) {
       const timeDiffMs = Math.abs(toDate.getTime() - fromDate.getTime());
-      const numDays = Math.floor(timeDiffMs / oneDayMs);
+      const numDays = Math.floor(timeDiffMs / oneDayMs) + 1;
 
       const date = new Date(fromDate);
       let numRows = 0;

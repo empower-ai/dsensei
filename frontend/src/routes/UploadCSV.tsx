@@ -1,5 +1,5 @@
 import * as rd from "@duckdb/react-duckdb";
-import { useEffect, useState } from "react";
+import { MouseEvent, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import { Card, Flex, Text, Title } from "@tremor/react";
@@ -69,8 +69,9 @@ function CsvUploader() {
     setPreviewData(array);
   };
 
-  const onDrop = async <T extends File>(acceptedFiles: T[]) => {
+  async function loadFile(file: File) {
     setIsProcessingFile(true);
+
     const fileReader = new FileReader();
     fileReader.onload = async function (event) {
       const text = event.target?.result;
@@ -81,11 +82,26 @@ function CsvUploader() {
     };
 
     try {
-      fileReader.readAsText(acceptedFiles[0]);
-      setFile(acceptedFiles[0]);
+      fileReader.readAsText(file);
+      setFile(file);
     } catch (e) {
       setError("Cannot load the file. Please upload a valid CSV file.");
     }
+  }
+
+  const onUseSampleFile = async (e: MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    const response = await fetch(process.env.PUBLIC_URL + "/sample_data.csv");
+    const blobData = await response.blob();
+    const file = new File([blobData], "sample_data.csv", {
+      type: blobData.type,
+    });
+
+    loadFile(file);
+  };
+
+  const onDrop = async <T extends File>(acceptedFiles: T[]) => {
+    loadFile(acceptedFiles[0]);
   };
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
@@ -102,16 +118,16 @@ function CsvUploader() {
       {!fileLoaded && (
         <>
           <Text>
-            Start a new report by uploading a CSV file (
+            Start a new report by uploading a CSV file or{" "}
             <a
               target="_blank"
               href={process.env.PUBLIC_URL + "/sample_data.csv"}
               className="text-blue-800"
+              onClick={onUseSampleFile}
               rel="noreferrer"
             >
-              sample csv
+              try with sample data
             </a>
-            )
           </Text>
           <Card className="max-w-6xl">
             {isProcessFile && (
