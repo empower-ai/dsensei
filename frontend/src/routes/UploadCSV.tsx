@@ -186,7 +186,7 @@ function CsvUploader() {
       <Card className="max-w-6xl p-3">
         <Accordion defaultOpen={true} className="border-0">
           <AccordionHeader>
-            <Title>How to use DSensei?</Title>
+            <Title>What is DSensei?</Title>
           </AccordionHeader>
           <AccordionBody>
             <iframe
@@ -194,15 +194,9 @@ function CsvUploader() {
               title="Demo"
               allowFullScreen={true}
               seamless={true}
-              src="https://www.loom.com/embed/9bd150ea3ef945fca3754e3fcf8a2602?sid=492e4f71-19a4-44c5-a2fa-f6bd4cfd1292"
+              src="https://www.loom.com/embed/b945578d62ad4ec8b929d50d8b37081e?sid=6f7b640c-3368-4e23-9b00-b51d49448ae4"
             />
-          </AccordionBody>
-        </Accordion>
-        <Accordion className="border-0">
-          <AccordionHeader>
-            <Title>What is DSensei?</Title>
-          </AccordionHeader>
-          <AccordionBody>
+            <br />
             DSensei is an AI-powered key driver analysis engine that can
             pinpoint the root cause of metric fluctuations within one minute. We
             save data teams hours to days of manual work on root cause analysis
