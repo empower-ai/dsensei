@@ -8,6 +8,7 @@ type SingleSelectorProps = {
   selectedValue: string;
   onValueChange: (value: string) => void;
   instruction?: ReactElement;
+  disabled?: boolean;
 };
 
 function SingleSelector({
@@ -17,6 +18,7 @@ function SingleSelector({
   selectedValue,
   onValueChange,
   instruction,
+  disabled,
 }: SingleSelectorProps) {
   const options = values.map((v, i) => (
     <SelectItem value={v} key={v}>
@@ -33,6 +35,7 @@ function SingleSelector({
           className="row-span-full"
           value={selectedValue}
           onValueChange={onValueChange}
+          disabled={disabled}
         >
           {options}
         </Select>

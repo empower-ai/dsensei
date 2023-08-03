@@ -1,5 +1,8 @@
 import * as rd from "@duckdb/react-duckdb";
 import {
+  Accordion,
+  AccordionBody,
+  AccordionHeader,
   Bold,
   Button,
   Card,
@@ -331,6 +334,23 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
       <Title>Report Config</Title>
       <Divider />
       <div className="flex flex-col gap-4">
+        <SingleSelector
+          title={
+            <Text className="pr-4 text-black">{"Select report type"}</Text>
+          }
+          labels={["Date Range Comparison Report"]}
+          values={["date_range_comparison"]}
+          selectedValue={"date_range_comparison"}
+          onValueChange={() => {}}
+          disabled={true}
+          instruction={
+            <Text>
+              Date range comparison report compares between two date ranges on
+              the selected metric and aggregated of the selected group by
+              columns. Currently this is the only report type we support.
+            </Text>
+          }
+        />
         {/* Date column selector */}
         <SingleSelector
           title={
@@ -380,7 +400,9 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
         {/* Analysing metric single selector */}
         <SingleSelector
           title={
-            <Text className="pr-4 text-black">{"Select metric column"}</Text>
+            <Text className="pr-4 text-black">
+              {"Select the metric column"}
+            </Text>
           }
           labels={header.map((h) => h.name)}
           values={header.map((h) => h.name)}
@@ -410,54 +432,8 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
                 key={`${m}-selector`}
                 instruction={<Text>How to aggregation the metric.</Text>}
               />
-              <ExpectedChangeInput
-                key={`${m}-change-input`}
-                defaultValue={selectedColumns[m].expectedValue}
-                onValueChange={(v) =>
-                  onSelectMetricExpectedChange(m, parseFloat(v) / 100)
-                }
-              />
             </div>
           ))}
-        {/* Supporting metrics multi selector */}
-        <MultiSelector
-          title={
-            <Text className="pr-4 text-black">
-              Select related metric columns <Bold>[optional]</Bold>
-            </Text>
-          }
-          labels={header
-            .map((h) => h.name)
-            .filter(
-              (h) =>
-                !(
-                  selectedColumns.hasOwnProperty(h) &&
-                  selectedColumns[h]["type"] === "metric"
-                )
-            )}
-          values={header
-            .map((h) => h.name)
-            .filter(
-              (h) =>
-                !(
-                  selectedColumns.hasOwnProperty(h) &&
-                  selectedColumns[h]["type"] === "metric"
-                )
-            )}
-          selectedValues={Object.keys(selectedColumns).filter(
-            (c) => selectedColumns[c]["type"] === "supporting_metric"
-          )}
-          onValueChange={(metrics) =>
-            onSelectMetrics(metrics, "supporting_metric")
-          }
-          instruction={
-            <Text>
-              Optional list of additional metrics to analyze together. For
-              instance you may want to analyze the number of buyers and orders
-              when analyzing the total sales revenue.
-            </Text>
-          }
-        />
         {Object.keys(selectedColumns)
           .filter((c) => selectedColumns[c]["type"] === "supporting_metric")
           .map((m) => (
@@ -475,7 +451,7 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
           ))}
         {/* Dimension columns multi selector */}
         <MultiSelector
-          title={"Select dimension columns"}
+          title={"Select group by columns"}
           labels={getValidDimensionColumns().map(
             (h) => `${h} - ${countByColumn[h]} distinct values`
           )}
@@ -492,6 +468,68 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
             </Text>
           }
         />
+        <Divider className="my-2" />
+        <Accordion className="border-0">
+          <AccordionHeader>
+            <Title>
+              Advanced settings <Bold>[optional]</Bold>
+            </Title>
+          </AccordionHeader>
+          <AccordionBody>
+            {/* Supporting metrics multi selector */}
+            <MultiSelector
+              title={
+                <Text className="pr-4 text-black">
+                  Select related metric columns <Bold>[optional]</Bold>
+                </Text>
+              }
+              labels={header
+                .map((h) => h.name)
+                .filter(
+                  (h) =>
+                    !(
+                      selectedColumns.hasOwnProperty(h) &&
+                      selectedColumns[h]["type"] === "metric"
+                    )
+                )}
+              values={header
+                .map((h) => h.name)
+                .filter(
+                  (h) =>
+                    !(
+                      selectedColumns.hasOwnProperty(h) &&
+                      selectedColumns[h]["type"] === "metric"
+                    )
+                )}
+              selectedValues={Object.keys(selectedColumns).filter(
+                (c) => selectedColumns[c]["type"] === "supporting_metric"
+              )}
+              onValueChange={(metrics) =>
+                onSelectMetrics(metrics, "supporting_metric")
+              }
+              instruction={
+                <Text>
+                  Optional list of additional metrics to analyze together. For
+                  instance you may want to analyze the number of buyers and
+                  orders when analyzing the total sales revenue.
+                </Text>
+              }
+            />
+            {Object.keys(selectedColumns)
+              .filter((c) => selectedColumns[c]["type"] === "metric")
+              .map((m) => (
+                <div key={m}>
+                  <ExpectedChangeInput
+                    key={`${m}-change-input`}
+                    defaultValue={selectedColumns[m].expectedValue}
+                    onValueChange={(v) =>
+                      onSelectMetricExpectedChange(m, parseFloat(v) / 100)
+                    }
+                  />
+                </div>
+              ))}
+          </AccordionBody>
+        </Accordion>
       </div>
       <Flex justifyContent="center" className="flex-col">
         <Divider />

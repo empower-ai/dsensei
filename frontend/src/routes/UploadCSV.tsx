@@ -2,7 +2,7 @@ import * as rd from "@duckdb/react-duckdb";
 import { MouseEvent, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-import { Card, Flex, Text, Title } from "@tremor/react";
+import { Button, Card, Divider, Flex, Text, Title } from "@tremor/react";
 
 import DataConfig from "../components/uploader/DataConfig";
 import DataPreviewer from "../components/uploader/DataPreviewer";
@@ -120,18 +120,6 @@ function CsvUploader() {
       <Title>New Report</Title>
       {!fileLoaded && (
         <>
-          <Text>
-            Start a new report by uploading a CSV file or{" "}
-            <a
-              target="_blank"
-              href={process.env.PUBLIC_URL + "/sample_data.csv"}
-              className="text-blue-800"
-              onClick={onUseSampleFile}
-              rel="noreferrer"
-            >
-              try with sample data
-            </a>
-          </Text>
           <Card className="max-w-6xl">
             {isProcessFile && (
               <Flex className="h-64	gap-3" justifyContent="center">
@@ -141,6 +129,19 @@ function CsvUploader() {
             )}
             {!isProcessFile && !fileLoaded && (
               <>
+                <Flex justifyContent="center">
+                  <Button onClick={onUseSampleFile}>
+                    Try with Sample Data
+                  </Button>
+                </Flex>
+                <Flex justifyContent="center" className="gap 4">
+                  <Divider />
+                  <Text>or</Text>
+                  <Divider />
+                </Flex>
+                <Flex justifyContent="center" className="pb-4">
+                  <Text>Start a new report by uploading a CSV file</Text>
+                </Flex>
                 <div {...getRootProps()}>
                   <div className="flex items-center w-full justify-center">
                     <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">

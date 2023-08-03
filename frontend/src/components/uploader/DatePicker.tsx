@@ -200,7 +200,7 @@ function DatePicker({
       </Col>
       <Col className="items-center" numColSpan={3}>
         <Flex justifyContent="start" className="gap-1">
-          <Text className="text-black">Period to analyze</Text>
+          <Text className="text-black">Date range to analyze</Text>
           {renderDateRangeStats(comparisonDateRangeData.stats)}
         </Flex>
       </Col>
@@ -221,7 +221,7 @@ function DatePicker({
           />
         </Flex>
         <Flex justifyContent="start" className="gap-1">
-          <Text className="text-black">Period to compare with</Text>
+          <Text className="text-black">Date range to compare with</Text>
           {renderDateRangeStats(baseDateRangeData.stats)}
         </Flex>
         <Flex className="gap-1">
