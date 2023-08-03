@@ -72,11 +72,11 @@ def analyze(df,
 
     baseline = df.loc[df[date_column].between(
         pd.to_datetime(baseline_period[0], utc=True),
-        pd.to_datetime(baseline_period[1], utc=True))
+        pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
     ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
     comparison = df.loc[df[date_column].between(
         pd.to_datetime(comparison_period[0], utc=True),
-        pd.to_datetime(comparison_period[1], utc=True))
+        pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))
     ].groupby(columns).agg(agg_method).rename(columns = metrics_name)
 
     joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
@@ -128,11 +128,11 @@ def parAnalyze(df: pd.DataFrame,
 
     baseline_df = df.loc[df[date_column].between(
         pd.to_datetime(baseline_period[0], utc=True),
-        pd.to_datetime(baseline_period[1], utc=True))
+        pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
     ]
     comparison_df = df.loc[df[date_column].between(
         pd.to_datetime(comparison_period[0], utc=True),
-        pd.to_datetime(comparison_period[1], utc=True))
+        pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))
     ]
 
     def func(columns: List[str]):
@@ -256,11 +256,11 @@ class MetricsController(object):
 
         baseline = self.df.loc[self.df[self.date_column].between(
             pd.to_datetime(self.baseline_date_range[0], utc=True),
-            pd.to_datetime(self.baseline_date_range[1], utc=True))
+            pd.to_datetime(self.baseline_date_range[1] + pd.DateOffset(1), utc=True))
         ].groupby('date').agg(self.agg_method)
         comparison = self.df.loc[self.df[self.date_column].between(
             pd.to_datetime(self.comparison_date_range[0], utc=True),
-            pd.to_datetime(self.comparison_date_range[1], utc=True))
+            pd.to_datetime(self.comparison_date_range[1] + pd.DateOffset(1), utc=True))
         ].groupby('date').agg(self.agg_method)
 
         metrics.aggregationMethod = self.agg_method[metricsName]
