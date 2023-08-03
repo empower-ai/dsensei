@@ -24,12 +24,13 @@ type DataConfigProps = {
     type: string;
   }[];
   file: File | undefined;
+  prefillWithSampleData: boolean;
 };
 
 type ColumnType = "metric" | "supporting_metric" | "dimension" | "date";
 type AggregationType = "sum" | "count" | "distinct";
 
-function DataConfig({ header, file }: DataConfigProps) {
+function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
   const db = rd.useDuckDB().value!;
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: {
@@ -87,36 +88,38 @@ function DataConfig({ header, file }: DataConfigProps) {
       );
       setCountByDateByColumn(Object.fromEntries(res));
 
-      setSelectedColumns({
-        userId: {
-          type: "metric",
-          aggregationOption: "distinct",
-          expectedValue: 0.03,
-        },
-        eventTime: {
-          type: "date",
-        },
-        country: {
-          type: "dimension",
-        },
-        gender: {
-          type: "dimension",
-        },
-        majorOsVersion: {
-          type: "dimension",
-        },
-        phoneBrand: {
-          type: "dimension",
-        },
-      });
-      setDefaultBaseDateRange({
-        from: createNewDateWithBrowserTimeZone("2022-07-01"),
-        to: createNewDateWithBrowserTimeZone("2022-07-31"),
-      });
-      setDefaultComparisonDateRange({
-        from: createNewDateWithBrowserTimeZone("2022-08-01"),
-        to: createNewDateWithBrowserTimeZone("2022-08-31"),
-      });
+      if (prefillWithSampleData) {
+        setSelectedColumns({
+          userId: {
+            type: "metric",
+            aggregationOption: "distinct",
+            expectedValue: 0.03,
+          },
+          eventTime: {
+            type: "date",
+          },
+          country: {
+            type: "dimension",
+          },
+          gender: {
+            type: "dimension",
+          },
+          majorOsVersion: {
+            type: "dimension",
+          },
+          phoneBrand: {
+            type: "dimension",
+          },
+        });
+        setDefaultBaseDateRange({
+          from: createNewDateWithBrowserTimeZone("2022-07-01"),
+          to: createNewDateWithBrowserTimeZone("2022-07-31"),
+        });
+        setDefaultComparisonDateRange({
+          from: createNewDateWithBrowserTimeZone("2022-08-01"),
+          to: createNewDateWithBrowserTimeZone("2022-08-31"),
+        });
+      }
     }
 
     async function calculateDistinctCountByColumn() {

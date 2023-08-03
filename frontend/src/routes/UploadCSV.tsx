@@ -15,6 +15,8 @@ function CsvUploader() {
   const [error, setError] = useState<string>("");
   const [isProcessFile, setIsProcessingFile] = useState<boolean>(false);
   const [fileLoaded, setFileLoaded] = useState<boolean>(false);
+  const [prefillWithSampleData, setPrefillWithSampleData] =
+    useState<boolean>(false);
 
   const db = rd.useDuckDB();
   const resolveDB = rd.useDuckDBResolver();
@@ -97,6 +99,7 @@ function CsvUploader() {
       type: blobData.type,
     });
 
+    setPrefillWithSampleData(true);
     loadFile(file);
   };
 
@@ -176,7 +179,13 @@ function CsvUploader() {
           </Card>
         </>
       )}
-      {fileLoaded && <DataConfig header={header} file={file} />}
+      {fileLoaded && (
+        <DataConfig
+          header={header}
+          file={file}
+          prefillWithSampleData={prefillWithSampleData}
+        />
+      )}
       {fileLoaded && (
         <DataPreviewer
           fileName={file?.name}
