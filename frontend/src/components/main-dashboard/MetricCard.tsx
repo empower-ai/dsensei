@@ -92,7 +92,7 @@ export function MetricCard({
           </div>
           <div className="self-end content-center">
             <Text>
-              <Bold>Related Metrics</Bold>
+              <Bold>Additional Metrics</Bold>
             </Text>
             <List>
               {supportingMetrics.length > 0 ? (
@@ -135,7 +135,7 @@ export function MetricCard({
           </div>
           <div className="self-end content-center">
             <Text>
-              <Bold>Related Metrics</Bold>
+              <Bold>Additional Metrics</Bold>
             </Text>
             <List>
               {supportingMetrics.length > 0 ? (
