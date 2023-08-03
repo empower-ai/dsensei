@@ -4,7 +4,7 @@
 
 ## Introduction
 
-https://github.com/dsensei/dsensei/assets/1261809/e0c22d7c-d984-4fca-b8d2-272e76f3a0d3
+https://github.com/dsensei/dsensei/assets/1261809/faad8af3-ac8e-45ab-9982-70f4c9d022a1
 
 The video is muted by default, 🎧 Unmute for audio explanations and improve your viewing experience!
 
