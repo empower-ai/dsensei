@@ -1,4 +1,3 @@
-import * as rd from "@duckdb/react-duckdb";
 import {
   Accordion,
   AccordionBody,
@@ -6,41 +5,53 @@ import {
   Bold,
   Button,
   Card,
-  DateRangePickerValue,
   Divider,
   Flex,
   Subtitle,
   Text,
   Title,
 } from "@tremor/react";
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { createNewDateWithBrowserTimeZone } from "../../common/utils";
-import DatePicker, { DateRangeData } from "./DatePicker";
-import MultiSelector from "./MultiSelector";
-import { ExpectedChangeInput } from "./NumberInput";
-import SingleSelector from "./SingleSelector";
+import { useEffect, useState } from "react";
+import { Column } from "../../../types/data-source";
+import {
+  AggregationType,
+  ColumnConfig,
+  ColumnType,
+  DateRangeConfig,
+  PrefillConfig,
+  RowCountByColumn,
+  RowCountByDateAndColumn,
+} from "../../../types/report-config";
+import DatePicker, { DateRangeData } from "../DatePicker";
+import MultiSelector from "../MultiSelector";
+import { ExpectedChangeInput } from "../NumberInput";
+import SingleSelector from "../SingleSelector";
 
-type DataConfigProps = {
-  header: {
-    name: string;
-    type: string;
-  }[];
-  file: File | undefined;
-  prefillWithSampleData: boolean;
+type Props = {
+  columns: Column[];
+  rowCountByColumn: RowCountByColumn;
+  rowCountByDateColumn: RowCountByDateAndColumn;
+  prefilledConfigs?: PrefillConfig;
+  isUploading: boolean;
+  onSubmit: (
+    selectedColumns: {
+      [key: string]: ColumnConfig;
+    },
+    baseDateRange: DateRangeConfig,
+    comparisonDateRange: DateRangeConfig
+  ) => Promise<void>;
 };
 
-type ColumnType = "metric" | "supporting_metric" | "dimension" | "date";
-type AggregationType = "sum" | "count" | "distinct";
-
-function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
-  const db = rd.useDuckDB().value!;
+function ReportConfig({
+  columns: header,
+  rowCountByColumn,
+  rowCountByDateColumn: rowCountByDateColumns,
+  prefilledConfigs,
+  isUploading,
+  onSubmit,
+}: Props) {
   const [selectedColumns, setSelectedColumns] = useState<{
-    [k: string]: {
-      type: ColumnType;
-      aggregationOption?: AggregationType;
-      expectedValue?: number;
-    };
+    [k: string]: ColumnConfig;
   }>({});
   const [comparisonDateRangeData, setComparisonDateRangeData] =
     useState<DateRangeData>({
@@ -51,104 +62,20 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
     range: {},
     stats: {},
   });
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [countByDateByColumn, setCountByDateByColumn] = useState<{
-    [key: string]: {
-      [key: string]: number;
-    };
-  }>({});
-  const [countByColumn, setCountByColumn] = useState<{ [key: string]: number }>(
-    {}
-  );
-  const [defaultBaseDateRange, setDefaultBaseDateRange] =
-    useState<DateRangePickerValue>();
-  const [defaultComparisonDateRange, setDefaultComparisonDateRange] =
-    useState<DateRangePickerValue>();
-
-  const navigate = useNavigate();
 
   useEffect(() => {
-    async function calculateCountByDateByColumn() {
-      const conn = await db.connect();
-
-      const res = await Promise.all(
-        header
-          .filter((h) => h.type === "TIMESTAMP" || h.type === "DATE")
-          .map(async (h) => {
-            const query = `SELECT COUNT(1) as count, strftime(${h.name}, '%Y-%m-%d') as date from uploaded_content group by strftime(${h.name}, '%Y-%m-%d')`;
-            const res = await conn.query(query);
-
-            return [
-              h.name,
-              Object.fromEntries(
-                res.toArray().map((row) => {
-                  const rowInJson = row.toJSON();
-                  return [rowInJson.date, parseInt(rowInJson.count)];
-                })
-              ),
-            ];
-          })
-      );
-      setCountByDateByColumn(Object.fromEntries(res));
-
-      if (prefillWithSampleData) {
-        setSelectedColumns({
-          userId: {
-            type: "metric",
-            aggregationOption: "distinct",
-            expectedValue: 0.03,
-          },
-          eventTime: {
-            type: "date",
-          },
-          country: {
-            type: "dimension",
-          },
-          gender: {
-            type: "dimension",
-          },
-          majorOsVersion: {
-            type: "dimension",
-          },
-          phoneBrand: {
-            type: "dimension",
-          },
-        });
-        setDefaultBaseDateRange({
-          from: createNewDateWithBrowserTimeZone("2022-07-01"),
-          to: createNewDateWithBrowserTimeZone("2022-07-31"),
-        });
-        setDefaultComparisonDateRange({
-          from: createNewDateWithBrowserTimeZone("2022-08-01"),
-          to: createNewDateWithBrowserTimeZone("2022-08-31"),
-        });
-      }
+    if (prefilledConfigs) {
+      setSelectedColumns(prefilledConfigs.selectedColumns);
+      setBaseDateRangeData({
+        range: prefilledConfigs.baseDateRange,
+        stats: {},
+      });
+      setComparisonDateRangeData({
+        range: prefilledConfigs.comparisonDateRange,
+        stats: {},
+      });
     }
-
-    async function calculateDistinctCountByColumn() {
-      if (header.length > 0) {
-        const conn = await db.connect();
-
-        const res = await conn.query(
-          `SELECT ${header
-            .map((h) => `COUNT(DISTINCT ${h.name}) as ${h.name}`)
-            .join(",")}, COUNT(1) as totalRowsReserved from uploaded_content`
-        );
-
-        setCountByColumn(
-          Object.fromEntries(
-            Object.entries(res?.toArray()[0].toJSON()).map((entry) => {
-              const [column_name, count] = entry;
-              return [column_name, parseInt(count as string)];
-            })
-          )
-        );
-      }
-    }
-
-    calculateCountByDateByColumn();
-    calculateDistinctCountByColumn();
-  }, [db, header]);
+  }, [prefilledConfigs]);
 
   const onSelectMetrics = (metrics: string[], type: ColumnType) => {
     const selectedColumnsClone = Object.assign({}, selectedColumns);
@@ -246,11 +173,11 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
     setComparisonDateRangeData({ range: {}, stats: {} });
   };
 
-  const selectedDateCol = Object.keys(selectedColumns).find(
+  const selectedDateColumn = Object.keys(selectedColumns).find(
     (c) => selectedColumns[c]["type"] === "date"
   );
 
-  const potentialDateCols = header.filter((h) => {
+  const dateColumns = header.filter((h) => {
     return h.type === "TIMESTAMP" || h.type === "DATE";
   });
 
@@ -277,35 +204,6 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
     );
   }
 
-  const handleOnSubmit = async (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => {
-    setIsUploading(true);
-
-    const formData = new FormData();
-    formData.append("file", file!);
-    const res = await fetch(
-      process.env.NODE_ENV === "development"
-        ? "http://127.0.0.1:5001/api/file_upload"
-        : "/api/file_upload",
-      {
-        mode: "cors",
-        method: "POST",
-        body: formData,
-      }
-    );
-
-    const { id } = await res.json();
-    navigate("/dashboard", {
-      state: {
-        fileId: id,
-        selectedColumns,
-        baseDateRange: baseDateRangeData.range,
-        comparisonDateRange: comparisonDateRangeData.range,
-      },
-    });
-  };
-
   function getValidDimensionColumns() {
     return header
       .map((h) => h.name)
@@ -318,13 +216,13 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
           )
       )
       .filter((h) => {
-        if (Object.keys(countByColumn).length === 0) {
+        if (Object.keys(rowCountByColumn).length === 0) {
           return true;
         }
 
         return (
-          countByColumn[h] < 100 ||
-          countByColumn[h] / countByColumn["totalRowsReserved"] < 0.01
+          rowCountByColumn[h] < 100 ||
+          rowCountByColumn[h] / rowCountByColumn["totalRowsReserved"] < 0.01
         );
       });
   }
@@ -357,16 +255,16 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
             <Text className="pr-4 text-black">{"Select date column"}</Text>
           }
           labels={
-            potentialDateCols.length === 0
+            dateColumns.length === 0
               ? header.map((h) => h.name)
-              : potentialDateCols.map((h) => h.name)
+              : dateColumns.map((h) => h.name)
           }
           values={
-            potentialDateCols.length === 0
+            dateColumns.length === 0
               ? header.map((h) => h.name)
-              : potentialDateCols.map((h) => h.name)
+              : dateColumns.map((h) => h.name)
           }
-          selectedValue={selectedDateCol ? selectedDateCol : ""}
+          selectedValue={selectedDateColumn ? selectedDateColumn : ""}
           onValueChange={onSelectDateColumn}
           instruction={
             <Text>
@@ -385,16 +283,16 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
           }
         />
         {/* Date pickers */}
-        {selectedDateCol && countByDateByColumn[selectedDateCol] && (
+        {selectedDateColumn && rowCountByDateColumns[selectedDateColumn] && (
           <DatePicker
             title={"Select date ranges"}
-            countByDate={countByDateByColumn[selectedDateCol]}
+            countByDate={rowCountByDateColumns[selectedDateColumn]}
             comparisonDateRangeData={comparisonDateRangeData}
             setComparisonDateRangeData={setComparisonDateRangeData}
             baseDateRangeData={baseDateRangeData}
             setBaseDateRangeData={setBaseDateRangeData}
-            defaultBaseDateRange={defaultBaseDateRange}
-            defaultComparisonDateRange={defaultComparisonDateRange}
+            defaultBaseDateRange={prefilledConfigs?.baseDateRange}
+            defaultComparisonDateRange={prefilledConfigs?.comparisonDateRange}
           />
         )}
         {/* Analysing metric single selector */}
@@ -453,7 +351,7 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
         <MultiSelector
           title={"Select group by columns"}
           labels={getValidDimensionColumns().map(
-            (h) => `${h} - ${countByColumn[h]} distinct values`
+            (h) => `${h} - ${rowCountByColumn[h]} distinct values`
           )}
           values={getValidDimensionColumns()}
           selectedValues={Object.keys(selectedColumns).filter(
@@ -534,9 +432,13 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
       <Flex justifyContent="center" className="flex-col">
         <Divider />
         <Button
-          onClick={(e) => {
-            handleOnSubmit(e);
-          }}
+          onClick={async () =>
+            await onSubmit(
+              selectedColumns,
+              baseDateRangeData.range,
+              comparisonDateRangeData.range
+            )
+          }
           loading={isUploading}
           disabled={!canSubmit()}
         >
@@ -547,4 +449,4 @@ function DataConfig({ header, file, prefillWithSampleData }: DataConfigProps) {
   );
 }
 
-export default DataConfig;
+export default ReportConfig;

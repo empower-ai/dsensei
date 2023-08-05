@@ -4,13 +4,14 @@ import { useDropzone } from "react-dropzone";
 
 import { Button, Card, Divider, Flex, Text, Title } from "@tremor/react";
 
-import DataConfig from "../components/uploader/DataConfig";
 import DataPreviewer from "../components/uploader/DataPreviewer";
 import InformationCard from "../components/uploader/InformationCard";
+import CSVBasedReportConfig from "../components/uploader/report-config/CSVBasedReportConfig";
+import { Column, DataType } from "../types/data-source";
 
 function CsvUploader() {
   const [file, setFile] = useState<File>();
-  const [header, setHeader] = useState<{ name: string; type: string }[]>([]);
+  const [header, setHeader] = useState<Column[]>([]);
   const [previewData, setPreviewData] = useState<{ [k: string]: string }[]>([]);
   const [error, setError] = useState<string>("");
   const [isProcessFile, setIsProcessingFile] = useState<boolean>(false);
@@ -49,7 +50,8 @@ function CsvUploader() {
       const rowInJson = row.toJSON();
       return {
         name: rowInJson.column_name,
-        type: rowInJson.column_type,
+        type: rowInJson.column_type as DataType,
+        nullable: false,
       };
     });
     setHeader(parsedHeaders);
@@ -181,8 +183,8 @@ function CsvUploader() {
         </>
       )}
       {fileLoaded && (
-        <DataConfig
-          header={header}
+        <CSVBasedReportConfig
+          columns={header}
           file={file}
           prefillWithSampleData={prefillWithSampleData}
         />
