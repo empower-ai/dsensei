@@ -2,7 +2,7 @@ import * as rd from "@duckdb/react-duckdb";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createNewDateWithBrowserTimeZone } from "../../../common/utils";
-import { Field } from "../../../types/data-source";
+import { CSVSchema } from "../../../types/data-source";
 import {
   ColumnConfig,
   DateRangeConfig,
@@ -45,14 +45,12 @@ const sampleDataPrefills: PrefillConfig = {
 };
 
 interface Props {
-  columns: Field[];
-  file?: File;
+  schema: CSVSchema;
   prefillWithSampleData: boolean;
 }
 
 export default function CSVBasedReportConfig({
-  columns,
-  file,
+  schema: { fields, file },
   prefillWithSampleData,
 }: Props) {
   const db = rd.useDuckDB().value!;
@@ -70,17 +68,17 @@ export default function CSVBasedReportConfig({
       const conn = await db.connect();
 
       const res = await Promise.all(
-        columns
+        fields
           .filter(
-            (column) => column.type === "TIMESTAMP" || column.type === "DATE"
+            (field) => field.type === "TIMESTAMP" || field.type === "DATE"
           )
-          .map(async (column) => {
-            const query = `SELECT COUNT(1) as count, strftime(${column.name}, '%Y-%m-%d') as date
-               from uploaded_content group by strftime(${column.name}, '%Y-%m-%d')`;
+          .map(async (field) => {
+            const query = `SELECT COUNT(1) as count, strftime(${field.name}, '%Y-%m-%d') as date
+               from uploaded_content group by strftime(${field.name}, '%Y-%m-%d')`;
             const res = await conn.query(query);
 
             return [
-              column.name,
+              field.name,
               Object.fromEntries(
                 res.toArray().map((row) => {
                   const rowInJson = row.toJSON();
@@ -94,12 +92,12 @@ export default function CSVBasedReportConfig({
     }
 
     async function calculateDistinctCountByColumn() {
-      if (columns.length > 0) {
+      if (fields.length > 0) {
         const conn = await db.connect();
 
         const res = await conn.query(
-          `SELECT ${columns
-            .map((column) => `COUNT(DISTINCT ${column.name}) as ${column.name}`)
+          `SELECT ${fields
+            .map((field) => `COUNT(DISTINCT ${field.name}) as ${field.name}`)
             .join(",")}, COUNT(1) as totalRowsReserved from uploaded_content`
         );
 
@@ -116,7 +114,7 @@ export default function CSVBasedReportConfig({
 
     calculateDistinctCountByColumn();
     calculateCountByDateAndColumn();
-  }, [db, columns]);
+  }, [db, fields]);
 
   const onSubmit = async (
     selectedColumns: {
@@ -153,7 +151,7 @@ export default function CSVBasedReportConfig({
 
   return (
     <ReportConfig
-      columns={columns}
+      columns={fields}
       rowCountByColumn={rowCountByColumn}
       rowCountByDateColumn={rowCountByDateAndColumn}
       prefilledConfigs={prefillWithSampleData ? sampleDataPrefills : undefined}

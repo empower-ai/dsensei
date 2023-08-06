@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import { MainContent } from "./common/MainContent";
 import MainDashboard from "./components/main-dashboard/MainDashboard";
-import CsvUploader from "./routes/UploadCSV";
+import NewReport from "./routes/NewReport";
 
 export const router = createBrowserRouter([
   {
@@ -16,7 +16,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: (
       <MainContent>
-        <CsvUploader />
+        <NewReport />
       </MainContent>
     ),
   },

@@ -1,7 +1,9 @@
-export interface Schema<T> {
+export interface Schema {
   name: string;
-  columns: Field[];
-  additionalMetaData: T;
+  fields: Field[];
+  previewData: {
+    [key: string]: string;
+  }[];
 }
 
 export type FieldType = "DATE" | "TIMESTAMP" | "VARCHAR" | "FLOAT" | "INTEGER";
@@ -14,6 +16,10 @@ export interface Field {
   mode: FieldMode;
 }
 
-export interface BigQueryMetaData {
+export interface BigquerySchema extends Schema {
   isDateSuffixPartitionTable: boolean;
+}
+
+export interface CSVSchema extends Schema {
+  file: File;
 }
