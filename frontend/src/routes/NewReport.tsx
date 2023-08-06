@@ -14,9 +14,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DataPreviewer from "../components/uploader/DataPreviewer";
 import InformationCard from "../components/uploader/InformationCard";
+import CSVLoader from "../components/uploader/data-source-loader/CSVLoader";
 import CSVBasedReportConfig from "../components/uploader/report-config/CSVBasedReportConfig";
 import { CSVSchema, Schema } from "../types/data-source";
-import CsvUploader from "./UploadCSV";
 
 function NewReport() {
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ function NewReport() {
               </Select>
             </Flex>
           </Grid>
-          <CsvUploader
+          <CSVLoader
             useSampleFile={useSampleFile}
             onLoadingSchema={() => {
               setIsLoadingSchema(true);

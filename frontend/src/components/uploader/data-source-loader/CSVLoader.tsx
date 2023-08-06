@@ -4,7 +4,7 @@ import { useDropzone } from "react-dropzone";
 
 import { Flex, Text } from "@tremor/react";
 
-import { CSVSchema, FieldMode, FieldType } from "../types/data-source";
+import { CSVSchema, FieldMode, FieldType } from "../../../types/data-source";
 
 interface Props {
   useSampleFile?: boolean;
@@ -12,11 +12,7 @@ interface Props {
   onSchemaLoaded: (schema: CSVSchema) => void;
 }
 
-function CsvUploader({
-  useSampleFile,
-  onLoadingSchema,
-  onSchemaLoaded,
-}: Props) {
+function CSVLoader({ useSampleFile, onLoadingSchema, onSchemaLoaded }: Props) {
   const [error, setError] = useState<string>("");
 
   const db = rd.useDuckDB();
@@ -162,4 +158,4 @@ function CsvUploader({
   );
 }
 
-export default CsvUploader;
+export default CSVLoader;
