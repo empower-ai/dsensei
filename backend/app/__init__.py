@@ -14,21 +14,10 @@ from app.data_source import bp as data_source_bp
 
 app = Flask(__name__, static_url_path='')
 
-CORS(app)
 app.config.from_object(Config)
-app.register_blueprint(data_source_bp, url_prefix='/api/data-source')
+app.register_blueprint(data_source_bp)
+CORS(app)
 app._static_folder = os.path.abspath("static/")
-
-
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers',
-                         'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods',
-                         'GET,PUT,POST,DELETE,OPTIONS')
-    return response
-
 
 agg_method_map = {
     "sum": "sum",

@@ -17,7 +17,7 @@ class Field:
 class Schema:
     name: str
     description: Optional[str]
-    columns: list[Field]
+    fields: list[Field]
 
 
 @dataclass(frozen=True)
