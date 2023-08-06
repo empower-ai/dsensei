@@ -12,7 +12,7 @@ import {
   Title,
 } from "@tremor/react";
 import { useEffect, useState } from "react";
-import { Column } from "../../../types/data-source";
+import { Field } from "../../../types/data-source";
 import {
   AggregationType,
   ColumnConfig,
@@ -28,7 +28,7 @@ import { ExpectedChangeInput } from "../NumberInput";
 import SingleSelector from "../SingleSelector";
 
 type Props = {
-  columns: Column[];
+  columns: Field[];
   rowCountByColumn: RowCountByColumn;
   rowCountByDateColumn: RowCountByDateAndColumn;
   prefilledConfigs?: PrefillConfig;

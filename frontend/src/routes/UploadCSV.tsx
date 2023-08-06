@@ -7,11 +7,11 @@ import { Button, Card, Divider, Flex, Text, Title } from "@tremor/react";
 import DataPreviewer from "../components/uploader/DataPreviewer";
 import InformationCard from "../components/uploader/InformationCard";
 import CSVBasedReportConfig from "../components/uploader/report-config/CSVBasedReportConfig";
-import { Column, DataType } from "../types/data-source";
+import { Field, FieldMode, FieldType } from "../types/data-source";
 
 function CsvUploader() {
   const [file, setFile] = useState<File>();
-  const [header, setHeader] = useState<Column[]>([]);
+  const [header, setHeader] = useState<Field[]>([]);
   const [previewData, setPreviewData] = useState<{ [k: string]: string }[]>([]);
   const [error, setError] = useState<string>("");
   const [isProcessFile, setIsProcessingFile] = useState<boolean>(false);
@@ -50,8 +50,8 @@ function CsvUploader() {
       const rowInJson = row.toJSON();
       return {
         name: rowInJson.column_name,
-        type: rowInJson.column_type as DataType,
-        nullable: false,
+        type: rowInJson.column_type as FieldType,
+        mode: "NULLABLE" as FieldMode,
       };
     });
     setHeader(parsedHeaders);

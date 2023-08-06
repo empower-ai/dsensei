@@ -2,7 +2,7 @@ import * as rd from "@duckdb/react-duckdb";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createNewDateWithBrowserTimeZone } from "../../../common/utils";
-import { Column } from "../../../types/data-source";
+import { Field } from "../../../types/data-source";
 import {
   ColumnConfig,
   DateRangeConfig,
@@ -45,7 +45,7 @@ const sampleDataPrefills: PrefillConfig = {
 };
 
 interface Props {
-  columns: Column[];
+  columns: Field[];
   file?: File;
   prefillWithSampleData: boolean;
 }

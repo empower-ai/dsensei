@@ -1,7 +1,7 @@
 from google.cloud import bigquery
 from google.cloud.bigquery import Dataset
 
-from app.data_source.datasource import BigquerySchema, Column
+from app.data_source.datasource import BigquerySchema, Field
 
 
 class BigquerySource:
@@ -11,7 +11,7 @@ class BigquerySource:
 
     def get_schema(self, full_name: str) -> BigquerySchema:
         table = self.client.get_table(full_name)
-        columns = [Column(
+        columns = [Field(
             name=field.name,
             description=field.description,
             type=field.field_type,

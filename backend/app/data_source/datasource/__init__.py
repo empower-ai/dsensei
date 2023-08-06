@@ -1,23 +1,23 @@
 from dataclasses import dataclass
 from typing import Union, Optional
 
-ColumnType = Union['DATE', 'TIMESTAMP', 'VARCHAR', 'FLOAT', 'INTEGER']
-ColumnMode = Union['NULLABLE', 'REQUIRED', 'REPEATED']
+FieldType = Union['DATE', 'TIMESTAMP', 'VARCHAR', 'FLOAT', 'INTEGER']
+FieldMode = Union['NULLABLE', 'REQUIRED', 'REPEATED']
 
 
 @dataclass(frozen=True)
-class Column:
+class Field:
     name: str
     description: str
-    type: ColumnType
-    mode: ColumnMode
+    type: FieldType
+    mode: FieldMode
 
 
 @dataclass(frozen=True)
 class Schema:
     name: str
     description: Optional[str]
-    columns: list[Column]
+    columns: list[Field]
 
 
 @dataclass(frozen=True)

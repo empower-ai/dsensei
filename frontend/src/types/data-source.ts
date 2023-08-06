@@ -1,18 +1,19 @@
 export interface Schema<T> {
   name: string;
-  columns: Column[];
+  columns: Field[];
   additionalMetaData: T;
 }
 
-export type DataType = "DATE" | "TIMESTAMP" | "VARCHAR" | "FLOAT" | "INTEGER";
+export type FieldType = "DATE" | "TIMESTAMP" | "VARCHAR" | "FLOAT" | "INTEGER";
+export type FieldMode = "NULLABLE" | "REPEATED" | "REQUIRED";
 
-export interface Column {
+export interface Field {
   name: string;
   description?: string;
-  type: DataType;
-  nullable: boolean;
+  type: FieldType;
+  mode: FieldMode;
 }
 
 export interface BigQueryMetaData {
-  isSuffixPartitionTable: boolean;
+  isDateSuffixPartitionTable: boolean;
 }
