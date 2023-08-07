@@ -4,36 +4,26 @@ from typing import Dict, List, Tuple
 from app.data_source.datasource.bigquerySource import BigquerySource
 from google.cloud import bigquery
 
-"""
-SELECT
-  ageGroupDim,
-  phoneBrandDim,
-  majorOsVersion AS osVersionDim,
-  DATE(eventTime) AS day,
-  COUNT(DISTINCT userId) AS distinctUsersCount
-FROM
-  `dsensei.dsensei_demo.demo-large-1B-factor100`,
-  UNNEST([ageGroup, -1]) as ageGroupDim,
-  UNNEST([phoneBrand, 'ALL']) as phoneBrandDim,
-  UNNEST([majorOsVersion, 'ALL']) as osVersionDim
-GROUP BY
-  ageGroupDim,
-  phoneBrandDim,
-  osVersionDim,
-  day
-"""
-
-QUERY_TEMPLATE = """
+SUB_QUERY_TEMPLATE = """
 SELECT
   {},
-  DATE({}) AS day,
   {}
 FROM
   `{}`,
   {}
+WHERE {} BETWEEN TIMESTAMP('{}') AND TIMESTAMP('{}')
 GROUP BY
-  {},
-  day
+  {}
+"""
+
+QUERY_TEMPLATE = """
+WITH baseline AS ({}),
+comparison AS ({})
+SELECT {}
+FROM comparison FULL OUTER JOIN BASELINE ON
+{}
+ORDER BY {} DESC
+LIMIT 10000
 """
 
 
@@ -70,13 +60,14 @@ class BqMetrics():
         """
         Get the metrics of the self.columns
         """
-        select_columns = self.columns
+        groupby_columns = self.columns
         unnest_columns = list(map(
             lambda x: f'UNNEST([{x}, "ALL"]) AS {x}',
             self.columns
         ))
         date_column = self.date_column
         agg = []
+        metric_column = [k for k, v in self.agg_method.items()]
         for k, v in self.agg_method.items():
             if v == 'sum':
                 agg.append(f'SUM({k}) AS {k}')
@@ -89,13 +80,50 @@ class BqMetrics():
 
         print(agg)
 
-        query = QUERY_TEMPLATE.format(
-            ',\n'.join(select_columns),
-            date_column,
+        baseline_query = SUB_QUERY_TEMPLATE.format(
+            ',\n'.join(groupby_columns),
             ',\n'.join(agg),
             self.table_name,
             ',\n'.join(unnest_columns),
-            ',\n'.join(select_columns)
+            date_column,
+            self.baseline_period[0],
+            self.baseline_period[1],
+            ',\n'.join(groupby_columns)
+        )
+
+        comparison_query = SUB_QUERY_TEMPLATE.format(
+            ',\n'.join(groupby_columns),
+            ',\n'.join(agg),
+            self.table_name,
+            ',\n'.join(unnest_columns),
+            date_column,
+            self.comparison_period[0],
+            self.comparison_period[1],
+            ',\n'.join(groupby_columns)
+        )
+
+        select_values = [
+            f'COALESCE(comparison.{x}, baseline.{x}) AS {x}' for x in groupby_columns
+        ] + [
+            f'COALESCE(comparison.{x}, 0) AS {x}_comparison' for x in metric_column
+        ] + [
+            f'COALESCE(baseline.{x}, 0) AS {x}_baseline' for x in metric_column
+        ] + [
+            f'COALESCE(comparison.{x}, 0) - COALESCE(baseline.{x}, 0) AS {x}_diff' for x in metric_column
+        ] + [
+            f'ABS(COALESCE(comparison.{x}, 0) - COALESCE(baseline.{x}, 0)) AS {x}_abs_diff' for x in metric_column
+        ]
+
+        join_clause = [
+            f'comparison.{x} = baseline.{x}' for x in groupby_columns
+        ]
+
+        query = QUERY_TEMPLATE.format(
+            baseline_query,
+            comparison_query,
+            ',\n'.join(select_values),
+            ' AND '.join(join_clause),
+            ',\n'.join([f'{x}_abs_diff' for x in metric_column])
         )
 
         print(query)
