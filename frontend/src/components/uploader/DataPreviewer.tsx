@@ -58,7 +58,7 @@ function DataPreviewer({
           Start Over
         </Button>
       </Flex>
-      <Text>File: {fileName}</Text>
+      <Text>Table name: {fileName}</Text>
       <Table className="mt-2">
         <TableHead>
           <TableRow>{tableHeader}</TableRow>
