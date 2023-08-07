@@ -21,6 +21,11 @@ class Schema:
     fields: list[Field]
     previewData: list[dict[str, str]]
 
+@dataclass(frozen=True)
+class Dataset:
+    name: str
+    project: str
+
 
 @dataclass(frozen=True)
 class BigquerySchema(Schema):

@@ -1,7 +1,6 @@
 from google.cloud import bigquery
-from google.cloud.bigquery import Dataset
 
-from app.data_source.datasource import BigquerySchema, Field
+from app.data_source.datasource import BigquerySchema, Field, Dataset
 
 
 class BigquerySource:
@@ -21,7 +20,6 @@ class BigquerySource:
             SELECT {selections}
             FROM `{table.project}.{table.dataset_id}.{table.table_id}`
         """
-        print(query)
 
         num_distinct_value_by_field = next(self.client.query(query).result())
 
@@ -50,6 +48,15 @@ class BigquerySource:
             previewData=[dict(row) for row in preview_rows]
         )
         return schema
+
+    def list_dataset(self) -> list[Dataset]:
+        dataset_list_res = self.client.list_datasets()
+
+        return [Dataset(
+            name=dataset.dataset_id,
+            project=dataset.project
+        )
+            for dataset in dataset_list_res]
 
     def list_tables(self, dataset: Dataset = None) -> list[BigquerySchema]:
         tables = self.client.list_tables(dataset)

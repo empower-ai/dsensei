@@ -53,7 +53,7 @@ function DataPreviewer({
   return (
     <Card className="max-w-6xl mx-auto">
       <Flex>
-        <Title>CSV Content Preview</Title>
+        <Title>Table Preview</Title>
         <Button icon={ArrowPathIcon} onClick={onReset}>
           Start Over
         </Button>

@@ -92,8 +92,10 @@ function NewReport() {
               onLoadingSchema={() => {
                 setIsLoadingSchema(true);
               }}
-              onSchemaLoaded={(schema: BigquerySchema) => {
-                setSchema(schema);
+              onSchemaLoaded={(schema?: BigquerySchema) => {
+                if (schema) {
+                  setSchema(schema);
+                }
                 setIsLoadingSchema(false);
               }}
             />
