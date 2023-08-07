@@ -63,6 +63,7 @@ function CSVLoader({ useSampleFile, onLoadingSchema, onSchemaLoaded }: Props) {
         name: rowInJson.column_name as string,
         type: rowInJson.column_type as FieldType,
         mode: "NULLABLE" as FieldMode,
+        numDistinctValues: 0,
       };
     });
 

@@ -14,6 +14,7 @@ export interface Field {
   description?: string;
   type: FieldType;
   mode: FieldMode;
+  numDistinctValues: number;
 }
 
 export interface BigquerySchema extends Schema {

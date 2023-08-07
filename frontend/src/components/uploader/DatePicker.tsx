@@ -27,7 +27,7 @@ type DatePickerProps = {
   setComparisonDateRangeData: (value: DateRangeData) => void;
   baseDateRangeData: DateRangeData;
   setBaseDateRangeData: (value: DateRangeData) => void;
-  countByDate: {
+  countByDate?: {
     [key: string]: number;
   };
   defaultBaseDateRange?: DateRangePickerValue;
@@ -62,11 +62,14 @@ function DatePicker({
   const [baseDateRangeMode, setBaseDateRangeMode] =
     useState<BaseDateMode>("previous");
 
-  const dates = Object.keys(countByDate).sort(
-    (d1, d2) => new Date(d1).getTime() - new Date(d2).getTime()
-  );
-  const minDate = new Date(dates[0]);
-  const maxDate = new Date(dates[dates.length - 1]);
+  let minDate, maxDate;
+  if (countByDate) {
+    const dates = Object.keys(countByDate).sort(
+      (d1, d2) => new Date(d1).getTime() - new Date(d2).getTime()
+    );
+    minDate = new Date(dates[0]);
+    maxDate = new Date(dates[dates.length - 1]);
+  }
 
   function getComparisonDateRangePreviousPeriodDateRange(
     comparisonDateRange: DateRangePickerValue
@@ -94,7 +97,8 @@ function DatePicker({
     if (dateRangeStats.numDays) {
       return (
         <Text>
-          ({dateRangeStats.numDays} days and {dateRangeStats.numRows ?? 0} rows
+          ({dateRangeStats.numDays} days{" "}
+          {countByDate ? `and ${dateRangeStats.numRows ?? 0} rows` : ""}
           selected)
         </Text>
       );
@@ -112,12 +116,14 @@ function DatePicker({
 
       const date = new Date(fromDate);
       let numRows = 0;
-      while (
-        moment(date).format("YYYY-MM-DD") !==
-        moment(toDate).format("YYYY-MM-DD")
-      ) {
-        numRows += countByDate[moment(date).format("YYYY-MM-DD")] ?? 0;
-        date.setDate(date.getDate() + 1);
+      if (countByDate) {
+        while (
+          moment(date).format("YYYY-MM-DD") !==
+          moment(toDate).format("YYYY-MM-DD")
+        ) {
+          numRows += countByDate[moment(date).format("YYYY-MM-DD")] ?? 0;
+          date.setDate(date.getDate() + 1);
+        }
       }
 
       return {
@@ -183,6 +189,9 @@ function DatePicker({
   }
 
   function shouldDisplayWarning() {
+    if (!countByDate) {
+      return false;
+    }
     return (
       (((baseDateRangeData.stats.numDays ?? 0) > 0 &&
         baseDateRangeData.stats.numRows) ??

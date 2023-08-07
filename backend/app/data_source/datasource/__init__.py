@@ -11,6 +11,7 @@ class Field:
     description: str
     type: FieldType
     mode: FieldMode
+    numDistinctValues: int
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,7 @@ class Schema:
     name: str
     description: Optional[str]
     fields: list[Field]
+    previewData: list[dict[str, str]]
 
 
 @dataclass(frozen=True)

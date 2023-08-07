@@ -9,33 +9,46 @@ class BigquerySource:
     def __init__(self) -> None:
         self.client = bigquery.Client()
 
+    @staticmethod
+    def convert_field_type(bq_type: str) -> str:
+        pass
+
     def get_schema(self, full_name: str) -> BigquerySchema:
         table = self.client.get_table(full_name)
 
-        fields = [Field(
-            name=field.name,
-            description=field.description,
-            type=field.field_type,
-            mode=field.mode
-        ) for field in table.schema]
-
-        selections = ','.join([f'APPROX_COUNT_DISTINCT({field.name}) as {field.name}' for field in fields])
+        selections = ','.join([f'APPROX_COUNT_DISTINCT({field.name}) as {field.name}' for field in table.schema])
         query = f"""
             SELECT {selections}
-            FROM {table.project}.{table.dataset_id}.{table.table_id}
+            FROM `{table.project}.{table.dataset_id}.{table.table_id}`
         """
         print(query)
-        res = self.client.query(query)
-        for row in res:
-            print(row.userId)
+
+        num_distinct_value_by_field = next(self.client.query(query).result())
+
+        fields = []
+        for field in table.schema:
+            fields.append(Field(
+                name=field.name,
+                description=field.description,
+                type=field.field_type,
+                mode=field.mode,
+                numDistinctValues=num_distinct_value_by_field[field.name]
+            ))
+
+        query = f"""
+            SELECT *
+            FROM `{table.project}.{table.dataset_id}.{table.table_id}`
+            limit 10
+        """
+        preview_rows = self.client.query(query).result()
 
         schema = BigquerySchema(
             name=table.table_id,
             description=table.description,
             fields=fields,
-            isDateSuffixPartitionTable=False
+            isDateSuffixPartitionTable=False,
+            previewData=[dict(row) for row in preview_rows]
         )
-
         return schema
 
     def list_tables(self, dataset: Dataset = None) -> list[BigquerySchema]:

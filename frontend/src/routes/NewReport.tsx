@@ -11,16 +11,15 @@ import {
 } from "@tremor/react";
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import DataPreviewer from "../components/uploader/DataPreviewer";
 import InformationCard from "../components/uploader/InformationCard";
+import BigqueryLoader from "../components/uploader/data-source-loader/BigqueryLoader";
 import CSVLoader from "../components/uploader/data-source-loader/CSVLoader";
+import BigqueryBasedReportConfig from "../components/uploader/report-config/BigqueryBasedReportConfig";
 import CSVBasedReportConfig from "../components/uploader/report-config/CSVBasedReportConfig";
-import { CSVSchema, Schema } from "../types/data-source";
+import { BigquerySchema, CSVSchema, Schema } from "../types/data-source";
 
 function NewReport() {
-  const navigate = useNavigate();
-
   const [isLoadingSchema, setIsLoadingSchema] = useState<boolean>(false);
   const [schema, setSchema] = useState<Schema>();
   const [useSampleFile, setUseSampleFile] = useState<boolean>(false);
@@ -65,34 +64,53 @@ function NewReport() {
               alignItems="center"
               className="pb-4 col-span-6 col-start-3 gap-3"
             >
-              <Text className="w-auto">Select data source:</Text>
+              <Text className="w-auto text-black">Select data source:</Text>
               <Select
                 className="w-2 min-w-[150px]"
                 value={dataSource}
                 onValueChange={setDataSource}
               >
                 <SelectItem value="csv">CSV</SelectItem>
+                <SelectItem value="bigquery">BigQuery</SelectItem>
               </Select>
             </Flex>
           </Grid>
-          <CSVLoader
-            useSampleFile={useSampleFile}
-            onLoadingSchema={() => {
-              setIsLoadingSchema(true);
-            }}
-            onSchemaLoaded={(schema: CSVSchema) => {
-              setSchema(schema);
-              setIsLoadingSchema(false);
-            }}
-          />
+          {dataSource === "csv" && (
+            <CSVLoader
+              useSampleFile={useSampleFile}
+              onLoadingSchema={() => {
+                setIsLoadingSchema(true);
+              }}
+              onSchemaLoaded={(schema: CSVSchema) => {
+                setSchema(schema);
+                setIsLoadingSchema(false);
+              }}
+            />
+          )}
+          {dataSource === "bigquery" && (
+            <BigqueryLoader
+              onLoadingSchema={() => {
+                setIsLoadingSchema(true);
+              }}
+              onSchemaLoaded={(schema: BigquerySchema) => {
+                setSchema(schema);
+                setIsLoadingSchema(false);
+              }}
+            />
+          )}
         </Card>
       )}
       {schema && (
         <>
-          <CSVBasedReportConfig
-            schema={schema as CSVSchema}
-            prefillWithSampleData={useSampleFile}
-          />
+          {dataSource === "csv" && (
+            <CSVBasedReportConfig
+              schema={schema as CSVSchema}
+              prefillWithSampleData={useSampleFile}
+            />
+          )}
+          {dataSource === "bigquery" && (
+            <BigqueryBasedReportConfig schema={schema as BigquerySchema} />
+          )}
           <DataPreviewer
             fileName={schema.name}
             onReset={() => {
@@ -102,7 +120,7 @@ function NewReport() {
               setDataSource("csv");
             }}
             header={schema.fields}
-            previewData={schema.previewData}
+            previewData={schema.previewData ?? []}
           />
         </>
       )}

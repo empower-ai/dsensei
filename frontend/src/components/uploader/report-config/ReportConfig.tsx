@@ -30,7 +30,7 @@ import SingleSelector from "../SingleSelector";
 type Props = {
   columns: Field[];
   rowCountByColumn: RowCountByColumn;
-  rowCountByDateColumn: RowCountByDateAndColumn;
+  rowCountByDateColumn?: RowCountByDateAndColumn;
   prefilledConfigs?: PrefillConfig;
   isUploading: boolean;
   onSubmit: (
@@ -45,7 +45,7 @@ type Props = {
 function ReportConfig({
   columns: header,
   rowCountByColumn,
-  rowCountByDateColumn: rowCountByDateColumns,
+  rowCountByDateColumn,
   prefilledConfigs,
   isUploading,
   onSubmit,
@@ -192,15 +192,19 @@ function ReportConfig({
         (column) => column.type === "dimension"
       ).length > 0;
 
+    const hasRows =
+      !rowCountByDateColumn ||
+      ((comparisonDateRangeData.stats.numRows ?? 0) > 0 &&
+        (baseDateRangeData.stats.numRows ?? 0) > 0);
+
     return (
       comparisonDateRangeData.range.from &&
       comparisonDateRangeData.range.to &&
-      (comparisonDateRangeData.stats.numRows ?? 0) > 0 &&
       baseDateRangeData.range.from &&
       baseDateRangeData.range.to &&
-      (baseDateRangeData.stats.numRows ?? 0) > 0 &&
       hasMetricColumn &&
-      hasDimensionColumn
+      hasDimensionColumn &&
+      hasRows
     );
   }
 
@@ -225,6 +229,30 @@ function ReportConfig({
           rowCountByColumn[h] / rowCountByColumn["totalRowsReserved"] < 0.01
         );
       });
+  }
+
+  function renderDatePicker() {
+    if (rowCountByDateColumn && !selectedDateColumn) {
+      return null;
+    }
+
+    let countByDate;
+    if (rowCountByDateColumn && selectedDateColumn) {
+      countByDate = rowCountByDateColumn[selectedDateColumn];
+    }
+
+    return (
+      <DatePicker
+        title={"Select date ranges"}
+        countByDate={countByDate}
+        comparisonDateRangeData={comparisonDateRangeData}
+        setComparisonDateRangeData={setComparisonDateRangeData}
+        baseDateRangeData={baseDateRangeData}
+        setBaseDateRangeData={setBaseDateRangeData}
+        defaultBaseDateRange={prefilledConfigs?.baseDateRange}
+        defaultComparisonDateRange={prefilledConfigs?.comparisonDateRange}
+      />
+    );
   }
 
   return (
@@ -283,18 +311,7 @@ function ReportConfig({
           }
         />
         {/* Date pickers */}
-        {selectedDateColumn && rowCountByDateColumns[selectedDateColumn] && (
-          <DatePicker
-            title={"Select date ranges"}
-            countByDate={rowCountByDateColumns[selectedDateColumn]}
-            comparisonDateRangeData={comparisonDateRangeData}
-            setComparisonDateRangeData={setComparisonDateRangeData}
-            baseDateRangeData={baseDateRangeData}
-            setBaseDateRangeData={setBaseDateRangeData}
-            defaultBaseDateRange={prefilledConfigs?.baseDateRange}
-            defaultComparisonDateRange={prefilledConfigs?.comparisonDateRange}
-          />
-        )}
+        {renderDatePicker()}
         {/* Analysing metric single selector */}
         <SingleSelector
           title={
