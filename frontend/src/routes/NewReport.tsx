@@ -115,6 +115,7 @@ function NewReport() {
           <Flex justifyContent="center">
             <Button
               onClick={() => {
+                setDataSource("csv");
                 setUseSampleFile(true);
               }}
             >
