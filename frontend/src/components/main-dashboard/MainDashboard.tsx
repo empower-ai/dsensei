@@ -38,11 +38,19 @@ export default function MainDashboard() {
   const dispatch = useDispatch();
   const routerState = useLocation().state;
 
-  const { fileId, baseDateRange, comparisonDateRange, selectedColumns } =
-    routerState;
+  const {
+    fileId,
+    baseDateRange,
+    comparisonDateRange,
+    selectedColumns,
+    dataSourceType,
+  } = routerState;
 
   useEffect(() => {
-    const apiPath = `/api/insight`;
+    let apiPath = "/api/insight";
+    if (dataSourceType === "bigquery") {
+      apiPath = "/api/bqinsight";
+    }
 
     dispatch(setLoadingStatus(true));
     fetch(

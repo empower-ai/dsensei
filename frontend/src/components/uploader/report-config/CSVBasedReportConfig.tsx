@@ -142,6 +142,7 @@ export default function CSVBasedReportConfig({
     navigate("/dashboard", {
       state: {
         fileId: id,
+        dataSourceType: "csv",
         selectedColumns,
         baseDateRange,
         comparisonDateRange,
