@@ -3,14 +3,14 @@ import os
 from datetime import datetime
 
 import pandas as pd
+from app.data_source import bp as data_source_bp
 from app.file_upload.services.file_upload import FileUploadService
+from app.insight.datasource.bqMetrics import BqMetrics
 from app.insight.services.metrics import MetricsController
 from config import Config
 from flask import Flask, request
 from flask_cors import CORS
 from loguru import logger
-
-from app.data_source import bp as data_source_bp
 
 app = Flask(__name__, static_url_path='')
 
@@ -36,6 +36,50 @@ def dashboard():
     return app.send_static_file('index.html')
 
 
+@app.route('/api/bqinsight', methods=['POST'])
+def getBqInsight():
+    data = request.get_json()
+
+    baseDateRange = data['baseDateRange']
+    comparisonDateRange = data['comparisonDateRange']
+    selectedColumns = data['selectedColumns']
+
+    baselineStart = datetime.strptime(
+        baseDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    baselineEnd = datetime.strptime(
+        baseDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    comparisonStart = datetime.strptime(
+        comparisonDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    comparisonEnd = datetime.strptime(
+        comparisonDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+
+    date_column = list(
+        filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0].strip()
+
+    agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
+                             ['type'] == 'supporting_metric', selectedColumns.items()))
+    expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))[
+        0][1]['expectedValue']
+
+    metrics_name = {k: k for k, v in agg_method}
+    metrics_name.update({date_column: 'count'})
+    agg_method = {k: agg_method_map[v['aggregationOption']]
+                  for k, v in agg_method}
+    dimensions = list(
+        filter(lambda x: x[1]['type'] == 'dimension', selectedColumns.items()))
+    dimensions = [k for k, v in dimensions]
+
+    bq_metric = BqMetrics(
+        table_name='dsensei_demo.demo-large-1B-factor100',
+        baseline_period=(baselineStart, baselineEnd),
+        comparison_period=(comparisonStart, comparisonEnd),
+        date_column=date_column,
+        agg_method=agg_method,
+        metrics_name=metrics_name,
+        columns=dimensions)
+    return bq_metric.get_metrics()
+
+
 @app.route('/api/insight', methods=['POST'])
 def getInsight():
     data = request.get_json()
@@ -57,7 +101,7 @@ def getInsight():
         filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0].strip()
 
     agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
-    ['type'] == 'supporting_metric', selectedColumns.items()))
+                             ['type'] == 'supporting_metric', selectedColumns.items()))
     expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))[
         0][1]['expectedValue']
 
