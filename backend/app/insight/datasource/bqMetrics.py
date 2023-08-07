@@ -122,15 +122,18 @@ class BqMetrics():
     def _prepare_query(self) -> str:
         groupby_columns = self.columns
         unnest_columns = list(map(
-            lambda x: f'UNNEST([{x}, "ALL"]) AS {x}',
+            lambda x: f'UNNEST([CAST({x} AS STRING), "ALL"]) AS {x}',
             self.columns
         ))
         date_column = self.date_column
         agg = self._get_agg()
         metric_column = [k for k, v in self.agg_method.items()]
 
+        columns_to_select = [
+            f"CAST({x} AS STRING) AS {x}" for x in groupby_columns
+        ]
         baseline_query = SUB_QUERY_TEMPLATE.format(
-            ',\n'.join(groupby_columns),
+            ',\n'.join(columns_to_select),
             ',\n'.join(agg),
             self.table_name,
             ',\n'.join(unnest_columns),
@@ -141,7 +144,7 @@ class BqMetrics():
         )
 
         comparison_query = SUB_QUERY_TEMPLATE.format(
-            ',\n'.join(groupby_columns),
+            ',\n'.join(columns_to_select),
             ',\n'.join(agg),
             self.table_name,
             ',\n'.join(unnest_columns),
