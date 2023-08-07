@@ -22,16 +22,43 @@ FROM
   {}
 WHERE {} BETWEEN TIMESTAMP('{}') AND TIMESTAMP('{}')
 GROUP BY
+
   {}
+"""
+
+METRIC_BY_DATE = """
+SELECT
+  {},
+  DATE({}) as day,
+FROM
+  `{}`
+WHERE {} BETWEEN TIMESTAMP('{}') AND TIMESTAMP('{}')
+GROUP BY
+  day
+"""
+
+JOIN_TEMPLATE = """
+SELECT {}
+FROM comparison FULL OUTER JOIN baseline ON
+{}
+"""
+
+STD_TEMPLATE = """
+SELECT
+    STDDEV(COALESCE((joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline)), 0.5)) AS std
+FROM joined
 """
 
 QUERY_TEMPLATE = """
 WITH baseline AS ({}),
-comparison AS ({})
-SELECT {}
-FROM comparison FULL OUTER JOIN BASELINE ON
-{}
-ORDER BY {} DESC
+comparison AS ({}),
+joined AS ({}),
+std AS ({})
+SELECT *,
+joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline) / std.std AS z_score,
+joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline) as change_percentage
+FROM joined CROSS JOIN std
+ORDER BY ABS(z_score) DESC
 LIMIT 10000
 """
 
@@ -45,7 +72,7 @@ class BqMetrics():
                  agg_method: Dict[str, str],
                  metrics_name: Dict[str, str],
                  columns: List[str],
-                 expected_value: float = 0) -> None:
+                 expected_value: List[float] = 0) -> None:
         self.table_name = table_name
         self.baseline_period = baseline_period
         self.comparison_period = comparison_period
@@ -67,15 +94,8 @@ class BqMetrics():
             if field.name in self.columns:
                 self.column_types[field.name] = field.type
 
-    def _prepare_query(self) -> str:
-        groupby_columns = self.columns
-        unnest_columns = list(map(
-            lambda x: f'UNNEST([{x}, "ALL"]) AS {x}',
-            self.columns
-        ))
-        date_column = self.date_column
+    def _get_agg(self) -> List[str]:
         agg = []
-        metric_column = [k for k, v in self.agg_method.items()]
         for k, v in self.agg_method.items():
             if v == 'sum':
                 agg.append(f'SUM({k}) AS {k}')
@@ -85,6 +105,29 @@ class BqMetrics():
                 agg.append(f'COUNT({k}) AS {k}')
             else:
                 raise Exception(f'Invalid aggregation method {v} for {k}')
+        return agg
+
+    def _prepare_value_by_date_query(self) -> str:
+        agg = self._get_agg()
+
+        query = METRIC_BY_DATE.format(
+            ',\n'.join(agg),
+            self.date_column,
+            self.table_name,
+            self.date_column,
+            self.baseline_period[0],
+            self.comparison_period[1])
+        return query
+
+    def _prepare_query(self) -> str:
+        groupby_columns = self.columns
+        unnest_columns = list(map(
+            lambda x: f'UNNEST([{x}, "ALL"]) AS {x}',
+            self.columns
+        ))
+        date_column = self.date_column
+        agg = self._get_agg()
+        metric_column = [k for k, v in self.agg_method.items()]
 
         baseline_query = SUB_QUERY_TEMPLATE.format(
             ',\n'.join(groupby_columns),
@@ -128,13 +171,25 @@ class BqMetrics():
             f'comparison.{x} = baseline.{x}' for x in groupby_columns
         ]
 
+        join_query = JOIN_TEMPLATE.format(
+            ',\n'.join(select_values),
+            ' AND '.join(join_clause))
+
+        std_query = STD_TEMPLATE.format(
+            metric_column[0], metric_column[0], metric_column[0])
+
         query = QUERY_TEMPLATE.format(
             baseline_query,
             comparison_query,
-            ',\n'.join(select_values),
-            ' AND '.join(join_clause),
-            ',\n'.join([f'{x}_abs_diff' for x in metric_column])
-        )
+            join_query,
+            std_query,
+            metric_column[0],
+            metric_column[0],
+            metric_column[0],
+            metric_column[0],
+            metric_column[0],
+            metric_column[0])
+        print(query)
         return query
 
     def _get_dimensions(self, df: pd.DataFrame) -> Dict[str, Dimension]:
@@ -160,7 +215,7 @@ class BqMetrics():
                 row['_cnt_comparison'], row['_cnt_comparison'] / comparison_num_rows, row[metric_name + "_baseline"])
             last_period_value = PeriodValue(
                 row['_cnt_baseline'], row['_cnt_baseline'] / baseline_num_rows, row[metric_name + "_comparison"])
-            return DimensionSliceInfo(key, serialized_key, [], last_period_value, current_period_value, current_period_value.sliceValue - last_period_value.sliceValue)
+            return DimensionSliceInfo(key, serialized_key, [], last_period_value, current_period_value, current_period_value.sliceValue - last_period_value.sliceValue, row['change_percentage'], row['z_score'])
 
         ret = df.apply(
             lambda row: mapToObj(row.name, row), axis=1).tolist()
@@ -178,22 +233,6 @@ class BqMetrics():
         all_dimension_slices = self._get_dimension_slice_info(
             df, metric_name, metric.baselineNumRows, metric.comparisonNumRows)
 
-        all_dimension_slices.sort(
-            key=lambda slice: abs(slice.impact), reverse=True)
-        for slice_info in all_dimension_slices:
-            slice_info.changePercentage = 0.2 if slice_info.baselineValue.sliceValue == 0 else (
-                slice_info.comparisonValue.sliceValue - slice_info.baselineValue.sliceValue) / slice_info.baselineValue.sliceValue
-        lower = np.percentile(
-            [slice_info.changePercentage for slice_info in all_dimension_slices], 20)
-        upper = np.percentile(
-            [slice_info.changePercentage for slice_info in all_dimension_slices], 80)
-        changes = [slice_info.changePercentage for slice_info in all_dimension_slices if slice_info.changePercentage >=
-                   lower and slice_info.changePercentage <= upper]
-        change_std_dev = np.std(changes)
-        for slice_info in all_dimension_slices:
-            slice_info.changeDev = abs(
-                (slice_info.changePercentage - self.expected_value) / change_std_dev)
-
         logger.info('Building top driver slice keys')
         metric.topDriverSliceKeys = list(map(
             lambda slice: slice.serializedKey,
@@ -209,6 +248,7 @@ class BqMetrics():
         """
         query = self._prepare_query()
         # print(query)
+        # return ''
         result = self.client.query(query).to_dataframe()
 
         ret = {

@@ -47,7 +47,6 @@ class DimensionSliceInfo:
     changePercentage: float = None
     changeDev: float = None
 
-
 @dataclass
 class Metric:
     name: str = None
@@ -116,7 +115,7 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
             currentPeriodValue,
             currentPeriodValue.sliceValue - lastPeriodValue.sliceValue)
         return sliceInfo
-    # print(df)
+
     dimensionSliceInfos = df.apply(
         lambda row: mapToObj(row.name, row), axis=1).tolist()
     return dimensionSliceInfos

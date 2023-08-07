@@ -70,13 +70,14 @@ def getBqInsight():
     dimensions = [k for k, v in dimensions]
 
     bq_metric = BqMetrics(
-        table_name='dsensei_demo.demo-large-1B-factor100',
+        table_name='dsensei_demo.demo6',
         baseline_period=(baselineStart, baselineEnd),
         comparison_period=(comparisonStart, comparisonEnd),
         date_column=date_column,
         agg_method=agg_method,
         metrics_name=metrics_name,
-        columns=dimensions)
+        columns=dimensions,
+        expected_value=expected_value)
     return bq_metric.get_metrics()
 
 
