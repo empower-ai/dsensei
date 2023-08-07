@@ -66,14 +66,6 @@ function ReportConfig({
   useEffect(() => {
     if (prefilledConfigs) {
       setSelectedColumns(prefilledConfigs.selectedColumns);
-      setBaseDateRangeData({
-        range: prefilledConfigs.baseDateRange,
-        stats: {},
-      });
-      setComparisonDateRangeData({
-        range: prefilledConfigs.comparisonDateRange,
-        stats: {},
-      });
     }
   }, [prefilledConfigs]);
 
@@ -239,6 +231,9 @@ function ReportConfig({
     let countByDate;
     if (rowCountByDateColumn && selectedDateColumn) {
       countByDate = rowCountByDateColumn[selectedDateColumn];
+      if (!countByDate) {
+        return null;
+      }
     }
 
     return (

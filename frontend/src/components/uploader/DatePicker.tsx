@@ -98,7 +98,7 @@ function DatePicker({
       return (
         <Text>
           ({dateRangeStats.numDays} days{" "}
-          {countByDate ? `and ${dateRangeStats.numRows ?? 0} rows` : ""}
+          {countByDate ? `and ${dateRangeStats.numRows ?? 0} rows ` : ""}
           selected)
         </Text>
       );
