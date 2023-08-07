@@ -33,8 +33,8 @@ SELECT
 FROM
   `{}`
 WHERE {} BETWEEN TIMESTAMP('{}') AND TIMESTAMP('{}')
-GROUP BY
-  day
+GROUP BY day
+ORDER BY day
 """
 
 JOIN_TEMPLATE = """
@@ -116,7 +116,7 @@ class BqMetrics():
             self.table_name,
             self.date_column,
             self.baseline_period[0],
-            self.comparison_period[1])
+            self.comparison_period[1] + datetime.timedelta(days=1))
         return query
 
     def _prepare_query(self) -> str:
@@ -136,7 +136,7 @@ class BqMetrics():
             ',\n'.join(unnest_columns),
             date_column,
             self.baseline_period[0],
-            self.baseline_period[1],
+            self.baseline_period[1] + datetime.timedelta(days=1),
             ',\n'.join(groupby_columns)
         )
 
@@ -147,7 +147,7 @@ class BqMetrics():
             ',\n'.join(unnest_columns),
             date_column,
             self.comparison_period[0],
-            self.comparison_period[1],
+            self.comparison_period[1] + datetime.timedelta(days=1),
             ',\n'.join(groupby_columns)
         )
 
@@ -223,18 +223,19 @@ class BqMetrics():
         ret.sort(key=lambda x: abs(x.impact), reverse=True)
         return ret
 
-    def build_metrics(self, metric_name: str, df: pd.DataFrame) -> Metric:
+    def build_metrics(self,
+                      metric_name: str,
+                      df: pd.DataFrame,
+                      value_by_date_df: pd.DataFrame) -> Metric:
         metric = Metric()
         metric.name = self.metrics_name[metric_name]
         metric.dimensions = self._get_dimensions(df)
 
-        # TODO: fix these two lines
         metric.baselineNumRows = df['_cnt_baseline'].max()
         metric.comparisonNumRows = df['_cnt_comparison'].max()
 
-        # TODO: fix these
-        metric.baselineValue = 100
-        metric.comparisonValue = 100
+        metric.baselineValue = df[metric_name + '_baseline'].max()
+        metric.comparisonValue = df[metric_name + '_comparison'].max()
 
         all_dimension_slices = self._get_dimension_slice_info(
             df, metric_name, metric.baselineNumRows, metric.comparisonNumRows)
@@ -248,19 +249,38 @@ class BqMetrics():
                                      for dimension_slice in all_dimension_slices
                                      }
 
-        # TODO: fix these
+        baseline_by_day = value_by_date_df.loc[
+            value_by_date_df['day'].between(
+                self.baseline_period[0], self.baseline_period[1] + datetime.timedelta(days=1))
+        ]
+        comparison_by_day = value_by_date_df.loc[
+            value_by_date_df['day'].between(
+                self.comparison_period[0], self.comparison_period[1] + datetime.timedelta(days=1))
+        ]
+
+        metric.baselineValueByDate = [
+            {
+                "date": row['day'].strftime('%Y-%m-%d'),
+                "value": row[metric_name]
+            }
+            for _, row in baseline_by_day.iterrows()
+        ]
+        metric.comparisonValueByDate = [
+            {
+                "date": row['day'].strftime('%Y-%m-%d'),
+                "value": row[metric_name]
+            }
+            for _, row in comparison_by_day.iterrows()
+        ]
         metric.baselineDateRange = [
-            self.baseline_period[0].strftime("%Y-%m-%d"), self.baseline_period[1].strftime("%Y-%m-%d")]
+            self.baseline_period[0].strftime('%Y-%m-%d'),
+            self.baseline_period[1].strftime('%Y-%m-%d')
+        ]
         metric.comparisonDateRange = [
-            self.comparison_period[0].strftime("%Y-%m-%d"), self.comparison_period[1].strftime("%Y-%m-%d")]
-        metric.baselineValueByDate = [{
-            "date": "2022-07-01",
-            "value": 100
-        }]
-        metric.comparisonValueByDate = [{
-            "date": "2022-08-01",
-            "value": 100
-        }]
+            self.comparison_period[0].strftime('%Y-%m-%d'),
+            self.comparison_period[1].strftime('%Y-%m-%d')
+        ]
+
         metric.expectedChangePercentage = 0
         metric.aggregationMethod = self.agg_method[metric_name]
 
@@ -274,8 +294,12 @@ class BqMetrics():
         # return ''
         result = self.client.query(query).to_dataframe()
 
+        value_by_date_query = self._prepare_value_by_date_query()
+        value_by_date_result = self.client.query(
+            value_by_date_query).to_dataframe()
+
         ret = {
-            k: asdict(self.build_metrics(k, result))
+            k: asdict(self.build_metrics(k, result, value_by_date_result))
             for k in self.metrics_name.keys()
             if k != self.date_column
         }
