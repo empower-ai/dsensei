@@ -49,7 +49,7 @@ class DimensionSliceInfo:
 
 
 @dataclass
-class Metrics:
+class Metric:
     name: str = None
     expectedChangePercentage: float = None
     aggregationMethod: str = None
@@ -74,9 +74,6 @@ def analyze(df,
             metrics_name: Dict[str, str],
             columns: List[str]):
     columns = list(columns)
-
-    print(agg_method)
-    print(metrics_name)
 
     baseline = df.loc[df[date_column].between(
         pd.to_datetime(baseline_period[0], utc=True),
@@ -249,8 +246,8 @@ class MetricsController(object):
         slice_info.sort(key=lambda slice: abs(slice.impact), reverse=True)
         return list(map(lambda slice: slice.serializedKey, slice_info[:topN]))
 
-    def buildMetrics(self, metricsName: str) -> Metrics:
-        metrics = Metrics()
+    def buildMetrics(self, metricsName: str) -> Metric:
+        metrics = Metric()
         metrics.name = metricsName
         metrics.baselineNumRows = self.aggs['count_baseline'].sum()
         metrics.comparisonNumRows = self.aggs['count'].sum()

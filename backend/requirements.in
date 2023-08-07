@@ -3,3 +3,4 @@ pandas==2.0.3
 Flask-Cors==4.0.0
 loguru==0.7.0
 google-cloud-bigquery==3.11.4
+db-dtypes==1.1.1
