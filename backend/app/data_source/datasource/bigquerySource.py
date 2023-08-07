@@ -1,6 +1,11 @@
+from concurrent.futures import ThreadPoolExecutor, wait
+
 from google.cloud import bigquery
+from google.cloud.bigquery.table import RowIterator
 
 from app.data_source.datasource import BigquerySchema, Field, Dataset
+
+query_executor = ThreadPoolExecutor(max_workers=10)
 
 
 class BigquerySource:
@@ -16,13 +21,19 @@ class BigquerySource:
         table = self.client.get_table(full_name)
 
         selections = ','.join([f'APPROX_COUNT_DISTINCT({field.name}) as {field.name}' for field in table.schema])
-        query = f"""
-            SELECT {selections}
-            FROM `{table.project}.{table.dataset_id}.{table.table_id}`
-        """
 
-        num_distinct_value_by_field = next(self.client.query(query).result())
-
+        num_distinct_value_by_field_res, preview_data_res = self.run_queries_in_parallel([
+            f"""
+                SELECT {selections}
+                FROM `{table.project}.{table.dataset_id}.{table.table_id}`
+            """,
+            f"""
+                SELECT *
+                FROM `{table.project}.{table.dataset_id}.{table.table_id}`
+                limit 10
+            """
+        ])
+        num_distinct_value_by_field = next(num_distinct_value_by_field_res)
         fields = []
         for field in table.schema:
             fields.append(Field(
@@ -33,19 +44,12 @@ class BigquerySource:
                 numDistinctValues=num_distinct_value_by_field[field.name]
             ))
 
-        query = f"""
-            SELECT *
-            FROM `{table.project}.{table.dataset_id}.{table.table_id}`
-            limit 10
-        """
-        preview_rows = self.client.query(query).result()
-
         schema = BigquerySchema(
             name=table.table_id,
             description=table.description,
             fields=fields,
             isDateSuffixPartitionTable=False,
-            previewData=[dict(row) for row in preview_rows]
+            previewData=[dict(row) for row in preview_data_res]
         )
         return schema
 
@@ -66,3 +70,14 @@ class BigquerySource:
             schemas.append(schema)
 
         return schemas
+
+    def run_queries_in_parallel(self, queries) -> list[RowIterator]:
+        future_results = [query_executor.submit(self.run_query, query) for query in queries]
+
+        wait(future_results)
+        return [future.result() for future in future_results]
+
+    def run_query(self, query) -> RowIterator:
+        # Run the query and return the results
+        query_job = self.client.query(query)
+        return query_job.result()
