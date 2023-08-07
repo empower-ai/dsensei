@@ -159,14 +159,6 @@ function buildWaterfall(
   return result;
 }
 
-function getStandardDeviation(changes: number[]): number {
-  const n = changes.length;
-  const mean = changes.reduce((a, b) => a + b) / n;
-  return Math.sqrt(
-    changes.map((x) => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n
-  );
-}
-
 function buildRowStatusMap(
   metric: InsightMetric,
   groupRows: boolean,
@@ -184,19 +176,11 @@ function buildRowStatusMap(
     metric,
     selectedDimensions
   );
-  const changeStd = getStandardDeviation(
-    filteredTopDriverSliceKeys.map(
-      (key) => metric.dimensionSliceInfo[key].changePercentage
-    )
-  );
 
   const topDriverSliceKeys = filteredTopDriverSliceKeys.filter((key) => {
     const sliceInfo = metric.dimensionSliceInfo[key];
 
-    const changeDev = Math.abs(
-      (sliceInfo.changePercentage - metric.expectedChangePercentage) / changeStd
-    );
-    return mode === "impact" || changeDev > 0.3;
+    return mode === "impact" || sliceInfo.changeDev > 0.3;
   });
 
   if (!groupRows) {
