@@ -1,9 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor, wait
 
+from app.data_source.datasource import BigquerySchema, Dataset, Field
 from google.cloud import bigquery
 from google.cloud.bigquery.table import RowIterator
-
-from app.data_source.datasource import BigquerySchema, Field, Dataset
 
 query_executor = ThreadPoolExecutor(max_workers=10)
 
@@ -20,7 +19,8 @@ class BigquerySource:
     def get_schema(self, full_name: str) -> BigquerySchema:
         table = self.client.get_table(full_name)
 
-        selections = ','.join([f'APPROX_COUNT_DISTINCT({field.name}) as {field.name}' for field in table.schema])
+        selections = ','.join(
+            [f'APPROX_COUNT_DISTINCT({field.name}) as {field.name}' for field in table.schema])
 
         num_distinct_value_by_field_res, preview_data_res = self.run_queries_in_parallel([
             f"""
@@ -45,7 +45,7 @@ class BigquerySource:
             ))
 
         schema = BigquerySchema(
-            name=table.table_id,
+            name=f"{table.project}.{table.dataset_id}.{table.table_id}",
             description=table.description,
             fields=fields,
             isDateSuffixPartitionTable=False,
@@ -72,7 +72,8 @@ class BigquerySource:
         return schemas
 
     def run_queries_in_parallel(self, queries) -> list[RowIterator]:
-        future_results = [query_executor.submit(self.run_query, query) for query in queries]
+        future_results = [query_executor.submit(
+            self.run_query, query) for query in queries]
 
         wait(future_results)
         return [future.result() for future in future_results]

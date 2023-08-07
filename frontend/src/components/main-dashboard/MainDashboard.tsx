@@ -33,6 +33,7 @@ export default function MainDashboard() {
   const routerState = useLocation().state;
 
   const {
+    tableName,
     fileId,
     baseDateRange,
     comparisonDateRange,
@@ -55,6 +56,7 @@ export default function MainDashboard() {
         mode: "cors",
         method: "POST",
         body: JSON.stringify({
+          tableName,
           fileId,
           baseDateRange,
           comparisonDateRange,

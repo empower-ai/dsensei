@@ -40,6 +40,7 @@ def dashboard():
 def getBqInsight():
     data = request.get_json()
 
+    table_name = data['tableName']
     baseDateRange = data['baseDateRange']
     comparisonDateRange = data['comparisonDateRange']
     selectedColumns = data['selectedColumns']
@@ -70,7 +71,7 @@ def getBqInsight():
     dimensions = [k for k, v in dimensions]
 
     bq_metric = BqMetrics(
-        table_name='dsensei_demo.demo_small',
+        table_name=table_name,
         baseline_period=(baselineStart, baselineEnd),
         comparison_period=(comparisonStart, comparisonEnd),
         date_column=date_column,

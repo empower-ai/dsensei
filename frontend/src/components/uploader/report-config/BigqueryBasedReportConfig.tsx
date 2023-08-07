@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function BigqueryBasedReportConfig({
-  schema: { fields },
+  schema: { name, fields },
 }: Props) {
   const navigate = useNavigate();
   const rowCountByColumn = Object.fromEntries(
@@ -24,6 +24,7 @@ export default function BigqueryBasedReportConfig({
   ) => {
     navigate("/dashboard", {
       state: {
+        tableName: name,
         dataSourceType: "bigquery",
         selectedColumns,
         baseDateRange,
