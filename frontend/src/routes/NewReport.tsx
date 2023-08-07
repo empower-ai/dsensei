@@ -25,6 +25,74 @@ function NewReport() {
   const [useSampleFile, setUseSampleFile] = useState<boolean>(false);
   const [dataSource, setDataSource] = useState<string>("csv");
 
+  function renderDataSourceLoader() {
+    if (window.location.hostname === "app.dsensei.app") {
+      return (
+        <>
+          <Flex justifyContent="center" className="pb-4">
+            <Text>Start a new report by uploading a CSV file</Text>
+          </Flex>
+          <CSVLoader
+            useSampleFile={useSampleFile}
+            onLoadingSchema={() => {
+              setIsLoadingSchema(true);
+            }}
+            onSchemaLoaded={(schema: CSVSchema) => {
+              setSchema(schema);
+              setIsLoadingSchema(false);
+            }}
+          />
+        </>
+      );
+    }
+    return (
+      <>
+        <Grid numItems={10}>
+          <Flex
+            justifyContent="center"
+            alignItems="center"
+            className="pb-4 col-span-6 col-start-3 gap-3"
+          >
+            <Text className="w-auto text-black">Select data source:</Text>
+            <Select
+              className="w-2 min-w-[150px]"
+              value={dataSource}
+              onValueChange={setDataSource}
+            >
+              <SelectItem value="csv">CSV</SelectItem>
+              <SelectItem value="bigquery">BigQuery</SelectItem>
+            </Select>
+          </Flex>
+        </Grid>
+        {dataSource === "csv" && (
+          <CSVLoader
+            useSampleFile={useSampleFile}
+            onLoadingSchema={() => {
+              setIsLoadingSchema(true);
+            }}
+            onSchemaLoaded={(schema: CSVSchema) => {
+              setSchema(schema);
+              setIsLoadingSchema(false);
+            }}
+          />
+        )}
+        {dataSource === "bigquery" && (
+          <BigqueryLoader
+            onLoadingSchema={() => {
+              setIsLoadingSchema(true);
+            }}
+            onSchemaLoaded={(schema?: BigquerySchema) => {
+              if (schema) {
+                setSchema(schema);
+              }
+              setIsLoadingSchema(false);
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2 justify-center items-center pt-20">
       <Title>New Report</Title>
@@ -58,48 +126,7 @@ function NewReport() {
             <Text>or</Text>
             <Divider />
           </Flex>
-          <Grid numItems={10}>
-            <Flex
-              justifyContent="center"
-              alignItems="center"
-              className="pb-4 col-span-6 col-start-3 gap-3"
-            >
-              <Text className="w-auto text-black">Select data source:</Text>
-              <Select
-                className="w-2 min-w-[150px]"
-                value={dataSource}
-                onValueChange={setDataSource}
-              >
-                <SelectItem value="csv">CSV</SelectItem>
-                <SelectItem value="bigquery">BigQuery</SelectItem>
-              </Select>
-            </Flex>
-          </Grid>
-          {dataSource === "csv" && (
-            <CSVLoader
-              useSampleFile={useSampleFile}
-              onLoadingSchema={() => {
-                setIsLoadingSchema(true);
-              }}
-              onSchemaLoaded={(schema: CSVSchema) => {
-                setSchema(schema);
-                setIsLoadingSchema(false);
-              }}
-            />
-          )}
-          {dataSource === "bigquery" && (
-            <BigqueryLoader
-              onLoadingSchema={() => {
-                setIsLoadingSchema(true);
-              }}
-              onSchemaLoaded={(schema?: BigquerySchema) => {
-                if (schema) {
-                  setSchema(schema);
-                }
-                setIsLoadingSchema(false);
-              }}
-            />
-          )}
+          {renderDataSourceLoader()}
         </Card>
       )}
       {schema && (
