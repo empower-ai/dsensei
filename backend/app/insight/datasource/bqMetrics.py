@@ -189,13 +189,13 @@ class BqMetrics():
             metric_column[0],
             metric_column[0],
             metric_column[0])
-        print(query)
         return query
 
     def _get_dimensions(self, df: pd.DataFrame) -> Dict[str, Dimension]:
         dimensions = {}
         for column in self.columns:
-            values = list(df[column].unique()).remove('ALL')
+            values = list(df[column].unique())
+            values.remove('ALL')
             dimensions[column] = Dimension(name=column, values=values)
         return dimensions
 
@@ -212,14 +212,16 @@ class BqMetrics():
                 [f'{value_pair.dimension}:{value_pair.value}' for value_pair in sorted_key])
 
             current_period_value = PeriodValue(
-                row['_cnt_comparison'], row['_cnt_comparison'] / comparison_num_rows, row[metric_name + "_baseline"])
+                row['_cnt_comparison'], row['_cnt_comparison'] / comparison_num_rows, row[metric_name + "_comparison"])
             last_period_value = PeriodValue(
-                row['_cnt_baseline'], row['_cnt_baseline'] / baseline_num_rows, row[metric_name + "_comparison"])
+                row['_cnt_baseline'], row['_cnt_baseline'] / baseline_num_rows, row[metric_name + "_baseline"])
             return DimensionSliceInfo(key, serialized_key, [], last_period_value, current_period_value, current_period_value.sliceValue - last_period_value.sliceValue, row['change_percentage'], row['z_score'])
 
         ret = df.apply(
             lambda row: mapToObj(row.name, row), axis=1).tolist()
-        return list(filter(lambda x: x.serializedKey is not None, ret))
+        ret = list(filter(lambda x: x.serializedKey is not None, ret))
+        ret.sort(key=lambda x: abs(x.impact), reverse=True)
+        return ret
 
     def build_metrics(self, metric_name: str, df: pd.DataFrame) -> Metric:
         metric = Metric()
@@ -230,16 +232,38 @@ class BqMetrics():
         metric.baselineNumRows = df['_cnt_baseline'].max()
         metric.comparisonNumRows = df['_cnt_comparison'].max()
 
+        # TODO: fix these
+        metric.baselineValue = 100
+        metric.comparisonValue = 100
+
         all_dimension_slices = self._get_dimension_slice_info(
             df, metric_name, metric.baselineNumRows, metric.comparisonNumRows)
 
         logger.info('Building top driver slice keys')
+
         metric.topDriverSliceKeys = list(map(
             lambda slice: slice.serializedKey,
             [dimension_slice for dimension_slice in all_dimension_slices[:1000]]))
         metric.dimensionSliceInfo = {dimension_slice.serializedKey: dimension_slice
                                      for dimension_slice in all_dimension_slices
                                      }
+
+        # TODO: fix these
+        metric.baselineDateRange = [
+            self.baseline_period[0].strftime("%Y-%m-%d"), self.baseline_period[1].strftime("%Y-%m-%d")]
+        metric.comparisonDateRange = [
+            self.comparison_period[0].strftime("%Y-%m-%d"), self.comparison_period[1].strftime("%Y-%m-%d")]
+        metric.baselineValueByDate = [{
+            "date": "2022-07-01",
+            "value": 100
+        }]
+        metric.comparisonValueByDate = [{
+            "date": "2022-08-01",
+            "value": 100
+        }]
+        metric.expectedChangePercentage = 0
+        metric.aggregationMethod = self.agg_method[metric_name]
+
         return metric
 
     def get_metrics(self) -> Dict[str, float]:
@@ -247,7 +271,6 @@ class BqMetrics():
         Get the metrics of the self.columns
         """
         query = self._prepare_query()
-        # print(query)
         # return ''
         result = self.client.query(query).to_dataframe()
 
