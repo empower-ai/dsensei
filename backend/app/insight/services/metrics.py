@@ -47,6 +47,7 @@ class DimensionSliceInfo:
     changePercentage: float = None
     changeDev: float = None
 
+
 @dataclass
 class Metric:
     name: str = None
