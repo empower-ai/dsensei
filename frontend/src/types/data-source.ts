@@ -6,7 +6,13 @@ export interface Schema {
   }[];
 }
 
-export type FieldType = "DATE" | "TIMESTAMP" | "VARCHAR" | "FLOAT" | "INTEGER";
+export type FieldType =
+  | "DATE"
+  | "TIMESTAMP"
+  | "VARCHAR"
+  | "FLOAT"
+  | "INTEGER"
+  | "DATETIME";
 export type FieldMode = "NULLABLE" | "REPEATED" | "REQUIRED";
 
 export interface Field {

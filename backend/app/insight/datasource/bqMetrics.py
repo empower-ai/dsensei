@@ -69,6 +69,7 @@ class BqMetrics():
                  baseline_period: Tuple[datetime.date, datetime.date],
                  comparison_period: Tuple[datetime.date, datetime.date],
                  date_column,
+                 date_column_type,
                  agg_method: Dict[str, str],
                  metrics_name: Dict[str, str],
                  columns: List[str],
@@ -77,6 +78,8 @@ class BqMetrics():
         self.baseline_period = baseline_period
         self.comparison_period = comparison_period
         self.date_column = date_column
+        self.date_column_converted = f"IF({date_column} > 1924991999, TIMESTAMP_MILLIS({date_column}), TIMESTAMP_SECONDS({date_column}))" \
+            if date_column_type == "INTEGER" else f"TIMESTAMP({date_column})"
         self.agg_method = agg_method
         self.metrics_name = metrics_name
         self.columns = columns
@@ -112,9 +115,9 @@ class BqMetrics():
 
         query = METRIC_BY_DATE.format(
             ',\n'.join(agg),
-            self.date_column,
+            self.date_column_converted,
             self.table_name,
-            self.date_column,
+            self.date_column_converted,
             self.baseline_period[0],
             self.comparison_period[1] + datetime.timedelta(days=1))
         return query
@@ -137,7 +140,7 @@ class BqMetrics():
             ',\n'.join(agg),
             self.table_name,
             ',\n'.join(unnest_columns),
-            date_column,
+            self.date_column_converted,
             self.baseline_period[0],
             self.baseline_period[1] + datetime.timedelta(days=1),
             ',\n'.join(groupby_columns)
@@ -148,7 +151,7 @@ class BqMetrics():
             ',\n'.join(agg),
             self.table_name,
             ',\n'.join(unnest_columns),
-            date_column,
+            self.date_column_converted,
             self.comparison_period[0],
             self.comparison_period[1] + datetime.timedelta(days=1),
             ',\n'.join(groupby_columns)
@@ -156,19 +159,19 @@ class BqMetrics():
 
         # TODO: Add support for other types, like int
         select_values = [
-            f'COALESCE(comparison.{x}, baseline.{x}) AS {x}' for x in groupby_columns
-        ] + [
-            f'COALESCE(comparison.{x}, 0) AS {x}_comparison' for x in metric_column
-        ] + [
-            f'COALESCE(baseline.{x}, 0) AS {x}_baseline' for x in metric_column
-        ] + [
-            f'COALESCE(comparison.{x}, 0) - COALESCE(baseline.{x}, 0) AS {x}_diff' for x in metric_column
-        ] + [
-            f'ABS(COALESCE(comparison.{x}, 0) - COALESCE(baseline.{x}, 0)) AS {x}_abs_diff' for x in metric_column
-        ] + [
-            'COALESCE(comparison._cnt, 0) AS _cnt_comparison',
-            'COALESCE(baseline._cnt, 0) AS _cnt_baseline',
-        ]
+                            f'COALESCE(comparison.{x}, baseline.{x}) AS {x}' for x in groupby_columns
+                        ] + [
+                            f'COALESCE(comparison.{x}, 0) AS {x}_comparison' for x in metric_column
+                        ] + [
+                            f'COALESCE(baseline.{x}, 0) AS {x}_baseline' for x in metric_column
+                        ] + [
+                            f'COALESCE(comparison.{x}, 0) - COALESCE(baseline.{x}, 0) AS {x}_diff' for x in metric_column
+                        ] + [
+                            f'ABS(COALESCE(comparison.{x}, 0) - COALESCE(baseline.{x}, 0)) AS {x}_abs_diff' for x in metric_column
+                        ] + [
+                            'COALESCE(comparison._cnt, 0) AS _cnt_comparison',
+                            'COALESCE(baseline._cnt, 0) AS _cnt_baseline',
+                        ]
 
         join_clause = [
             f'comparison.{x} = baseline.{x}' for x in groupby_columns
@@ -218,7 +221,8 @@ class BqMetrics():
                 row['_cnt_comparison'], row['_cnt_comparison'] / comparison_num_rows, row[metric_name + "_comparison"])
             last_period_value = PeriodValue(
                 row['_cnt_baseline'], row['_cnt_baseline'] / baseline_num_rows, row[metric_name + "_baseline"])
-            return DimensionSliceInfo(key, serialized_key, [], last_period_value, current_period_value, current_period_value.sliceValue - last_period_value.sliceValue, row['change_percentage'], row['z_score'])
+            return DimensionSliceInfo(key, serialized_key, [], last_period_value, current_period_value,
+                                      current_period_value.sliceValue - last_period_value.sliceValue, row['change_percentage'], row['z_score'])
 
         ret = df.apply(
             lambda row: mapToObj(row.name, row), axis=1).tolist()

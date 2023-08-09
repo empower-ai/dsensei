@@ -56,6 +56,7 @@ def getBqInsight():
 
     date_column = list(
         filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0].strip()
+    date_column_type = list(filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][1]['fieldType'].strip()
 
     agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
                              ['type'] == 'supporting_metric', selectedColumns.items()))
@@ -75,6 +76,7 @@ def getBqInsight():
         baseline_period=(baselineStart, baselineEnd),
         comparison_period=(comparisonStart, comparisonEnd),
         date_column=date_column,
+        date_column_type=date_column_type,
         agg_method=agg_method,
         metrics_name=metrics_name,
         columns=dimensions,

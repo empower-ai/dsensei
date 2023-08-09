@@ -7,9 +7,8 @@ interface Props {
   schema: BigquerySchema;
 }
 
-export default function BigqueryBasedReportConfig({
-  schema: { name, fields },
-}: Props) {
+export default function BigqueryBasedReportConfig({ schema }: Props) {
+  const { name, fields } = schema;
   const navigate = useNavigate();
   const rowCountByColumn = Object.fromEntries(
     fields.map((field) => [field.name, field.numDistinctValues])
@@ -35,7 +34,7 @@ export default function BigqueryBasedReportConfig({
 
   return (
     <ReportConfig
-      columns={fields}
+      schema={schema}
       rowCountByColumn={rowCountByColumn}
       onSubmit={onSubmit}
       isUploading={false}
