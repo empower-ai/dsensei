@@ -1,10 +1,12 @@
 import { DateRangePickerValue } from "@tremor/react";
+import { FieldType } from "./data-source";
 
 export type ColumnType = "metric" | "supporting_metric" | "dimension" | "date";
 export type AggregationType = "sum" | "count" | "distinct";
 
 export interface ColumnConfig {
   type: ColumnType;
+  fieldType: FieldType;
   aggregationOption?: AggregationType;
   expectedValue?: number;
 }

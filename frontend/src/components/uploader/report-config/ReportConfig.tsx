@@ -12,7 +12,7 @@ import {
   Title,
 } from "@tremor/react";
 import { useEffect, useState } from "react";
-import { Field } from "../../../types/data-source";
+import { Schema } from "../../../types/data-source";
 import {
   AggregationType,
   ColumnConfig,
@@ -28,7 +28,7 @@ import { ExpectedChangeInput } from "../NumberInput";
 import SingleSelector from "../SingleSelector";
 
 type Props = {
-  columns: Field[];
+  schema: Schema;
   rowCountByColumn: RowCountByColumn;
   rowCountByDateColumn?: RowCountByDateAndColumn;
   prefilledConfigs?: PrefillConfig;
@@ -43,7 +43,7 @@ type Props = {
 };
 
 function ReportConfig({
-  columns: header,
+  schema,
   rowCountByColumn,
   rowCountByDateColumn,
   prefilledConfigs,
@@ -83,6 +83,7 @@ function ReportConfig({
           type,
           aggregationOption: "sum",
           expectedValue: 0.0,
+          fieldType: schema.fields.find((f) => f.name === m)!.type,
         })
     );
     const removedMetrics = Object.keys(selectedColumnsClone).filter(
@@ -136,6 +137,7 @@ function ReportConfig({
       (d) =>
         (selectedColumnsClone[d] = {
           type: "dimension",
+          fieldType: schema.fields.find((f) => f.name === d)!.type,
         })
     );
     const removedDimension = Object.keys(selectedColumnsClone).filter(
@@ -158,6 +160,7 @@ function ReportConfig({
     prevDateColumns.map((d) => delete selectedColumnsClone[d]);
     selectedColumnsClone[dateCol] = {
       type: "date",
+      fieldType: schema.fields.find((f) => f.name === dateCol)!.type,
     };
     setSelectedColumns(selectedColumnsClone);
 
@@ -169,9 +172,29 @@ function ReportConfig({
     (c) => selectedColumns[c]["type"] === "date"
   );
 
-  const dateColumns = header.filter((h) => {
-    return h.type === "TIMESTAMP" || h.type === "DATE";
-  });
+  function getDateColumns() {
+    const dateColumnsByType = schema.fields.filter(
+      (h) =>
+        h.type === "TIMESTAMP" || h.type === "DATE" || h.type === "DATETIME"
+    );
+
+    if (dateColumnsByType.length === 0) {
+      return schema.fields.filter((h) => {
+        const value = schema.previewData[0][h.name];
+        if (Number.isNaN(Number(value))) {
+          // parse non number string
+          return !Number.isNaN(Date.parse(value));
+        } else if (Number(value) > 631152000) {
+          // Timestamp larger than 1990/1/1
+          return true;
+        } else {
+          return false;
+        }
+      });
+    }
+
+    return dateColumnsByType;
+  }
 
   function canSubmit() {
     const hasMetricColumn =
@@ -201,7 +224,7 @@ function ReportConfig({
   }
 
   function getValidDimensionColumns() {
-    return header
+    return schema.fields
       .map((h) => h.name)
       .filter(
         (h) =>
@@ -278,14 +301,14 @@ function ReportConfig({
             <Text className="pr-4 text-black">{"Select date column"}</Text>
           }
           labels={
-            dateColumns.length === 0
-              ? header.map((h) => h.name)
-              : dateColumns.map((h) => h.name)
+            getDateColumns().length === 0
+              ? schema.fields.map((h) => h.name)
+              : getDateColumns().map((h) => h.name)
           }
           values={
-            dateColumns.length === 0
-              ? header.map((h) => h.name)
-              : dateColumns.map((h) => h.name)
+            getDateColumns().length === 0
+              ? schema.fields.map((h) => h.name)
+              : getDateColumns().map((h) => h.name)
           }
           selectedValue={selectedDateColumn ? selectedDateColumn : ""}
           onValueChange={onSelectDateColumn}
@@ -314,8 +337,8 @@ function ReportConfig({
               {"Select the metric column"}
             </Text>
           }
-          labels={header.map((h) => h.name)}
-          values={header.map((h) => h.name)}
+          labels={schema.fields.map((h) => h.name)}
+          values={schema.fields.map((h) => h.name)}
           selectedValue={
             Object.keys(selectedColumns).filter(
               (c) => selectedColumns[c]["type"] === "metric"
@@ -393,7 +416,7 @@ function ReportConfig({
                   Select related metric columns <Bold>[optional]</Bold>
                 </Text>
               }
-              labels={header
+              labels={schema.fields
                 .map((h) => h.name)
                 .filter(
                   (h) =>
@@ -402,7 +425,7 @@ function ReportConfig({
                       selectedColumns[h]["type"] === "metric"
                     )
                 )}
-              values={header
+              values={schema.fields
                 .map((h) => h.name)
                 .filter(
                   (h) =>

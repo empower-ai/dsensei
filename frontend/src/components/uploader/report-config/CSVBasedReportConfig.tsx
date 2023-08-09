@@ -17,21 +17,27 @@ const sampleDataPrefills: PrefillConfig = {
       type: "metric",
       aggregationOption: "distinct",
       expectedValue: 0.03,
+      fieldType: "VARCHAR",
     },
     eventTime: {
       type: "date",
+      fieldType: "TIMESTAMP",
     },
     country: {
       type: "dimension",
+      fieldType: "VARCHAR",
     },
     gender: {
       type: "dimension",
+      fieldType: "VARCHAR",
     },
     majorOsVersion: {
       type: "dimension",
+      fieldType: "VARCHAR",
     },
     phoneBrand: {
       type: "dimension",
+      fieldType: "VARCHAR",
     },
   },
   baseDateRange: {
@@ -50,11 +56,12 @@ interface Props {
 }
 
 export default function CSVBasedReportConfig({
-  schema: { fields, file },
+  schema,
   prefillWithSampleData,
 }: Props) {
   const db = rd.useDuckDB().value!;
   const navigate = useNavigate();
+  const { fields, file } = schema;
 
   const [rowCountByDateAndColumn, setRowCountByDateAndColumn] =
     useState<RowCountByDateAndColumn>({});
@@ -152,7 +159,7 @@ export default function CSVBasedReportConfig({
 
   return (
     <ReportConfig
-      columns={fields}
+      schema={schema}
       rowCountByColumn={rowCountByColumn}
       rowCountByDateColumn={rowCountByDateAndColumn}
       prefilledConfigs={prefillWithSampleData ? sampleDataPrefills : undefined}
