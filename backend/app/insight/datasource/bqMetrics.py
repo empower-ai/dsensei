@@ -78,7 +78,7 @@ class BqMetrics():
         self.baseline_period = baseline_period
         self.comparison_period = comparison_period
         self.date_column = date_column
-        self.date_column_converted = f"IF({date_column} > 1924991999, TIMESTAMP_MILLIS({date_column}), TIMESTAMP_SECONDS({date_column}))" \
+        self.date_column_converted = f"IF({date_column} > 1924991999999, TIMESTAMP_MICROS({date_column}), IF({date_column} > 1924991999, TIMESTAMP_MILLIS({date_column}), TIMESTAMP_SECONDS({date_column})))" \
             if date_column_type == "INTEGER" else f"TIMESTAMP({date_column})"
         self.agg_method = agg_method
         self.metrics_name = metrics_name

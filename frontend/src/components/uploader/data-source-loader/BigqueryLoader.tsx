@@ -39,7 +39,7 @@ export default function BigqueryLoader({
               Server error, please retry. If the issue persists, please contact
               us at{" "}
               <a href="mailto:founders@dsensei.app" className="text-blue-500">
-                email
+                founders@dsensei.app
               </a>
             </Text>
           );
@@ -73,7 +73,7 @@ export default function BigqueryLoader({
           Server error, please retry. If the issue persists, please contact us
           at{" "}
           <a href="mailto:founders@dsensei.app" className="text-blue-500">
-            email
+            founders@dsensei.app
           </a>
         </Text>
       );
@@ -82,7 +82,7 @@ export default function BigqueryLoader({
   }
 
   function onTableNameChanged(tableName: string) {
-    if (tableName.match(/^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/)) {
+    if (tableName.match(/^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_*-]+$/)) {
       setIsTableNameValid(true);
     } else {
       setIsTableNameValid(false);

@@ -44,7 +44,9 @@ function DataPreviewer({
     <TableRow key={row_index}>
       {header.map((h, col_index) => (
         <TableCell key={row_index + "-" + col_index}>
-          <Text>{item[h.name]}</Text>
+          <Text>
+            {h.type === "RECORD" ? JSON.stringify(item[h.name]) : item[h.name]}
+          </Text>
         </TableCell>
       ))}
     </TableRow>

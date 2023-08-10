@@ -184,8 +184,15 @@ function ReportConfig({
         if (Number.isNaN(Number(value))) {
           // parse non number string
           return !Number.isNaN(Date.parse(value));
-        } else if (Number(value) > 631152000) {
-          // Timestamp larger than 1990/1/1
+        } else if (
+          // seconds
+          (Number(value) > 631152000 && Number(value) < 2082758399) ||
+          // milli seconds
+          (Number(value) > 631152000000 && Number(value) < 2082758399000) ||
+          // micro seconds
+          (Number(value) > 631152000000000 && Number(value) < 2082758399000000)
+        ) {
+          // Timestamp between 1990/1/1  and 2035/12/31
           return true;
         } else {
           return false;
@@ -240,8 +247,10 @@ function ReportConfig({
         }
 
         return (
-          rowCountByColumn[h] < 100 ||
-          rowCountByColumn[h] / rowCountByColumn["totalRowsReserved"] < 0.01
+          (rowCountByColumn[h] < 100 ||
+            rowCountByColumn[h] / rowCountByColumn["totalRowsReserved"] <
+              0.01) &&
+          rowCountByColumn[h] > 0
         );
       });
   }
@@ -337,8 +346,12 @@ function ReportConfig({
               {"Select the metric column"}
             </Text>
           }
-          labels={schema.fields.map((h) => h.name)}
-          values={schema.fields.map((h) => h.name)}
+          labels={schema.fields
+            .map((h) => h.name)
+            .filter((h) => rowCountByColumn[h] > 0)}
+          values={schema.fields
+            .map((h) => h.name)
+            .filter((h) => rowCountByColumn[h] > 0)}
           selectedValue={
             Object.keys(selectedColumns).filter(
               (c) => selectedColumns[c]["type"] === "metric"

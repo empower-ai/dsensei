@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, wait
+from pprint import pprint
 
 from app.data_source.datasource import BigquerySchema, Dataset, Field
 from google.cloud import bigquery
@@ -20,7 +21,7 @@ class BigquerySource:
         table = self.client.get_table(full_name)
 
         selections = ','.join(
-            [f'APPROX_COUNT_DISTINCT({field.name}) as {field.name}' for field in table.schema])
+            [f'APPROX_COUNT_DISTINCT({field.name}) as {field.name}' for field in table.schema if field.field_type != 'RECORD'])
 
         num_distinct_value_by_field_res, preview_data_res = self.run_queries_in_parallel([
             f"""
@@ -42,6 +43,8 @@ class BigquerySource:
                 type=field.field_type,
                 mode=field.mode,
                 numDistinctValues=num_distinct_value_by_field[field.name]
+                if (field.mode != "REPEATED" and field.field_type != "RECORD")
+                else 0
             ))
 
         schema = BigquerySchema(
