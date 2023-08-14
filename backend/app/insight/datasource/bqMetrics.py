@@ -55,7 +55,7 @@ comparison AS ({}),
 joined AS ({}),
 std AS ({})
 SELECT *,
-joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline) / std.std AS z_score,
+joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline) / IF(std.std = 0, 0.001, std.std) AS z_score,
 joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline) as change_percentage
 FROM joined CROSS JOIN std
 ORDER BY ABS(z_score) DESC
