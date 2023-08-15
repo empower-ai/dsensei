@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/react";
+import { Flex } from "@tremor/react";
 import { ReactNode } from "react";
 import { NavBar } from "./navbar";
 import { useTracking } from "./tracking";
@@ -12,8 +14,25 @@ export function MainContent({ children }: Props) {
 
   return (
     <>
-      <NavBar />
-      <main className="pt-18">{children}</main>
+      <NavBar />{" "}
+      <main>
+        <Sentry.ErrorBoundary
+          fallback={
+            <Flex justifyContent="center" className="pt-20">
+              Unexpected error happened, apologies for the inconvenience, please
+              contact us at:
+              <a
+                href="mailto:founders@dsensei.app"
+                className="text-blue-500 pl-2"
+              >
+                founders@dsensei.app
+              </a>
+            </Flex>
+          }
+        >
+          {children}
+        </Sentry.ErrorBoundary>
+      </main>
     </>
   );
 }

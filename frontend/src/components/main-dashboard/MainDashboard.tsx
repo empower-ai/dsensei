@@ -42,34 +42,39 @@ export default function MainDashboard() {
   } = routerState;
 
   useEffect(() => {
-    let apiPath = "/api/insight";
-    if (dataSourceType === "bigquery") {
-      apiPath = "/api/bqinsight";
+    async function loadInsight() {
+      let apiPath = "/api/insight";
+      if (dataSourceType === "bigquery") {
+        apiPath = "/api/bqinsight";
+      }
+
+      dispatch(setLoadingStatus(true));
+      const res = await fetch(
+        process.env.NODE_ENV === "development"
+          ? `http://127.0.0.1:5001${apiPath}`
+          : apiPath,
+        {
+          mode: "cors",
+          method: "POST",
+          body: JSON.stringify({
+            tableName,
+            fileId,
+            baseDateRange,
+            comparisonDateRange,
+            selectedColumns,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const jsonResult = await res.json();
+      dispatch(updateMetrics(jsonResult));
     }
 
-    dispatch(setLoadingStatus(true));
-    fetch(
-      process.env.NODE_ENV === "development"
-        ? `http://127.0.0.1:5001${apiPath}`
-        : apiPath,
-      {
-        mode: "cors",
-        method: "POST",
-        body: JSON.stringify({
-          tableName,
-          fileId,
-          baseDateRange,
-          comparisonDateRange,
-          selectedColumns,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    ).then((res) => {
-      res.json().then((json) => {
-        dispatch(updateMetrics(json));
-      });
+    loadInsight().catch((e) => {
+      throw e;
     });
   }, [baseDateRange, comparisonDateRange, fileId, dispatch, selectedColumns]);
 
