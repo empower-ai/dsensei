@@ -83,6 +83,7 @@ function CSVLoader({ useSampleFile, onLoadingSchema, onSchemaLoaded }: Props) {
 
     onSchemaLoaded({
       file: file,
+      countRows: csvRows.length,
       name: file.name,
       fields: parsedHeaders,
       previewData,

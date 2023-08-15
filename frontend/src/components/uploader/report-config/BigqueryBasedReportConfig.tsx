@@ -35,6 +35,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
   return (
     <ReportConfig
       schema={schema}
+      dataSourceType="bigquery"
       rowCountByColumn={rowCountByColumn}
       onSubmit={onSubmit}
       isUploading={false}

@@ -49,6 +49,7 @@ class BigquerySource:
 
         schema = BigquerySchema(
             name=f"{table.project}.{table.dataset_id}.{table.table_id}",
+            countRows=table.num_rows,
             description=table.description,
             fields=fields,
             isDateSuffixPartitionTable=False,

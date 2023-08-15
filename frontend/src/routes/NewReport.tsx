@@ -17,13 +17,18 @@ import BigqueryLoader from "../components/uploader/data-source-loader/BigqueryLo
 import CSVLoader from "../components/uploader/data-source-loader/CSVLoader";
 import BigqueryBasedReportConfig from "../components/uploader/report-config/BigqueryBasedReportConfig";
 import CSVBasedReportConfig from "../components/uploader/report-config/CSVBasedReportConfig";
-import { BigquerySchema, CSVSchema, Schema } from "../types/data-source";
+import {
+  BigquerySchema,
+  CSVSchema,
+  DataSourceType,
+  Schema,
+} from "../types/data-source";
 
 function NewReport() {
   const [isLoadingSchema, setIsLoadingSchema] = useState<boolean>(false);
   const [schema, setSchema] = useState<Schema>();
   const [useSampleFile, setUseSampleFile] = useState<boolean>(false);
-  const [dataSource, setDataSource] = useState<string>("csv");
+  const [dataSource, setDataSource] = useState<DataSourceType>("csv");
 
   function renderDataSourceLoader() {
     if (window.location.hostname === "app.dsensei.app") {
@@ -57,7 +62,7 @@ function NewReport() {
             <Select
               className="w-2 min-w-[150px]"
               value={dataSource}
-              onValueChange={setDataSource}
+              onValueChange={(value) => setDataSource(value as DataSourceType)}
             >
               <SelectItem value="csv">CSV</SelectItem>
               <SelectItem value="bigquery">BigQuery</SelectItem>

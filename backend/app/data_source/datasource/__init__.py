@@ -17,9 +17,11 @@ class Field:
 @dataclass(frozen=True)
 class Schema:
     name: str
+    countRows: int
     description: Optional[str]
     fields: list[Field]
     previewData: list[dict[str, str]]
+
 
 @dataclass(frozen=True)
 class Dataset:

@@ -1,10 +1,13 @@
 export interface Schema {
   name: string;
+  countRows: number;
   fields: Field[];
   previewData: {
     [key: string]: string;
   }[];
 }
+
+export type DataSourceType = "csv" | "bigquery";
 
 export type FieldType =
   | "DATE"

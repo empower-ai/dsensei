@@ -12,7 +12,8 @@ import {
   Title,
 } from "@tremor/react";
 import { useEffect, useState } from "react";
-import { Schema } from "../../../types/data-source";
+import { useTracking } from "../../../common/tracking";
+import { DataSourceType, Schema } from "../../../types/data-source";
 import {
   AggregationType,
   ColumnConfig,
@@ -29,6 +30,7 @@ import SingleSelector from "../SingleSelector";
 
 type Props = {
   schema: Schema;
+  dataSourceType: DataSourceType;
   rowCountByColumn: RowCountByColumn;
   rowCountByDateColumn?: RowCountByDateAndColumn;
   prefilledConfigs?: PrefillConfig;
@@ -44,12 +46,14 @@ type Props = {
 
 function ReportConfig({
   schema,
+  dataSourceType,
   rowCountByColumn,
   rowCountByDateColumn,
   prefilledConfigs,
   isUploading,
   onSubmit,
 }: Props) {
+  const { trackEvent } = useTracking();
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: ColumnConfig;
   }>({});
@@ -201,6 +205,28 @@ function ReportConfig({
     }
 
     return dateColumnsByType;
+  }
+
+  function trackSubmit() {
+    const dimensionColumns = Object.entries(selectedColumns).filter(
+      (entry) => entry[1].type === "dimension"
+    );
+
+    const numDimensions = dimensionColumns.length;
+    const cardinalityProduct = dimensionColumns.reduce((acc, column) => {
+      const [fieldName] = column;
+      const numDistinctValues =
+        schema.fields.find((field) => field.name === fieldName)
+          ?.numDistinctValues ?? 1;
+      return acc * numDistinctValues;
+    }, 1);
+    const data = {
+      numDimensions,
+      cardinalityProduct,
+      dataSourceType,
+      countRows: schema.countRows,
+    };
+    trackEvent("Report Submission", data);
   }
 
   function canSubmit() {
@@ -480,13 +506,14 @@ function ReportConfig({
       <Flex justifyContent="center" className="flex-col">
         <Divider />
         <Button
-          onClick={async () =>
+          onClick={async () => {
+            trackSubmit();
             await onSubmit(
               selectedColumns,
               baseDateRangeData.range,
               comparisonDateRangeData.range
-            )
-          }
+            );
+          }}
           loading={isUploading}
           disabled={!canSubmit()}
         >

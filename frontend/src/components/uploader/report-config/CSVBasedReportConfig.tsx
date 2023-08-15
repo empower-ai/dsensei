@@ -160,6 +160,7 @@ export default function CSVBasedReportConfig({
   return (
     <ReportConfig
       schema={schema}
+      dataSourceType="csv"
       rowCountByColumn={rowCountByColumn}
       rowCountByDateColumn={rowCountByDateAndColumn}
       prefilledConfigs={prefillWithSampleData ? sampleDataPrefills : undefined}

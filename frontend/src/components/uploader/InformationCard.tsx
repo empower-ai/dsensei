@@ -4,11 +4,15 @@ import {
   AccordionHeader,
   Card,
   Divider,
+  Flex,
   Text,
   Title,
 } from "@tremor/react";
+import { useTracking } from "../../common/tracking";
 
 export default function InformationCard() {
+  const { isTrackingEnabled, enableTracking, disableTracking } = useTracking();
+
   return (
     <Card className="max-w-6xl p-3">
       <Accordion defaultOpen={true} className="border-0">
@@ -110,18 +114,36 @@ export default function InformationCard() {
         </AccordionBody>
       </Accordion>
       <Divider className="mt-1 mb-1" />
-      <Text className="pt-1">
-        Like the project? Star us on{" "}
-        <a
-          href="https://github.com/dsensei/dsensei-insight"
-          target="_blank"
-          rel="noreferrer"
-          className="text-blue-500"
-        >
-          github
-        </a>
-        .
-      </Text>
+      <Flex justifyContent="between">
+        <Flex justifyContent="start" className="gap-2">
+          <input
+            type="checkbox"
+            checked={isTrackingEnabled()}
+            onChange={() => {
+              if (isTrackingEnabled()) {
+                disableTracking();
+              } else {
+                enableTracking();
+              }
+            }}
+          />
+          <Text>Send anonymous usage data to help us improve the product.</Text>
+        </Flex>
+        <Flex justifyContent="end">
+          <Text className="pt-1">
+            Like the project? Star us on{" "}
+            <a
+              href="https://github.com/dsensei/dsensei-insight"
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-500"
+            >
+              github
+            </a>
+            .
+          </Text>
+        </Flex>
+      </Flex>
     </Card>
   );
 }
