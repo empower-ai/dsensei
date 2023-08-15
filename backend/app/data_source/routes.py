@@ -13,7 +13,7 @@ bigquerySource = BigquerySource()
 @bp.route('bigquery/schema/<full_name>', methods=['GET'])
 def get_schema(full_name: str):
     try:
-        return json.dumps(asdict(bigquerySource.get_schema(full_name)), default=str)
+        return json.dumps(asdict(bigquerySource.get_schema(full_name)), default=str, allow_nan=False)
     except NotFound as e:
         return json.dumps({
             'error': 'Table not found.'

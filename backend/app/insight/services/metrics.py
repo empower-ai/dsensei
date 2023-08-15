@@ -99,7 +99,7 @@ def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, com
                           or isinstance(index, tuple)) else [index]
 
         key = tuple([DimensionValuePair(dimensions[i], str(index[i]))
-                    for i in range(len(dimensions))])
+                     for i in range(len(dimensions))])
 
         sorted_key = sorted(key, key=lambda x: x.dimension)
         serializedKey = '|'.join(
@@ -281,7 +281,7 @@ class MetricsController(object):
             key=lambda slice: abs(slice.impact), reverse=True)
         for sliceInfo in all_dimension_slices:
             sliceInfo.changePercentage = 0.2 if sliceInfo.baselineValue.sliceValue == 0 else (
-                sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
+                                                                                                     sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
         lower = np.percentile(
             [sliceInfo.changePercentage for sliceInfo in all_dimension_slices], 20)
         upper = np.percentile(
@@ -350,6 +350,6 @@ class MetricsController(object):
         }
 
         logger.info(f'Finished building metrics for {self.metrics_name}')
-        ret = json.dumps(ret, cls=NpEncoder)
+        ret = json.dumps(ret, cls=NpEncoder, allow_nan=False)
         logger.info(f'Finished dumping metrics for {self.metrics_name}')
         return ret

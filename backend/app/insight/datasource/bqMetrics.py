@@ -326,4 +326,4 @@ class BqMetrics():
             if k != self.date_column
         }
 
-        return json.dumps(ret, cls=NpEncoder)
+        return json.dumps(ret, cls=NpEncoder, allow_nan=False)

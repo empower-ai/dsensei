@@ -3,6 +3,9 @@ import os
 from datetime import datetime
 
 import pandas as pd
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
 from app.data_source import bp as data_source_bp
 from app.file_upload.services.file_upload import FileUploadService
 from app.insight.datasource.bqMetrics import BqMetrics
@@ -12,6 +15,17 @@ from flask import Flask, request
 from flask_cors import CORS
 from loguru import logger
 
+flask_env_value = os.environ.get('FLASK_ENV', '')
+if flask_env_value != 'development':
+    sentry_sdk.init(
+        dsn="https://196e3946ca25bbb9c939c14a7daa2da8@o4505710546190336.ingest.sentry.io/4505711370698752",
+        integrations=[
+            FlaskIntegration(),
+        ],
+
+        traces_sample_rate=1.0,
+        include_local_variables=False
+    )
 app = Flask(__name__, static_url_path='')
 
 app.config.from_object(Config)
@@ -59,7 +73,7 @@ def getBqInsight():
     date_column_type = list(filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][1]['fieldType'].strip()
 
     agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
-                             ['type'] == 'supporting_metric', selectedColumns.items()))
+    ['type'] == 'supporting_metric', selectedColumns.items()))
     expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))[
         0][1]['expectedValue']
 
@@ -105,7 +119,7 @@ def getInsight():
         filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0].strip()
 
     agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
-                             ['type'] == 'supporting_metric', selectedColumns.items()))
+    ['type'] == 'supporting_metric', selectedColumns.items()))
     expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))[
         0][1]['expectedValue']
 
