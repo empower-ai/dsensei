@@ -22,8 +22,8 @@ FROM
   {}
 WHERE {} BETWEEN TIMESTAMP('{}') AND TIMESTAMP('{}')
 GROUP BY
-
   {}
+HAVING {} > {}
 """
 
 METRIC_BY_DATE = """
@@ -38,7 +38,8 @@ ORDER BY day
 """
 
 JOIN_TEMPLATE = """
-SELECT {}
+SELECT {},
+{}
 FROM comparison FULL OUTER JOIN baseline ON
 {}
 """
@@ -56,10 +57,12 @@ joined AS ({}),
 std AS ({})
 SELECT *,
 joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline) / IF(std.std = 0, 0.001, std.std) AS z_score,
-joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline) as change_percentage
+joined.{}_diff / IF(joined.{}_baseline = 0, 1, joined.{}_baseline) as change_percentage,
 FROM joined CROSS JOIN std
-ORDER BY ABS(z_score) DESC
-LIMIT 10000
+ORDER BY
+    IF(count_all_values = {}, 1, 0) DESC,
+    ABS(z_score) DESC
+LIMIT 30000
 """
 
 
@@ -124,6 +127,9 @@ class BqMetrics():
 
     def _prepare_query(self) -> str:
         groupby_columns = self.columns
+        column_value_all_count = '+'.join(map(lambda x: f"IF({x}='ALL', 1, 0)", self.columns))
+        joined_column_value_all_count = 'COALESCE(' + '+'.join(map(lambda x: f"IF(comparison.{x}='ALL', 1, 0)", self.columns)) + ',' + '+'.join(
+            map(lambda x: f"IF(baseline.{x}='ALL', 1, 0)", self.columns)) + ') AS count_all_values'
         unnest_columns = list(map(
             lambda x: f'UNNEST([CAST({x} AS STRING), "ALL"]) AS {x}',
             self.columns
@@ -143,7 +149,9 @@ class BqMetrics():
             self.date_column_converted,
             self.baseline_period[0],
             self.baseline_period[1] + datetime.timedelta(days=1),
-            ',\n'.join(groupby_columns)
+            ',\n'.join(groupby_columns),
+            column_value_all_count,
+            len(columns_to_select) - 4  # group by up to 4 dimensions
         )
 
         comparison_query = SUB_QUERY_TEMPLATE.format(
@@ -154,7 +162,9 @@ class BqMetrics():
             self.date_column_converted,
             self.comparison_period[0],
             self.comparison_period[1] + datetime.timedelta(days=1),
-            ',\n'.join(groupby_columns)
+            ',\n'.join(groupby_columns),
+            column_value_all_count,
+            len(columns_to_select) - 4  # group by up to 4 dimensions
         )
 
         # TODO: Add support for other types, like int
@@ -179,6 +189,7 @@ class BqMetrics():
 
         join_query = JOIN_TEMPLATE.format(
             ',\n'.join(select_values),
+            joined_column_value_all_count,
             ' AND '.join(join_clause))
 
         std_query = STD_TEMPLATE.format(
@@ -194,7 +205,9 @@ class BqMetrics():
             metric_column[0],
             metric_column[0],
             metric_column[0],
-            metric_column[0])
+            metric_column[0],
+            len(columns_to_select) - 1
+        )
         return query
 
     def _get_dimensions(self, df: pd.DataFrame) -> Dict[str, Dimension]:
@@ -298,7 +311,6 @@ class BqMetrics():
         Get the metrics of the self.columns
         """
         query = self._prepare_query()
-        # return ''
         result = self.client.query(query).to_dataframe()
 
         value_by_date_query = self._prepare_value_by_date_query()
