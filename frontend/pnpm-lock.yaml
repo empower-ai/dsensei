@@ -1,6 +1,9 @@
 lockfileVersion: '6.0'
 
 dependencies:
+  '@amplitude/analytics-browser':
+    specifier: ^2.2.0
+    version: 2.2.0
   '@babel/core':
     specifier: ^7.16.0
     version: 7.22.9
@@ -154,6 +157,9 @@ dependencies:
   react-app-polyfill:
     specifier: ^3.0.0
     version: 3.0.0
+  react-cookie:
+    specifier: ^5.0.0
+    version: 5.0.0(react@18.2.0)
   react-csv:
     specifier: ^2.2.2
     version: 2.2.2
@@ -246,6 +252,58 @@ packages:
   /@alloc/quick-lru@5.2.0:
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+    dev: false
+
+  /@amplitude/analytics-browser@2.2.0:
+    resolution: {integrity: sha512-gCRnvXT5FDmaXbrmDVdVLbm7ubYgpQX2dRnA3R8uPfqw3YGXszueVxTPKYuMf0fdQ3+1N9RcPmyEycpywN9vKg==}
+    dependencies:
+      '@amplitude/analytics-client-common': 2.0.4
+      '@amplitude/analytics-core': 2.0.3
+      '@amplitude/analytics-types': 2.1.1
+      '@amplitude/plugin-page-view-tracking-browser': 2.0.6
+      '@amplitude/plugin-web-attribution-browser': 2.0.6
+      tslib: 2.6.0
+    dev: false
+
+  /@amplitude/analytics-client-common@2.0.4:
+    resolution: {integrity: sha512-X0+zE8sODcQ2ioj9ZB98Gr/9FCRDiJuSixefaLrfng/4x5VwHK0if8biCqqBHXu6HlMpeMFrCyiABUTDT87QVA==}
+    dependencies:
+      '@amplitude/analytics-connector': 1.4.8
+      '@amplitude/analytics-core': 2.0.3
+      '@amplitude/analytics-types': 2.1.1
+      tslib: 2.6.0
+    dev: false
+
+  /@amplitude/analytics-connector@1.4.8:
+    resolution: {integrity: sha512-dFW7c7Wb6Ng7vbmzwbaXZSpqfBx37ukamJV9ErFYYS8vGZK/Hkbt3M7fZHBI4WFU6CCwakr2ZXPme11uGPYWkQ==}
+    dev: false
+
+  /@amplitude/analytics-core@2.0.3:
+    resolution: {integrity: sha512-tpD1gCmPpzPNPumQT1ecOJtuan5OsQdKp9AX8YKc7t1/K3xHzGo3FH3JvdaAJVYYWeZV40bp/JL6wJiYIzyZjA==}
+    dependencies:
+      '@amplitude/analytics-types': 2.1.1
+      tslib: 2.6.0
+    dev: false
+
+  /@amplitude/analytics-types@2.1.1:
+    resolution: {integrity: sha512-H3vebPR9onRdp0WzAZmI/4qmAE903uLOd2ZfMeHsVc1zaFTTCk46SoCuV4IrlF+VILrDw9Fy6gC9yl5N2PZcJQ==}
+    dev: false
+
+  /@amplitude/plugin-page-view-tracking-browser@2.0.6:
+    resolution: {integrity: sha512-V8ef24E+KYINQf1o9MQnkmhFmQHGD5lb6mlTH8jGD2PdUe/KDXdO4S4rpBewxcrAfUH+iEqEanbVnTWpg6iPnw==}
+    dependencies:
+      '@amplitude/analytics-client-common': 2.0.4
+      '@amplitude/analytics-types': 2.1.1
+      tslib: 2.6.0
+    dev: false
+
+  /@amplitude/plugin-web-attribution-browser@2.0.6:
+    resolution: {integrity: sha512-+WQuhHJn7ZsYaTMe6iPE081b6y2oe9m+W/eZW+Lyf99Vt3rntDVYZIgZVwwds0s2SsUBcSvYFu1JgS65NfxWNQ==}
+    dependencies:
+      '@amplitude/analytics-client-common': 2.0.4
+      '@amplitude/analytics-core': 2.0.3
+      '@amplitude/analytics-types': 2.1.1
+      tslib: 2.6.0
     dev: false
 
   /@ampproject/remapping@2.2.1:
@@ -2747,6 +2805,10 @@ packages:
       '@types/node': 16.18.38
     dev: false
 
+  /@types/cookie@0.3.3:
+    resolution: {integrity: sha512-LKVP3cgXBT9RYj+t+9FDKwS5tdI+rPBXaNSkma7hvqy35lc7mAokC2zsqWJH0LaqIt3B962nuYI77hsJoT1gow==}
+    dev: false
+
   /@types/d3-array@3.0.5:
     resolution: {integrity: sha512-Qk7fpJ6qFp+26VeQ47WY0mkwXaiq8+76RJcncDEfMc2ocRzXLO67bLFRNI4OX1aGBoPzsM5Y2T+/m1pldOgD+A==}
     dev: false
@@ -4249,6 +4311,11 @@ packages:
 
   /cookie-signature@1.0.6:
     resolution: {integrity: sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==}
+    dev: false
+
+  /cookie@0.4.2:
+    resolution: {integrity: sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==}
+    engines: {node: '>= 0.6'}
     dev: false
 
   /cookie@0.5.0:
@@ -8902,6 +8969,17 @@ packages:
       whatwg-fetch: 3.6.16
     dev: false
 
+  /react-cookie@5.0.0(react@18.2.0):
+    resolution: {integrity: sha512-IAO8ff0SP5QN7NZwiPNMr5P0vuCTE2Zm9ailckJqZOfokMddyZTXwCEHreHQGunj5G+EWhHTzTRl0IHmL04hmg==}
+    peerDependencies:
+      react: '>= 16.3.0'
+    dependencies:
+      '@types/hoist-non-react-statics': 3.3.1
+      hoist-non-react-statics: 3.3.2
+      react: 18.2.0
+      universal-cookie: 4.0.4
+    dev: false
+
   /react-csv@2.2.2:
     resolution: {integrity: sha512-RG5hOcZKZFigIGE8LxIEV/OgS1vigFQT4EkaHeKgyuCbUAu9Nbd/1RYq++bJcJJ9VOqO/n9TZRADsXNDR4VEpw==}
     dev: false
@@ -10400,6 +10478,13 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       crypto-random-string: 2.0.0
+    dev: false
+
+  /universal-cookie@4.0.4:
+    resolution: {integrity: sha512-lbRVHoOMtItjWbM7TwDLdl8wug7izB0tq3/YVKhT/ahB4VDvWMyvnADfnJI8y6fSvsjh51Ix7lTGC6Tn4rMPhw==}
+    dependencies:
+      '@types/cookie': 0.3.3
+      cookie: 0.4.2
     dev: false
 
   /universalify@0.2.0:
