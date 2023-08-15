@@ -215,7 +215,8 @@ class BqMetrics():
         dimensions = {}
         for column in self.columns:
             values = list(df[column].unique())
-            values.remove('ALL')
+            if "ALL" in values:
+                values.remove('ALL')
             dimensions[column] = Dimension(name=column, values=values)
         return dimensions
 

@@ -182,7 +182,6 @@ def parToDimensionSliceInfo(slices, metrics_name, baselineCount: int, comparison
 
 def calculateTotalSegments(dimensions: Dict[str, Dimension]) -> int:
     nums = list(map(lambda x: len(x.values), dimensions.values()))
-    print(nums)
 
     def backtrack(start, curr_subset):
         all_subsets.append(list(curr_subset))
