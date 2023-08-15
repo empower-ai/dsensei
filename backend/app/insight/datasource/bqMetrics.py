@@ -8,7 +8,7 @@ import pandas as pd
 from app.data_source.datasource.bigquerySource import BigquerySource
 from app.insight.services.metrics import (Dimension, DimensionSliceInfo,
                                           DimensionValuePair, Metric,
-                                          NpEncoder, PeriodValue)
+                                          NpEncoder, PeriodValue, calculateTotalSegments)
 from google.cloud import bigquery
 from loguru import logger
 
@@ -127,7 +127,8 @@ class BqMetrics():
 
     def _prepare_query(self) -> str:
         groupby_columns = self.columns
-        column_value_all_count = '+'.join(map(lambda x: f"IF({x}='ALL', 1, 0)", self.columns))
+        column_value_all_count = '+'.join(
+            map(lambda x: f"IF({x}='ALL', 1, 0)", self.columns))
         joined_column_value_all_count = 'COALESCE(' + '+'.join(map(lambda x: f"IF(comparison.{x}='ALL', 1, 0)", self.columns)) + ',' + '+'.join(
             map(lambda x: f"IF(baseline.{x}='ALL', 1, 0)", self.columns)) + ') AS count_all_values'
         unnest_columns = list(map(
@@ -250,6 +251,7 @@ class BqMetrics():
         metric = Metric()
         metric.name = self.metrics_name[metric_name]
         metric.dimensions = self._get_dimensions(df)
+        metric.totalSegments = calculateTotalSegments(metric.dimensions)
 
         metric.baselineNumRows = df['_cnt_baseline'].max()
         metric.comparisonNumRows = df['_cnt_comparison'].max()

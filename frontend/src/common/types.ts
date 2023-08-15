@@ -1,5 +1,6 @@
 export interface InsightMetric {
   name: string;
+  totalSegments: number;
   expectedChangePercentage: number;
   aggregationMethod: string;
   baselineValue: number;

@@ -24,6 +24,7 @@ class DimensionValuePair:
     dimension: str = None
     value: str = None
 
+
 # @dataclass(frozen=True)
 # class DimensionSliceKey:
 #     dimension_value_pairs: tuple[DimensionValuePair]
@@ -51,6 +52,7 @@ class DimensionSliceInfo:
 @dataclass
 class Metric:
     name: str = None
+    totalSegments: int = None
     expectedChangePercentage: float = None
     aggregationMethod: str = None
     baselineNumRows: int = None
@@ -140,7 +142,6 @@ def parAnalyze(df: pd.DataFrame,
                columns: List[List[str]],
                agg_method: Dict[str, str],
                metrics_name: Dict[str, str]):
-
     baseline_df = df.loc[df[date_column].between(
         pd.to_datetime(baseline_period[0], utc=True),
         pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
@@ -177,6 +178,23 @@ def parToDimensionSliceInfo(slices, metrics_name, baselineCount: int, comparison
         slices
     )
     return flatten(all_dimension_slices)
+
+
+def calculateTotalSegments(dimensions: Dict[str, Dimension]) -> int:
+    nums = list(map(lambda x: len(x.values), dimensions.values()))
+    print(nums)
+
+    def backtrack(start, curr_subset):
+        all_subsets.append(list(curr_subset))
+        for i in range(start, len(nums)):
+            curr_subset.append(nums[i])
+            backtrack(i + 1, curr_subset)
+            curr_subset.pop()
+
+    all_subsets = []
+    backtrack(0, [])
+
+    return np.sum([np.prod(subset) for subset in all_subsets])
 
 
 class MetricsController(object):
@@ -252,6 +270,8 @@ class MetricsController(object):
         metrics.baselineNumRows = self.aggs['count_baseline'].sum()
         metrics.comparisonNumRows = self.aggs['count'].sum()
         metrics.dimensions = self.getDimensions()
+        metrics.totalSegments = calculateTotalSegments(metrics.dimensions)
+
         # Build dimension slice info
         logger.info(f'Building dimension slice info for {metricsName}')
 

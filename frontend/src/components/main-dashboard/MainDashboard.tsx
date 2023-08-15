@@ -139,12 +139,8 @@ export default function MainDashboard() {
               {formatNumber(analyzingMetrics.topDriverSliceKeys.length)}
             </Bold>{" "}
             top segments. Total of{" "}
-            <Bold>
-              {formatNumber(
-                Object.keys(analyzingMetrics.dimensionSliceInfo).length
-              )}
-            </Bold>{" "}
-            segments analyzed.
+            <Bold>{formatNumber(analyzingMetrics.totalSegments)}</Bold> segments
+            analyzed.
           </Text>
         </Flex>
       </Flex>
