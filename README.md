@@ -17,7 +17,7 @@ Live Demo
 Running Locally
 
 ```shell
-docker run -p 5001:5001 dsenseiapp/dsensei
+docker run -p 5001:5001 dsenseiapp/dsensei:latest
 ```
 
 Open [http://localhost:5001](http://localhost:5001)
@@ -38,7 +38,7 @@ are otherwise easy to overlook.
 
 DSensei overcome the limitation of existing BI tools to empower you
 to understand the "why" behind metric fluctuations to inform better
-business decisions more effectively. Checkout our [blog](https://www.dsensei.app/article/why-do-you-need-a-key-driver-analysis-engine) 
+business decisions more effectively. Checkout our [blog](https://www.dsensei.app/article/why-do-you-need-a-key-driver-analysis-engine)
 for more details.
 
 ## Setup
@@ -49,9 +49,19 @@ There are multiple ways to run DSensei on your machine.
 
 The recommended way is to use the official Docker image. Make sure you have Docker installed on your system, then run the following command:
 
+If you use CSV data source:
 ```shell
-docker run -p 5001:5001 dsenseiapp/dsensei
+docker run -p 5001:5001 dsenseiapp/dsensei:latest
 ```
+
+If you use BigQuery data source:
+
+```shell
+gcloud auth application-default login
+docker run -p 5001:5001 -v ~/.config:/root/.config -e GCLOUD_PROJECT=$GOOGLE_PROJECT dsenseiapp/dsensei:latest
+```
+
+Replace the `$GOOGLE_PROJECT` with your own GCP project name.
 
 This will pull the latest version of the DSensei-insight image and start the application on port 5001.
 
