@@ -26,7 +26,6 @@ import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
 import { MetricCard } from "./MetricCard";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
-import { WaterfallPanel } from "./panels/waterfall/WaterfallPanel";
 
 export default function MainDashboard() {
   const dispatch = useDispatch();
@@ -201,7 +200,7 @@ export default function MainDashboard() {
       <TabGroup className="mt-6">
         <TabList>
           <Tab>Top Driving Segments</Tab>
-          <Tab>Waterfall</Tab>
+          {/* <Tab>Waterfall</Tab> */}
           <Tab>Dimensions</Tab>
         </TabList>
         <TabPanels>
@@ -228,10 +227,10 @@ export default function MainDashboard() {
               />
             </div>
           </TabPanel>
-          <WaterfallPanel
+          {/* <WaterfallPanel
             waterfallRows={waterfallRows}
             metric={analyzingMetrics}
-          />
+          /> */}
           <TabPanel>
             <div className="mt-6 flex">
               <Card className="overflow-overlay">
