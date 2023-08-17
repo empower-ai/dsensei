@@ -3,12 +3,11 @@ import json
 from dataclasses import asdict
 from typing import Dict, List, Tuple
 
-import numpy as np
 import pandas as pd
 from app.data_source.datasource.bigquerySource import BigquerySource
 from app.insight.services.metrics import (Dimension, DimensionSliceInfo,
                                           DimensionValuePair, Metric,
-                                          NpEncoder, PeriodValue, calculateTotalSegments)
+                                          NpEncoder, PeriodValue, calculateTotalSegments, find_key_dimensions)
 from google.cloud import bigquery
 from loguru import logger
 
@@ -251,6 +250,7 @@ class BqMetrics():
                       value_by_date_df: pd.DataFrame) -> Metric:
         metric = Metric()
         metric.name = self.metrics_name[metric_name]
+        metric.keyDimensions = self.find_key_dimensions(df)
         metric.dimensions = self._get_dimensions(df)
         metric.totalSegments = calculateTotalSegments(metric.dimensions)
 
@@ -265,9 +265,13 @@ class BqMetrics():
 
         logger.info('Building top driver slice keys')
 
+        slices_suitable_for_top_slices = [
+            dimension_slice for dimension_slice in all_dimension_slices
+            if set(map(lambda key: key.dimension, dimension_slice.key)).issubset(set(metric.keyDimensions))
+        ]
         metric.topDriverSliceKeys = list(map(
             lambda slice: slice.serializedKey,
-            [dimension_slice for dimension_slice in all_dimension_slices[:1000]]))
+            [dimension_slice for dimension_slice in slices_suitable_for_top_slices[:1000]]))
         metric.dimensionSliceInfo = {dimension_slice.serializedKey: dimension_slice
                                      for dimension_slice in all_dimension_slices
                                      }
@@ -308,6 +312,17 @@ class BqMetrics():
         metric.aggregationMethod = self.agg_method[metric_name]
 
         return metric
+
+    def find_key_dimensions(self, df: pd.DataFrame) -> List[str]:
+        metric_name = next(iter(self.agg_method.keys()))
+        single_dimension_df = df[df.apply(lambda row: (row == 'ALL').sum() == len(self.columns) - 1, axis=1)]
+        single_dimension_df['dimension_value'] = single_dimension_df.apply(lambda row: row[row.index[0] in self.columns and row != 'ALL'][0], axis=1)
+        single_dimension_df['dimension_name'] = single_dimension_df.apply(lambda row: row[row.index[0] in self.columns and row != 'ALL'].index[0], axis=1)
+        single_dimension_df['metric_value_comparison'] = single_dimension_df[f"{metric_name}_comparison"]
+        single_dimension_df['metric_value_baseline'] = single_dimension_df[f"{metric_name}_baseline"]
+
+        return find_key_dimensions(
+            single_dimension_df.loc[:, ['dimension_name', 'dimension_value', 'metric_value_comparison', 'metric_value_baseline']])
 
     def get_metrics(self) -> Dict[str, float]:
         """

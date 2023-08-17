@@ -2,6 +2,7 @@ import datetime
 import itertools
 import json
 import multiprocessing as mp
+from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import asdict, dataclass
 from functools import partial
 from itertools import combinations
@@ -66,6 +67,10 @@ class Metric:
     topDriverSliceKeys: List[str] = None
     dimensions: Dict[str, Dimension] = None
     dimensionSliceInfo: Dict[str, DimensionSliceInfo] = None
+    keyDimensions: List[str] = None
+
+
+parallel_analysis_executor = ThreadPoolExecutor()
 
 
 def analyze(df,
@@ -75,16 +80,18 @@ def analyze(df,
             agg_method: Dict[str, str],
             metrics_name: Dict[str, str],
             columns: List[str]):
-    columns = list(columns)
-
-    baseline = df.loc[df[date_column].between(
-        pd.to_datetime(baseline_period[0], utc=True),
-        pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
-    ].groupby(columns).agg(agg_method).rename(columns=metrics_name)
-    comparison = df.loc[df[date_column].between(
-        pd.to_datetime(comparison_period[0], utc=True),
-        pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))
-    ].groupby(columns).agg(agg_method).rename(columns=metrics_name)
+    baseline = pd.DataFrame(
+        df.loc[
+            df[date_column].between(
+                pd.to_datetime(baseline_period[0], utc=True),
+                pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
+        ].agg(agg_method)).transpose().rename(columns=metrics_name)
+    comparison = pd.DataFrame(
+        df.loc[
+            df[date_column].between(
+                pd.to_datetime(comparison_period[0], utc=True),
+                pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))
+        ].agg(agg_method)).transpose().rename(columns=metrics_name)
 
     joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
     joined.fillna(0, inplace=True)
@@ -135,37 +142,6 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
-def parAnalyze(df: pd.DataFrame,
-               baseline_period: Tuple[datetime.date, datetime.date],
-               comparison_period: Tuple[datetime.date, datetime.date],
-               date_column: str,
-               columns: List[List[str]],
-               agg_method: Dict[str, str],
-               metrics_name: Dict[str, str]):
-    baseline_df = df.loc[df[date_column].between(
-        pd.to_datetime(baseline_period[0], utc=True),
-        pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
-    ]
-    comparison_df = df.loc[df[date_column].between(
-        pd.to_datetime(comparison_period[0], utc=True),
-        pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))
-    ]
-
-    def func(columns: List[str]):
-        columns = list(columns)
-
-        baseline = baseline_df.groupby(columns).agg(
-            agg_method).rename(columns=metrics_name)
-        comparison = comparison_df.groupby(columns).agg(
-            agg_method).rename(columns=metrics_name)
-
-        joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
-        joined.fillna(0, inplace=True)
-        return joined
-
-    return list(map(func, columns))
-
-
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
 
@@ -196,6 +172,41 @@ def calculateTotalSegments(dimensions: Dict[str, Dimension]) -> int:
     return np.sum([np.prod(subset) for subset in all_subsets])
 
 
+def find_key_dimensions(df: pd.DataFrame) -> List[str]:
+    processed_single_dimension_df = process_single_dimension_df(df)
+    return processed_single_dimension_df[processed_single_dimension_df['result'] > 0.01]['dimension_name'].tolist()
+
+
+def process_single_dimension_df(df: pd.DataFrame) -> pd.DataFrame:
+    sum_df = df.groupby(['dimension_name']).agg({
+        'metric_value_comparison': 'sum',
+        'metric_value_baseline': 'sum'
+    }).reset_index().set_index('dimension_name')
+    df = df.reset_index().set_index('dimension_name')
+    df = df.reset_index().join(sum_df, how='inner', rsuffix='_sum', on='dimension_name')
+    print(df)
+
+    df['weight'] = (df['metric_value_comparison'] + df['metric_value_baseline']) / (df['metric_value_comparison_sum'] + df['metric_value_baseline_sum'])
+    df['change'] = np.where(df['metric_value_baseline'] == 0, 0,
+                            (df['metric_value_comparison'] - df['metric_value_baseline']) / df['metric_value_baseline'])
+    # df['change'] = np.where(df['metric_value_baseline'] == 0, df['change'].max(),
+    #                         (df['metric_value_comparison'] - df['metric_value_baseline']) / df['metric_value_baseline'])
+
+    df['weighted_change'] = df['weight'] * df['change']
+    df_with_weighted_mean_change = df.groupby(['dimension_name']).agg({
+        'weighted_change': 'sum',  # sum of weight always = 1, no need to divide
+    }).rename(columns={'weighted_change': 'weighted_change_mean'})
+    merged_df = pd.merge(df, df_with_weighted_mean_change, on='dimension_name', how='inner')
+    merged_df['weighted_change_std_input'] = merged_df['weight'] * np.power(merged_df['change'] - merged_df['weighted_change_mean'], 2)
+
+    grouped_merged_df = merged_df.groupby(['dimension_name']).agg({
+        'weighted_change_std_input': 'sum'
+    })
+    grouped_merged_df['result'] = np.sqrt(np.array(grouped_merged_df['weighted_change_std_input'], dtype=np.float64))
+
+    return grouped_merged_df.reset_index()
+
+
 class MetricsController(object):
     def __init__(self,
                  data: pd.DataFrame,
@@ -219,6 +230,7 @@ class MetricsController(object):
         self.expected_value = expected_value
 
         self.slices = []
+        self.keyDimensions = []
         logger.info('init')
         self.slice(baseline_date_range, comparison_date_range)
         logger.info('init done')
@@ -227,8 +239,10 @@ class MetricsController(object):
         columnsList = []
         for i in range(1, min(4, len(self.columns_of_interest) + 1)):
             columnsList.extend(list(combinations(self.columns_of_interest, i)))
-        self.slices = parAnalyze(self.df, baseline_period, comparison_period,
-                                 self.date_column, columnsList, self.agg_method, self.metrics_name)
+        self.slices, self.keyDimensions = self.parAnalyze(
+            self.df, baseline_period, comparison_period,
+            self.date_column, columnsList, self.agg_method, self.metrics_name
+        )
 
     def getDimensions(self) -> Dict[str, Dimension]:
         dimensions = {}
@@ -270,7 +284,7 @@ class MetricsController(object):
         metrics.comparisonNumRows = self.aggs['count'].sum()
         metrics.dimensions = self.getDimensions()
         metrics.totalSegments = calculateTotalSegments(metrics.dimensions)
-
+        metrics.keyDimensions = self.keyDimensions
         # Build dimension slice info
         logger.info(f'Building dimension slice info for {metricsName}')
 
@@ -294,9 +308,13 @@ class MetricsController(object):
                 (sliceInfo.changePercentage - self.expected_value) / changeStdDev)
 
         logger.info('Building top driver slice keys')
+        slices_suitable_for_top_slices = [
+            dimension_slice for dimension_slice in all_dimension_slices
+            if set(map(lambda key: key.dimension, dimension_slice.key)).issubset(set(metrics.keyDimensions))
+        ]
         metrics.topDriverSliceKeys = list(map(
             lambda slice: slice.serializedKey,
-            [dimension_slice for dimension_slice in all_dimension_slices[:1000]]))
+            [dimension_slice for dimension_slice in slices_suitable_for_top_slices[:1000]]))
         metrics.dimensionSliceInfo = {dimension_slice.serializedKey: dimension_slice
                                       for dimension_slice in all_dimension_slices
                                       }
@@ -353,3 +371,64 @@ class MetricsController(object):
         ret = json.dumps(ret, cls=NpEncoder, allow_nan=False)
         logger.info(f'Finished dumping metrics for {self.metrics_name}')
         return ret
+
+    def parAnalyze(self,
+                   df: pd.DataFrame,
+                   baseline_period: Tuple[datetime.date, datetime.date],
+                   comparison_period: Tuple[datetime.date, datetime.date],
+                   date_column: str,
+                   columns: List[List[str]],
+                   agg_method: Dict[str, str],
+                   metrics_name: Dict[str, str]):
+        baseline_df = df.loc[df[date_column].between(
+            pd.to_datetime(baseline_period[0], utc=True),
+            pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
+        ]
+        comparison_df = df.loc[df[date_column].between(
+            pd.to_datetime(comparison_period[0], utc=True),
+            pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))
+        ]
+
+        def func(columns: List[str]):
+            columns = list(columns)
+
+            baseline = baseline_df.groupby(columns).agg(
+                agg_method).rename(columns=metrics_name)
+            comparison = comparison_df.groupby(columns).agg(
+                agg_method).rename(columns=metrics_name)
+
+            joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
+            joined.fillna(0, inplace=True)
+            return joined
+
+        single_dimension_df = pd.DataFrame()
+        for column in self.columns_of_interest:
+            metric_name, aggregation_method = next(iter(agg_method.items()))
+
+            baseline = baseline_df.rename(columns={
+                column: 'dimension_value',
+                metric_name: 'metric_value_baseline'
+            }).copy()
+            baseline['dimension_name'] = column
+            baseline = baseline.groupby(['dimension_value', 'dimension_name']).agg({
+                'metric_value_baseline': aggregation_method
+            })
+
+            comparison = comparison_df.rename(columns={
+                column: 'dimension_value',
+                metric_name: 'metric_value_comparison'
+            }).copy()
+            comparison['dimension_name'] = column
+            comparison = comparison.groupby(['dimension_value', 'dimension_name']).agg({
+                'metric_value_comparison': aggregation_method
+            })
+
+            joined = baseline.join(comparison, how='outer')
+            joined.fillna(0, inplace=True)
+
+            single_dimension_df = pd.concat([single_dimension_df, joined])
+
+        multi_dimension_grouping_futures = [parallel_analysis_executor.submit(func, column) for column in columns]
+        wait(multi_dimension_grouping_futures)
+        multi_dimension_grouping_result = [future.result() for future in multi_dimension_grouping_futures]
+        return multi_dimension_grouping_result, find_key_dimensions(single_dimension_df)
