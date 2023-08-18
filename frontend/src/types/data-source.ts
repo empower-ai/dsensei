@@ -7,7 +7,7 @@ export interface Schema {
   }[];
 }
 
-export type DataSourceType = "csv" | "bigquery";
+export type DataSourceType = "csv" | "bigquery" | "snowflake";
 
 export type FieldType =
   | "DATE"
@@ -28,6 +28,9 @@ export interface Field {
 
 export interface BigquerySchema extends Schema {
   isDateSuffixPartitionTable: boolean;
+}
+
+export interface SnowflakeSchema extends Schema {
 }
 
 export interface CSVSchema extends Schema {

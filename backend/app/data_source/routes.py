@@ -2,14 +2,13 @@ import json
 from dataclasses import asdict
 
 import simplejson
+from app.data_source import bp
+from app.data_source.datasource.bigquerySource import BigquerySource
+from app.data_source.datasource.snowflakeSource import SnowflakeSource
 from flask import request
 from google.api_core.exceptions import NotFound
 from google.auth.exceptions import GoogleAuthError
 from loguru import logger
-
-from app.data_source import bp
-from app.data_source.datasource.bigquerySource import BigquerySource
-from app.data_source.datasource.snowflakeSource import SnowflakeSource
 
 bigquerySource = BigquerySource()
 
@@ -53,7 +52,7 @@ def get_schema_snowflake():
     password = data['password']
     account = data['account']
     warehouse = data['warehouse']
-    full_table_name = data['full_data_name']
+    full_table_name = data['full_table_name']
 
     try:
         snowflake = SnowflakeSource(

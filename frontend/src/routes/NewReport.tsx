@@ -15,20 +15,23 @@ import DataPreviewer from "../components/uploader/DataPreviewer";
 import InformationCard from "../components/uploader/InformationCard";
 import BigqueryLoader from "../components/uploader/data-source-loader/BigqueryLoader";
 import CSVLoader from "../components/uploader/data-source-loader/CSVLoader";
+import SnowflakeLoader from "../components/uploader/data-source-loader/SnowflakeLoader";
 import BigqueryBasedReportConfig from "../components/uploader/report-config/BigqueryBasedReportConfig";
 import CSVBasedReportConfig from "../components/uploader/report-config/CSVBasedReportConfig";
+import SnowflakeBasedReportConfig from "../components/uploader/report-config/SnowflakeBasedReportConfig";
 import {
   BigquerySchema,
   CSVSchema,
   DataSourceType,
   Schema,
+  SnowflakeSchema,
 } from "../types/data-source";
 
 function NewReport() {
   const [isLoadingSchema, setIsLoadingSchema] = useState<boolean>(false);
   const [schema, setSchema] = useState<Schema>();
   const [useSampleFile, setUseSampleFile] = useState<boolean>(false);
-  const [dataSource, setDataSource] = useState<DataSourceType>("csv");
+  const [dataSource, setDataSource] = useState<DataSourceType>("snowflake");
 
   function renderDataSourceLoader() {
     if (window.location.hostname === "app.dsensei.app") {
@@ -66,6 +69,7 @@ function NewReport() {
             >
               <SelectItem value="csv">CSV</SelectItem>
               <SelectItem value="bigquery">BigQuery</SelectItem>
+              <SelectItem value="snowflake">SnowFlake</SelectItem>
             </Select>
           </Flex>
         </Grid>
@@ -94,6 +98,22 @@ function NewReport() {
             }}
           />
         )}
+        {
+          dataSource === "snowflake" && (
+            <SnowflakeLoader
+              onLoadingSchema={() => {
+                setIsLoadingSchema(true);
+              }}
+              onSchemaLoaded={(schema?: SnowflakeSchema) => {
+                if (schema) {
+                  console.log('set schema');
+                  setSchema(schema);
+                }
+                setIsLoadingSchema(false);
+              }}
+            />
+          )
+        }
       </>
     );
   }
@@ -145,6 +165,9 @@ function NewReport() {
           )}
           {dataSource === "bigquery" && (
             <BigqueryBasedReportConfig schema={schema as BigquerySchema} />
+          )}
+          {dataSource === "snowflake" && (
+            <SnowflakeBasedReportConfig schema={schema as SnowflakeSchema} />
           )}
           <DataPreviewer
             fileName={schema.name}
