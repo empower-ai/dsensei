@@ -4,6 +4,10 @@
 #
 #    pip-compile --output-file=requirements.txt
 #
+asn1crypto==1.5.1
+    # via
+    #   oscrypto
+    #   snowflake-connector-python
 blinker==1.6.2
     # via -r requirements.in
 cachetools==5.3.1
@@ -12,12 +16,25 @@ certifi==2023.7.22
     # via
     #   requests
     #   sentry-sdk
+    #   snowflake-connector-python
+cffi==1.15.1
+    # via
+    #   cryptography
+    #   snowflake-connector-python
 charset-normalizer==3.2.0
-    # via requests
+    # via
+    #   requests
+    #   snowflake-connector-python
 click==8.1.6
     # via flask
+cryptography==41.0.3
+    # via
+    #   pyopenssl
+    #   snowflake-connector-python
 db-dtypes==1.1.1
     # via -r requirements.in
+filelock==3.12.2
+    # via snowflake-connector-python
 flask==2.2.5
     # via
     #   -r requirements.in
@@ -52,7 +69,9 @@ grpcio==1.56.2
 grpcio-status==1.56.2
     # via google-api-core
 idna==3.4
-    # via requests
+    # via
+    #   requests
+    #   snowflake-connector-python
 itsdangerous==2.1.1
     # via flask
 jinja2==3.0.3
@@ -68,14 +87,19 @@ numpy==1.25.1
     #   db-dtypes
     #   pandas
     #   pyarrow
+oscrypto==1.3.0
+    # via snowflake-connector-python
 packaging==23.1
     # via
     #   db-dtypes
     #   google-cloud-bigquery
+    #   snowflake-connector-python
 pandas==2.0.3
     # via
     #   -r requirements.in
     #   db-dtypes
+platformdirs==3.8.1
+    # via snowflake-connector-python
 proto-plus==1.22.3
     # via google-cloud-bigquery
 protobuf==4.23.4
@@ -93,16 +117,27 @@ pyasn1==0.5.0
     #   rsa
 pyasn1-modules==0.3.0
     # via google-auth
+pycparser==2.21
+    # via cffi
+pycryptodomex==3.18.0
+    # via snowflake-connector-python
+pyjwt==2.8.0
+    # via snowflake-connector-python
+pyopenssl==23.2.0
+    # via snowflake-connector-python
 python-dateutil==2.8.2
     # via
     #   google-cloud-bigquery
     #   pandas
 pytz==2021.3
-    # via pandas
+    # via
+    #   pandas
+    #   snowflake-connector-python
 requests==2.31.0
     # via
     #   google-api-core
     #   google-cloud-bigquery
+    #   snowflake-connector-python
 rsa==4.9
     # via google-auth
 sentry-sdk==1.29.2
@@ -111,6 +146,14 @@ six==1.16.0
     # via
     #   google-auth
     #   python-dateutil
+snowflake-connector-python==3.1.0
+    # via -r requirements.in
+sortedcontainers==2.4.0
+    # via snowflake-connector-python
+tomlkit==0.12.1
+    # via snowflake-connector-python
+typing-extensions==4.7.1
+    # via snowflake-connector-python
 tzdata==2023.3
     # via pandas
 urllib3==1.26.16
@@ -118,5 +161,6 @@ urllib3==1.26.16
     #   google-auth
     #   requests
     #   sentry-sdk
+    #   snowflake-connector-python
 werkzeug==2.3.6
     # via flask

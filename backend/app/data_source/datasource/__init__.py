@@ -32,3 +32,8 @@ class Dataset:
 @dataclass(frozen=True)
 class BigquerySchema(Schema):
     isDateSuffixPartitionTable: bool
+
+
+@dataclass(frozen=True)
+class SnowflakeSchema(Schema):
+    pass
