@@ -5,7 +5,7 @@ import {
   formatMetricName,
 } from "../../../common/utils";
 import { RootState } from "../../../store";
-import { MetricCard } from "../MetricCard";
+import { MetricOverviewTable } from "../MetricOverviewTable";
 import { DimensionSliceDetailModalMetricCard } from "./DimensionSliceDetailModalMetricCard";
 
 export function DimensionSliceDetailModal() {
@@ -44,7 +44,7 @@ export function DimensionSliceDetailModal() {
         <Title>Metric Value</Title>
         <Flex justifyContent="center">
           <Flex className="pt-3 gap-6 w-[80%] h-[400px]">
-            <MetricCard
+            <MetricOverviewTable
               baseDateRange={analyzingMetrics.baselineDateRange}
               comparisonDateRange={analyzingMetrics.comparisonDateRange}
               baseNumRows={analyzingMetrics.baselineNumRows}

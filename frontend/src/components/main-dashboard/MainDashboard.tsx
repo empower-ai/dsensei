@@ -23,7 +23,7 @@ import {
 } from "../../common/utils";
 import { RootState } from "../../store";
 import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
-import { MetricCard } from "./MetricCard";
+import { MetricOverviewTable } from "./MetricOverviewTable";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
 
@@ -42,9 +42,17 @@ export default function MainDashboard() {
 
   useEffect(() => {
     async function loadInsight() {
-      let apiPath = "/api/insight";
-      if (dataSourceType === "bigquery") {
-        apiPath = "/api/bqinsight";
+      let apiPath = "";
+      switch (dataSourceType) {
+        case "csv":
+          apiPath = "/api/insight";
+          break;
+        case "bigquery":
+          apiPath = "/api/bqinsight";
+          break;
+        case "snowflake":
+          apiPath = "/api/snowflake-insight";
+          break;
       }
 
       dispatch(setLoadingStatus(true));
@@ -99,24 +107,31 @@ export default function MainDashboard() {
   }
 
   const allMetrics = [analyzingMetrics, ...relatedMetrics];
-  const chartData = allMetrics.map((metric) =>
-    (
-      metric.baselineValueByDate.map((baselineValue) => ({
-        date: formatDateString(baselineValue.date),
+  const chartData = allMetrics.map(
+    (metric) =>
+      metric.baselineValueByDate.map((baselineValue, idx) => ({
+        date:
+          formatDateString(baselineValue.date) +
+          " / " +
+          formatDateString(metric.comparisonValueByDate[idx].date),
+        day: idx,
         Base: baselineValue.value,
+        Comparison: metric.comparisonValueByDate[idx].value,
       })) as any[]
-    ).concat(
-      metric.comparisonValueByDate.map((comparisonValue) => ({
-        date: formatDateString(comparisonValue.date),
-        Comparison: comparisonValue.value,
-      }))
-    )
+    // .concat(
+    //   metric.comparisonValueByDate.map((comparisonValue, idx) => ({
+    //     date: formatDateString(comparisonValue.date),
+    //     day: idx,
+    //     Comparison: comparisonValue.value,
+    //   }))
+    // )
   );
 
   return (
-    <main className="px-12 pt-20">
-      <Flex className="pt-2">
-        {/* <Flex justifyContent="start" className="content-center gap-2">
+    <main className="px-12 pt-20 justify-center flex">
+      <div className="max-w-[80%]">
+        <Flex className="pt-2">
+          {/* <Flex justifyContent="start" className="content-center gap-2">
           <Text>Dimensions:</Text>
           <MultiSelect
             className="w-auto min-w-[250px]"
@@ -136,131 +151,142 @@ export default function MainDashboard() {
             ))}
           </MultiSelect>
         </Flex> */}
-        <Flex justifyContent="end">
-          <Text>
-            Showing{" "}
-            <Bold>
-              {formatNumber(analyzingMetrics.topDriverSliceKeys.length)}
-            </Bold>{" "}
-            top segments. Total of{" "}
-            <Bold>{formatNumber(analyzingMetrics.totalSegments)}</Bold> segments
-            analyzed.
-          </Text>
         </Flex>
-      </Flex>
-      <Grid
-        numItems={4}
-        numItemsLg={4}
-        numItemsMd={2}
-        numItemsSm={1}
-        className="gap-6 pt-4"
-      >
-        <MetricCard
-          baseDateRange={analyzingMetrics.baselineDateRange}
-          comparisonDateRange={analyzingMetrics.comparisonDateRange}
-          baseNumRows={analyzingMetrics.baselineNumRows}
-          comparisonNumRows={analyzingMetrics.comparisonNumRows}
-          baseValue={analyzingMetrics.baselineValue}
-          comparisonValue={analyzingMetrics.comparisonValue}
-          supportingMetrics={relatedMetrics.map((metric) => ({
-            name: formatMetricName(metric),
-            baseValue: metric.baselineValue,
-            comparisonValue: metric.comparisonValue,
-          }))}
-          metricName={formatMetricName(analyzingMetrics)}
-        />
-        <Card className="col-span-2">
-          <Title>Charts</Title>
-          <TabGroup>
-            <TabList>
-              {allMetrics.map((metric) => (
-                <Tab key={formatMetricName(metric)}>
-                  {formatMetricName(metric)}
-                </Tab>
-              ))}
-            </TabList>
-            <TabPanels>
-              {chartData.map((data) => (
-                <TabPanel>
-                  <LineChart
-                    className="mt-6"
-                    data={data}
-                    index="date"
-                    categories={["Base", "Comparison"]}
-                    colors={["orange", "sky"]}
-                    yAxisWidth={40}
-                    valueFormatter={formatNumber}
-                  />
-                </TabPanel>
-              ))}
-            </TabPanels>
-          </TabGroup>
-        </Card>
-      </Grid>
-      <TabGroup className="mt-6">
-        <TabList>
-          <Tab>Top Driving Segments</Tab>
-          {/* <Tab>Waterfall</Tab> */}
-          <Tab>Dimensions</Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel>
-            <div className="mt-6">
-              <TopDimensionSlicesTable
-                rowStatusMap={tableRowStatus}
-                rowCSV={tableRowCSV}
-                metric={analyzingMetrics}
-                maxDefaultRows={100}
-                groupRows={groupRows}
-                enableGroupToggle={true}
-                showDimensionSelector={true}
-                showCalculationMode={true}
-                title={
-                  <>
-                    <Flex flexDirection="col">
-                      <Title>Top Segments Driving the Overall Change</Title>
-                      <Text>Segments could have overlap</Text>
-                    </Flex>
-                    <Divider />
-                  </>
-                }
+        <Grid
+          numItems={4}
+          numItemsLg={4}
+          numItemsMd={2}
+          numItemsSm={1}
+          className="gap-6 pt-4"
+        >
+          <Flex className="col-span-4">
+            <Card>
+              <Title>Overview</Title>
+              <Divider />
+              <Text>
+                <Bold>Metric: </Bold>
+                {formatMetricName(analyzingMetrics)}
+              </Text>
+              <Text>
+                <Bold>Total segments: </Bold>
+                {formatNumber(analyzingMetrics.totalSegments)}
+              </Text>
+              <Text>
+                <Bold>Dimensions: </Bold>
+                {Object.values(analyzingMetrics.dimensions)
+                  .map((dimension) => dimension.name)
+                  .join(", ")}
+              </Text>
+              <Divider />
+              <MetricOverviewTable
+                baseDateRange={analyzingMetrics.baselineDateRange}
+                comparisonDateRange={analyzingMetrics.comparisonDateRange}
+                baseNumRows={analyzingMetrics.baselineNumRows}
+                comparisonNumRows={analyzingMetrics.comparisonNumRows}
+                baseValue={analyzingMetrics.baselineValue}
+                comparisonValue={analyzingMetrics.comparisonValue}
+                supportingMetrics={relatedMetrics.map((metric) => ({
+                  name: formatMetricName(metric),
+                  baseValue: metric.baselineValue,
+                  comparisonValue: metric.comparisonValue,
+                }))}
+                metricName={formatMetricName(analyzingMetrics)}
               />
-            </div>
-          </TabPanel>
-          {/* <WaterfallPanel
+            </Card>
+          </Flex>
+          <Card className="col-span-4">
+            <Title>Day by Day Comparison</Title>
+            <TabGroup>
+              <TabList>
+                {allMetrics.map((metric) => (
+                  <Tab key={formatMetricName(metric)}>
+                    {formatMetricName(metric)}
+                  </Tab>
+                ))}
+              </TabList>
+              <TabPanels>
+                {chartData.map((data) => (
+                  <TabPanel>
+                    <LineChart
+                      className="mt-6"
+                      data={data}
+                      index="date"
+                      categories={["Base", "Comparison"]}
+                      colors={["orange", "sky"]}
+                      yAxisWidth={40}
+                      valueFormatter={formatNumber}
+                    />
+                  </TabPanel>
+                ))}
+              </TabPanels>
+            </TabGroup>
+          </Card>
+        </Grid>
+        <TabGroup className="mt-6">
+          <TabList>
+            <Tab>Top Segments</Tab>
+            {/* <Tab>Waterfall</Tab> */}
+            <Tab>Segments by Dimensions</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel>
+              <div className="mt-6">
+                <TopDimensionSlicesTable
+                  rowStatusMap={tableRowStatus}
+                  rowCSV={tableRowCSV}
+                  metric={analyzingMetrics}
+                  maxDefaultRows={100}
+                  groupRows={groupRows}
+                  enableGroupToggle={true}
+                  showDimensionSelector={true}
+                  showCalculationMode={true}
+                  title={
+                    <>
+                      <Flex flexDirection="col">
+                        <Title>Top Segments Driving the Overall Change</Title>
+                        <Text>Segments could have overlap</Text>
+                      </Flex>
+                      <Divider />
+                    </>
+                  }
+                />
+              </div>
+            </TabPanel>
+            {/* <WaterfallPanel
             waterfallRows={waterfallRows}
             metric={analyzingMetrics}
           /> */}
-          <TabPanel>
-            <div className="mt-6 flex">
-              <Card className="overflow-overlay">
-                {selectedDimensions.map((dimension) => (
-                  <div className="mb-6">
-                    <TopDimensionSlicesTable
-                      metric={analyzingMetrics}
-                      rowStatusMap={
-                        tableRowStatusByDimension[dimension].rowStatus
-                      }
-                      rowCSV={tableRowStatusByDimension[dimension].rowCSV}
-                      dimension={dimension}
-                      maxDefaultRows={5}
-                      showDimensionSelector={false}
-                      showCalculationMode={false}
-                      title={
-                        <>
-                          <Title>Dimension: {dimension}</Title>
-                          <Divider />
-                        </>
-                      }
-                    />
-                  </div>
-                ))}
-              </Card>
-            </div>
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
-      <DimensionSliceDetailModal />
+            <TabPanel>
+              <div className="mt-6 flex">
+                <Card className="overflow-overlay">
+                  {selectedDimensions.map((dimension) => (
+                    <div className="mb-6">
+                      <TopDimensionSlicesTable
+                        metric={analyzingMetrics}
+                        rowStatusMap={
+                          tableRowStatusByDimension[dimension].rowStatus
+                        }
+                        rowCSV={tableRowStatusByDimension[dimension].rowCSV}
+                        dimension={dimension}
+                        maxDefaultRows={5}
+                        showDimensionSelector={false}
+                        showCalculationMode={false}
+                        title={
+                          <>
+                            <Title>Dimension: {dimension}</Title>
+                            <Divider />
+                          </>
+                        }
+                      />
+                    </div>
+                  ))}
+                </Card>
+              </div>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
+        <DimensionSliceDetailModal />
+      </div>
     </main>
   );
 }
