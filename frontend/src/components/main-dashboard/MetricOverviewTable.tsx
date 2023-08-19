@@ -1,14 +1,14 @@
 import {
   Badge,
   BadgeDelta,
-  Bold,
-  Card,
   Flex,
-  List,
-  ListItem,
-  Metric,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
   Text,
-  Title,
 } from "@tremor/react";
 import { ReactNode } from "react";
 import { formatDateString, formatNumber } from "../../common/utils";
@@ -28,7 +28,11 @@ interface Props {
   metricName: string;
 }
 
-function getChangePercentageBadge(num1: number, num2: number): ReactNode {
+function getChangePercentageBadge(
+  num1: number,
+  num2: number,
+  additionalClasses: string = ""
+): ReactNode {
   if (num1 === 0) {
     return <Badge color="gray">N/A</Badge>;
   }
@@ -55,13 +59,17 @@ function getChangePercentageBadge(num1: number, num2: number): ReactNode {
   }
 
   return (
-    <BadgeDelta size="xs" deltaType={deltaType}>
+    <BadgeDelta
+      size="xs"
+      deltaType={deltaType}
+      className={`align-middle ${additionalClasses}`}
+    >
       {content}
     </BadgeDelta>
   );
 }
 
-export function MetricCard({
+export function MetricOverviewTable({
   baseDateRange,
   comparisonDateRange,
   baseNumRows,
@@ -73,7 +81,61 @@ export function MetricCard({
 }: Props) {
   return (
     <>
-      <Card className="border-t-4 border-t-orange-500 h-[100%] overflow-overlay">
+      <Table className="overflow-visible">
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell></TableHeaderCell>
+            <TableHeaderCell>Period</TableHeaderCell>
+            <TableHeaderCell>Rows</TableHeaderCell>
+            <TableHeaderCell>{metricName}</TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableCell>
+              <Text color="orange">Base</Text>
+            </TableCell>
+            <TableCell>
+              {formatDateString(baseDateRange[0])} to{" "}
+              {formatDateString(baseDateRange[1])}
+            </TableCell>
+            <TableCell>{formatNumber(baseNumRows)}</TableCell>
+            <TableCell>{formatNumber(baseValue)}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>
+              <Text color="sky">Comparison</Text>
+            </TableCell>
+            <TableCell>
+              {formatDateString(comparisonDateRange[0])} to{" "}
+              {formatDateString(comparisonDateRange[1])}
+            </TableCell>
+            <TableCell>
+              <Flex
+                className="self-center text-center content-center gap-2"
+                justifyContent="start"
+              >
+                {formatNumber(comparisonNumRows)}
+                {getChangePercentageBadge(
+                  baseNumRows,
+                  comparisonNumRows,
+                  "mb-1"
+                )}
+              </Flex>
+            </TableCell>
+            <TableCell className="gap-3">
+              <Flex
+                className="self-center text-center content-center gap-2"
+                justifyContent="start"
+              >
+                {formatNumber(comparisonValue)}
+                {getChangePercentageBadge(baseValue, comparisonValue, "mb-1")}
+              </Flex>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+      {/* <Card className="border-t-4 border-t-orange-500 h-[100%] overflow-overlay">
         <div className="h-[100%] grid">
           <div>
             <Title>Base Period</Title>
@@ -162,7 +224,7 @@ export function MetricCard({
             </List>
           </div>
         </div>
-      </Card>
+      </Card> */}
     </>
   );
 }
