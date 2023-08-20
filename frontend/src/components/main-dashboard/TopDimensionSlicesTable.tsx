@@ -174,19 +174,19 @@ export default function TopDimensionSlicesTable({
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Segment Value
+                Metricss Value
                 <TooltipIcon text="Metric value aggregated to the segment." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Impact
+                Metrics Impact
                 <TooltipIcon text="Impact of the segment to the overall metric movement, calculated by: segment_value_of_comparison_period - segment_value_of_base_period." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Performance Compared with Average
+                Relative Performance
                 <TooltipIcon text="Performance of the segment compared with average performance, calculated by: change_pct_of_segment - avg_change_pct" />
               </Flex>
             </TableHeaderCell>
