@@ -174,7 +174,7 @@ export default function TopDimensionSlicesTable({
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Metricss Value
+                Metrics Value
                 <TooltipIcon text="Metric value aggregated to the segment." />
               </Flex>
             </TableHeaderCell>
