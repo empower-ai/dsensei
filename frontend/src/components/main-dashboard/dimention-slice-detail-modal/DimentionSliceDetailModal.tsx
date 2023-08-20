@@ -43,12 +43,12 @@ export function DimensionSliceDetailModal() {
         <Divider />
         <Title>Metric Value</Title>
         <Flex justifyContent="center">
-          <Flex className="pt-3 gap-6 w-[80%] h-[400px]">
+          <Flex className="pt-3 gap-6">
             <MetricOverviewTable
               baseDateRange={analyzingMetrics.baselineDateRange}
               comparisonDateRange={analyzingMetrics.comparisonDateRange}
-              baseNumRows={analyzingMetrics.baselineNumRows}
-              comparisonNumRows={analyzingMetrics.comparisonNumRows}
+              baseNumRows={sliceInfo.baselineValue.sliceCount}
+              comparisonNumRows={sliceInfo.comparisonValue.sliceCount}
               baseValue={sliceInfo.baselineValue.sliceValue}
               comparisonValue={sliceInfo.comparisonValue.sliceValue}
               supportingMetrics={relatedMetrics.map((metric) => ({

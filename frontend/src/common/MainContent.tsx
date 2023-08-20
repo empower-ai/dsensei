@@ -1,7 +1,6 @@
 import * as Sentry from "@sentry/react";
 import { Flex } from "@tremor/react";
 import { ReactNode } from "react";
-import { NavBar } from "./navbar";
 import { useTracking } from "./tracking";
 
 interface Props {
@@ -14,7 +13,6 @@ export function MainContent({ children }: Props) {
 
   return (
     <>
-      <NavBar />{" "}
       <main>
         <Sentry.ErrorBoundary
           fallback={

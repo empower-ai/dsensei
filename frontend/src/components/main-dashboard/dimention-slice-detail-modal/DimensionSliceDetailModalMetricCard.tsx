@@ -40,7 +40,7 @@ export function DimensionSliceDetailModalMetricCard({
   );
   return (
     <Flex className="justify-center mt-5">
-      <Card className="w-[80%]">
+      <Card>
         <Flex justifyContent="center">
           <Title>Metrics: {formatMetricName(metric)}</Title>
         </Flex>

@@ -1,4 +1,10 @@
 import {
+  InboxIcon,
+  QueueListIcon,
+  Square2StackIcon,
+  Squares2X2Icon,
+} from "@heroicons/react/24/outline";
+import {
   Card,
   Divider,
   Flex,
@@ -16,6 +22,8 @@ import { Range } from "immutable";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+import Sidebar from "../../common/sidebar/Sidebar";
+import SidebarElement from "../../common/sidebar/SidebarElement";
 import {
   formatDateString,
   formatMetricName,
@@ -27,10 +35,19 @@ import { MetricOverviewTable } from "./MetricOverviewTable";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
 
+enum ReportingType {
+  OVERVIEW,
+  TOP_SEGMENTS,
+  SEGMENTS_BY_DIMENSIONS,
+}
+
 export default function MainDashboard() {
   const dispatch = useDispatch();
   const routerState = useLocation().state;
   const [duration, setDuration] = useState(0);
+  const [reportingType, setReportingType] = useState<ReportingType>(
+    ReportingType.OVERVIEW
+  );
 
   const {
     tableName,
@@ -138,40 +155,43 @@ export default function MainDashboard() {
   );
 
   return (
-    <main className="px-12 pt-20 justify-center flex">
-      <div className="max-w-[80%]">
-        <Flex className="pt-2">
-          {/* <Flex justifyContent="start" className="content-center gap-2">
-          <Text>Dimensions:</Text>
-          <MultiSelect
-            className="w-auto min-w-[250px]"
-            value={selectedDimensions}
-            onValueChange={(value) => {
-              dispatch(updateSelectedDimensions(value));
+    <>
+      <Sidebar
+        elements={[
+          <SidebarElement text="New Report" icon={InboxIcon} />,
+          <Divider />,
+          <SidebarElement
+            text="Overview"
+            icon={Square2StackIcon}
+            isSelected={reportingType === ReportingType.OVERVIEW}
+            onClick={() => {
+              setReportingType(ReportingType.OVERVIEW);
             }}
-          >
-            {Object.values(analyzingMetrics.dimensions).map((dimension) => (
-              <MultiSelectItem
-                className="cursor-pointer"
-                value={dimension.name}
-                key={dimension.name}
-              >
-                {dimension.name}
-              </MultiSelectItem>
-            ))}
-          </MultiSelect>
-        </Flex> */}
-        </Flex>
-        <Grid
-          numItems={4}
-          numItemsLg={4}
-          numItemsMd={2}
-          numItemsSm={1}
-          className="gap-6 pt-4"
-        >
-          <Flex className="col-span-4">
-            <Card className="overflow-overlay">
-              <Title className="pb-4">Overview</Title>
+          />,
+          <SidebarElement
+            text="Top Driving Segments"
+            icon={QueueListIcon}
+            isSelected={reportingType === ReportingType.TOP_SEGMENTS}
+            onClick={() => {
+              setReportingType(ReportingType.TOP_SEGMENTS);
+            }}
+          />,
+          <SidebarElement
+            text="Segments by Dimensions"
+            icon={Squares2X2Icon}
+            isSelected={reportingType === ReportingType.SEGMENTS_BY_DIMENSIONS}
+            onClick={() => {
+              setReportingType(ReportingType.SEGMENTS_BY_DIMENSIONS);
+            }}
+          />,
+        ]}
+      />
+      <main className="pl-72 justify-center flex">
+        <div className="max-w-[80%]">
+          {reportingType === ReportingType.OVERVIEW && (
+            <Flex className="gap-y-4 pt-10" flexDirection="col">
+              <Title className="">Overview</Title>
+              <Divider />
               <Grid
                 numItemsLg={4}
                 numItemsMd={2}
@@ -199,7 +219,6 @@ export default function MainDashboard() {
                   <Text>{duration} seconds</Text>
                 </Card>
               </Grid>
-              <Divider />
               <MetricOverviewTable
                 baseDateRange={analyzingMetrics.baselineDateRange}
                 comparisonDateRange={analyzingMetrics.comparisonDateRange}
@@ -214,101 +233,81 @@ export default function MainDashboard() {
                 }))}
                 metricName={formatMetricName(analyzingMetrics)}
               />
-            </Card>
-          </Flex>
-          <Card className="col-span-4">
-            <Title>Day by Day Comparison</Title>
-            <TabGroup>
-              <TabList>
-                {allMetrics.map((metric) => (
-                  <Tab key={formatMetricName(metric)}>
-                    {formatMetricName(metric)}
-                  </Tab>
-                ))}
-              </TabList>
-              <TabPanels>
-                {chartData.map((data) => (
-                  <TabPanel>
-                    <LineChart
-                      className="mt-6"
-                      data={data}
-                      index="date"
-                      categories={["Base", "Comparison"]}
-                      colors={["orange", "sky"]}
-                      yAxisWidth={40}
-                      valueFormatter={formatNumber}
-                    />
-                  </TabPanel>
-                ))}
-              </TabPanels>
-            </TabGroup>
-          </Card>
-        </Grid>
-        <TabGroup className="mt-6">
-          <TabList>
-            <Tab>Top Segments</Tab>
-            {/* <Tab>Waterfall</Tab> */}
-            <Tab>Segments by Dimensions</Tab>
-          </TabList>
-          <TabPanels>
-            <TabPanel>
-              <div className="mt-6">
+              <Card className="col-span-4">
+                <Title>Day by Day Comparison</Title>
+                <TabGroup>
+                  <TabList>
+                    {allMetrics.map((metric) => (
+                      <Tab key={formatMetricName(metric)}>
+                        {formatMetricName(metric)}
+                      </Tab>
+                    ))}
+                  </TabList>
+                  <TabPanels>
+                    {chartData.map((data) => (
+                      <TabPanel>
+                        <LineChart
+                          className="mt-6"
+                          data={data}
+                          index="date"
+                          categories={["Base", "Comparison"]}
+                          colors={["orange", "sky"]}
+                          yAxisWidth={40}
+                          valueFormatter={formatNumber}
+                        />
+                      </TabPanel>
+                    ))}
+                  </TabPanels>
+                </TabGroup>
+              </Card>
+            </Flex>
+          )}
+          {reportingType === ReportingType.TOP_SEGMENTS && (
+            <Flex className="gap-y-4 pt-10" flexDirection="col">
+              <Title>Top Segments Driving the Overall Change</Title>
+              <Divider />
+              <TopDimensionSlicesTable
+                rowStatusMap={tableRowStatus}
+                rowCSV={tableRowCSV}
+                metric={analyzingMetrics}
+                maxDefaultRows={100}
+                groupRows={groupRows}
+                enableGroupToggle={true}
+                showDimensionSelector={true}
+                showCalculationMode={true}
+              />
+            </Flex>
+          )}
+          {/* <WaterfallPanel
+            waterfallRows={waterfallRows}
+            metric={analyzingMetrics}
+          /> */}
+          {reportingType === ReportingType.SEGMENTS_BY_DIMENSIONS && (
+            <Flex className="gap-y-4 pt-10" flexDirection="col">
+              <Title>Top Segments Driving the Overall Change</Title>
+              <Divider />
+              {selectedDimensions.map((dimension) => (
                 <TopDimensionSlicesTable
-                  rowStatusMap={tableRowStatus}
-                  rowCSV={tableRowCSV}
                   metric={analyzingMetrics}
-                  maxDefaultRows={100}
-                  groupRows={groupRows}
-                  enableGroupToggle={true}
-                  showDimensionSelector={true}
-                  showCalculationMode={true}
+                  rowStatusMap={tableRowStatusByDimension[dimension].rowStatus}
+                  rowCSV={tableRowStatusByDimension[dimension].rowCSV}
+                  dimension={dimension}
+                  maxDefaultRows={5}
+                  showDimensionSelector={false}
+                  showCalculationMode={false}
                   title={
                     <>
-                      <Flex flexDirection="col">
-                        <Title>Top Segments Driving the Overall Change</Title>
-                        <Text>Segments could have overlap</Text>
-                      </Flex>
+                      <Title>Dimension: {dimension}</Title>
                       <Divider />
                     </>
                   }
                 />
-              </div>
-            </TabPanel>
-            {/* <WaterfallPanel
-            waterfallRows={waterfallRows}
-            metric={analyzingMetrics}
-          /> */}
-            <TabPanel>
-              <div className="mt-6 flex">
-                <Card className="overflow-overlay">
-                  {selectedDimensions.map((dimension) => (
-                    <div className="mb-6">
-                      <TopDimensionSlicesTable
-                        metric={analyzingMetrics}
-                        rowStatusMap={
-                          tableRowStatusByDimension[dimension].rowStatus
-                        }
-                        rowCSV={tableRowStatusByDimension[dimension].rowCSV}
-                        dimension={dimension}
-                        maxDefaultRows={5}
-                        showDimensionSelector={false}
-                        showCalculationMode={false}
-                        title={
-                          <>
-                            <Title>Dimension: {dimension}</Title>
-                            <Divider />
-                          </>
-                        }
-                      />
-                    </div>
-                  ))}
-                </Card>
-              </div>
-            </TabPanel>
-          </TabPanels>
-        </TabGroup>
-        <DimensionSliceDetailModal />
-      </div>
-    </main>
+              ))}
+            </Flex>
+          )}
+          <DimensionSliceDetailModal />
+        </div>
+      </main>
+    </>
   );
 }

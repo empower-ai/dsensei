@@ -11,6 +11,7 @@ import {
 } from "@tremor/react";
 
 import { useState } from "react";
+import { NavBar } from "../common/navbar";
 import DataPreviewer from "../components/uploader/DataPreviewer";
 import InformationCard from "../components/uploader/InformationCard";
 import BigqueryLoader from "../components/uploader/data-source-loader/BigqueryLoader";
@@ -99,68 +100,71 @@ function NewReport() {
   }
 
   return (
-    <div className="flex flex-col gap-2 justify-center items-center pt-20">
-      <Title>New Report</Title>
-      {isLoadingSchema && !schema && (
-        <Card className="max-w-6xl">
-          <Flex className="h-64	gap-3" justifyContent="center">
-            <p>Processing</p>
-            <span className="loading loading-bars loading-lg"></span>
-          </Flex>
-        </Card>
-      )}
-      {!schema && (
-        // TODO: Have to keep the component which has the logic to load schema, refactor
-        // to move the file loading logic into action
-        <Card
-          className={`max-w-6xl ${
-            !isLoadingSchema ? "visible" : "invisible h-0 p-0"
-          }`}
-        >
-          <Flex justifyContent="center">
-            <Button
-              onClick={() => {
+    <>
+      <NavBar />
+      <div className="flex flex-col gap-2 justify-center items-center pt-20">
+        <Title>New Report</Title>
+        {isLoadingSchema && !schema && (
+          <Card className="max-w-6xl">
+            <Flex className="h-64	gap-3" justifyContent="center">
+              <p>Processing</p>
+              <span className="loading loading-bars loading-lg"></span>
+            </Flex>
+          </Card>
+        )}
+        {!schema && (
+          // TODO: Have to keep the component which has the logic to load schema, refactor
+          // to move the file loading logic into action
+          <Card
+            className={`max-w-6xl ${
+              !isLoadingSchema ? "visible" : "invisible h-0 p-0"
+            }`}
+          >
+            <Flex justifyContent="center">
+              <Button
+                onClick={() => {
+                  setDataSource("csv");
+                  setUseSampleFile(true);
+                }}
+              >
+                Try with Sample Data
+              </Button>
+            </Flex>
+            <Flex justifyContent="center" className="gap 4">
+              <Divider />
+              <Text>or</Text>
+              <Divider />
+            </Flex>
+            {renderDataSourceLoader()}
+          </Card>
+        )}
+        {schema && (
+          <>
+            {dataSource === "csv" && (
+              <CSVBasedReportConfig
+                schema={schema as CSVSchema}
+                prefillWithSampleData={useSampleFile}
+              />
+            )}
+            {dataSource === "bigquery" && (
+              <BigqueryBasedReportConfig schema={schema as BigquerySchema} />
+            )}
+            <DataPreviewer
+              fileName={schema.name}
+              onReset={() => {
+                setIsLoadingSchema(false);
+                setSchema(undefined);
+                setUseSampleFile(false);
                 setDataSource("csv");
-                setUseSampleFile(true);
               }}
-            >
-              Try with Sample Data
-            </Button>
-          </Flex>
-          <Flex justifyContent="center" className="gap 4">
-            <Divider />
-            <Text>or</Text>
-            <Divider />
-          </Flex>
-          {renderDataSourceLoader()}
-        </Card>
-      )}
-      {schema && (
-        <>
-          {dataSource === "csv" && (
-            <CSVBasedReportConfig
-              schema={schema as CSVSchema}
-              prefillWithSampleData={useSampleFile}
+              header={schema.fields}
+              previewData={schema.previewData ?? []}
             />
-          )}
-          {dataSource === "bigquery" && (
-            <BigqueryBasedReportConfig schema={schema as BigquerySchema} />
-          )}
-          <DataPreviewer
-            fileName={schema.name}
-            onReset={() => {
-              setIsLoadingSchema(false);
-              setSchema(undefined);
-              setUseSampleFile(false);
-              setDataSource("csv");
-            }}
-            header={schema.fields}
-            previewData={schema.previewData ?? []}
-          />
-        </>
-      )}
-      <InformationCard />
-    </div>
+          </>
+        )}
+        <InformationCard />
+      </div>
+    </>
   );
 }
 

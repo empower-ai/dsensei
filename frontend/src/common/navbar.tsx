@@ -10,7 +10,6 @@ export function NavBar() {
           <img className="h-12 w-12 mr-2 mobile:hidden" src={logo} alt="Logo" />
           <h1 className="text-2xl font-bold mr-16 ">DSensei</h1>
         </div>
-        <a href="/">New Report</a>
       </Flex>
       <Flex justifyContent="end" className="items-center gap-2">
         <h1>Contact Us:</h1>

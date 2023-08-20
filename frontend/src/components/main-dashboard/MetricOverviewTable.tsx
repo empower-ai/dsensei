@@ -1,6 +1,7 @@
 import {
   Badge,
   BadgeDelta,
+  Card,
   Flex,
   Table,
   TableBody,
@@ -80,7 +81,7 @@ export function MetricOverviewTable({
   metricName,
 }: Props) {
   return (
-    <>
+    <Card className="overflow-overlay">
       <Table className="overflow-visible">
         <TableHead>
           <TableRow>
@@ -135,96 +136,6 @@ export function MetricOverviewTable({
           </TableRow>
         </TableBody>
       </Table>
-      {/* <Card className="border-t-4 border-t-orange-500 h-[100%] overflow-overlay">
-        <div className="h-[100%] grid">
-          <div>
-            <Title>Base Period</Title>
-            <Text>
-              {" "}
-              {formatDateString(baseDateRange[0])} to{" "}
-              {formatDateString(baseDateRange[1])}
-            </Text>
-            <Text>{formatNumber(baseNumRows)} total rows</Text>
-          </div>
-          <div className="self-center text-center justify-self-center content-center">
-            <Flex className="self-center text-center justify-self-center content-center">
-              <Text className="self-end mr-2">{metricName}:</Text>
-              <Metric className="mr-2">{formatNumber(baseValue)}</Metric>
-            </Flex>
-          </div>
-          <div className="self-end content-center">
-            <Text>
-              <Bold>Additional Metrics</Bold>
-            </Text>
-            <List>
-              {supportingMetrics.length > 0 ? (
-                supportingMetrics.map((metric) => (
-                  <ListItem>
-                    <Flex justifyContent="end" className="space-x-2.5">
-                      <Text>{metric.name}:</Text>
-                      <Title>{metric.baseValue}</Title>
-                    </Flex>
-                  </ListItem>
-                ))
-              ) : (
-                <ListItem>
-                  {" "}
-                  <Flex justifyContent="end" className="space-x-2.5">
-                    N/A
-                  </Flex>
-                </ListItem>
-              )}
-            </List>
-          </div>
-        </div>
-      </Card>
-      <Card className="border-t-4 border-t-sky-500 h-[100%] overflow-overlay">
-        <div className="h-[100%] grid">
-          <div>
-            <Title>Comparison Period</Title>
-            <Text>
-              {formatDateString(comparisonDateRange[0])} to{" "}
-              {formatDateString(comparisonDateRange[1])}
-            </Text>
-            <Text>{formatNumber(comparisonNumRows)} total rows</Text>
-          </div>
-          <div className="self-center text-center justify-self-center content-center">
-            <Flex className="self-center text-center justify-self-center content-center">
-              <Text className="self-end mr-2">{metricName}:</Text>
-              <Metric className="mr-2">{formatNumber(comparisonValue)}</Metric>
-              {getChangePercentageBadge(baseValue, comparisonValue)}
-            </Flex>
-          </div>
-          <div className="self-end content-center">
-            <Text>
-              <Bold>Additional Metrics</Bold>
-            </Text>
-            <List>
-              {supportingMetrics.length > 0 ? (
-                supportingMetrics.map((metric) => (
-                  <ListItem>
-                    <Flex justifyContent="end" className="space-x-2.5">
-                      <Text>{metric.name}:</Text>
-                      <Title>{metric.comparisonValue}</Title>
-                      {getChangePercentageBadge(
-                        metric.baseValue,
-                        metric.comparisonValue
-                      )}
-                    </Flex>
-                  </ListItem>
-                ))
-              ) : (
-                <ListItem>
-                  {" "}
-                  <Flex justifyContent="end" className="space-x-2.5">
-                    N/A
-                  </Flex>
-                </ListItem>
-              )}
-            </List>
-          </div>
-        </div>
-      </Card> */}
-    </>
+    </Card>
   );
 }
