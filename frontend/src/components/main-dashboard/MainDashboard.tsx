@@ -135,21 +135,30 @@ export default function MainDashboard() {
       .map((idx) => {
         const baselineValue = metric.baselineValueByDate[idx];
         const comparisonValue = metric.comparisonValueByDate[idx];
-        let date;
+        let date, change;
         if (baselineValue && comparisonValue) {
           date = [
             formatDateString(baselineValue.date),
             formatDateString(comparisonValue.date),
           ].join(" / ");
+
+          if (baselineValue.value !== 0) {
+            change =
+              ((comparisonValue.value - baselineValue.value) /
+                baselineValue.value) *
+              100;
+          }
         } else if (baselineValue) {
           date = formatDateString(baselineValue.date);
         } else {
           date = formatDateString(comparisonValue.date);
         }
+
         return {
           date,
           Base: baselineValue?.value,
           Comparison: comparisonValue?.value,
+          Difference: change,
         };
       })
   );
@@ -234,7 +243,7 @@ export default function MainDashboard() {
                 metricName={formatMetricName(analyzingMetrics)}
               />
               <Card className="col-span-4">
-                <Title>Day by Day Comparison</Title>
+                <Title>Day by Day Value</Title>
                 <TabGroup>
                   <TabList>
                     {allMetrics.map((metric) => (
@@ -254,6 +263,33 @@ export default function MainDashboard() {
                           colors={["orange", "sky"]}
                           yAxisWidth={40}
                           valueFormatter={formatNumber}
+                        />
+                      </TabPanel>
+                    ))}
+                  </TabPanels>
+                </TabGroup>
+              </Card>
+              <Card className="col-span-4">
+                <Title>Day by Day Difference</Title>
+                <TabGroup>
+                  <TabList>
+                    {allMetrics.map((metric) => (
+                      <Tab key={formatMetricName(metric)}>
+                        {formatMetricName(metric)}
+                      </Tab>
+                    ))}
+                  </TabList>
+                  <TabPanels>
+                    {chartData.map((data) => (
+                      <TabPanel>
+                        <LineChart
+                          className="mt-6"
+                          data={data}
+                          index="date"
+                          categories={["Difference"]}
+                          colors={["green"]}
+                          yAxisWidth={40}
+                          valueFormatter={(num) => `${formatNumber(num)}%`}
                         />
                       </TabPanel>
                     ))}
