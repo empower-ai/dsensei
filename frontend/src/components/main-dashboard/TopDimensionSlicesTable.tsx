@@ -180,7 +180,7 @@ export default function TopDimensionSlicesTable({
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Metrics Impact
+                Metrics Change
                 <TooltipIcon text="Impact of the segment to the overall metric movement, calculated by: segment_value_of_comparison_period - segment_value_of_base_period." />
               </Flex>
             </TableHeaderCell>
