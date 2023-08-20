@@ -102,7 +102,7 @@ export default function TopDimensionSlicesTable({
     <Card className="overflow-overlay">
       {title}
       <Flex justifyContent="between">
-        <Flex justifyContent="start" className="gap-2 w-[1800px]">
+        <Flex justifyContent="start" className="gap-2 w-auto">
           {showCalculationMode && (
             <>
               <Text>Calculation Mode:</Text>
