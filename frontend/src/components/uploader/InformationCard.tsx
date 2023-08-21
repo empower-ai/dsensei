@@ -25,7 +25,7 @@ export default function InformationCard() {
             title="Demo"
             allowFullScreen={true}
             seamless={true}
-            src="https://www.loom.com/embed/b945578d62ad4ec8b929d50d8b37081e?sid=6f7b640c-3368-4e23-9b00-b51d49448ae4"
+            src="https://www.loom.com/embed/35ee267d3815405b95836ad809807128?sid=b735c758-3ac2-4e9a-9a75-ea046962a9db"
           />
           <br />
           DSensei is an AI-powered key driver analysis engine that can pinpoint
