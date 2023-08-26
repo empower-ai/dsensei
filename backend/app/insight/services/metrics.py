@@ -1,7 +1,7 @@
 import datetime
 import itertools
 import json
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import asdict, dataclass
 from itertools import combinations
 from typing import Dict, List, Tuple
@@ -178,14 +178,15 @@ def parAnalyzeHelper(
     po_agg_method = [build_polars_agg(name, method) for name, method in agg_method.items()]
 
     res = polars.DataFrame()
-    for columns in columns_list:
+
+    def func(columns):
         columns = list(columns)
         baseline = baseline_df.groupby(columns) \
             .agg(po_agg_method).rename(metrics_name)
         comparison = comparison_df.groupby(columns) \
             .agg(po_agg_method).rename(metrics_name)
 
-        joined = comparison.join(
+        return comparison.join(
             baseline,
             on=columns,
             suffix='_baseline',
@@ -195,7 +196,12 @@ def parAnalyzeHelper(
             .with_columns(polars.concat_list([polars.col(column).cast(str) for column in columns]).alias("dimension_values")) \
             .drop(columns)
 
-        res = polars.concat([res, joined])
+    futures = [parallel_analysis_executor.submit(
+        func, columns
+    ) for columns in columns_list]
+    wait(futures)
+    for future in futures:
+        res = polars.concat([res, future.result()])
 
     return res
 
