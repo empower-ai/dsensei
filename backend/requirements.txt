@@ -4,6 +4,12 @@
 #
 #    pip-compile --output-file=requirements.txt
 #
+adbc-driver-manager==0.5.1
+    # via adbc-driver-sqlite
+adbc-driver-sqlite==0.5.1
+    # via polars
+annotated-types==0.5.0
+    # via pydantic
 blinker==1.6.2
     # via -r requirements.in
 cachetools==5.3.1
@@ -16,14 +22,28 @@ charset-normalizer==3.2.0
     # via requests
 click==8.1.6
     # via flask
+cloudpickle==2.2.1
+    # via polars
+connectorx==0.2.3
+    # via polars
+contourpy==1.1.0
+    # via matplotlib
+cycler==0.11.0
+    # via matplotlib
 db-dtypes==1.1.1
     # via -r requirements.in
+deltalake==0.10.1
+    # via polars
 flask==2.2.5
     # via
     #   -r requirements.in
     #   flask-cors
 flask-cors==4.0.0
     # via -r requirements.in
+fonttools==4.42.1
+    # via matplotlib
+fsspec==2023.6.0
+    # via polars
 google-api-core[grpc]==2.11.1
     # via
     #   google-cloud-bigquery
@@ -44,6 +64,8 @@ googleapis-common-protos==1.60.0
     # via
     #   google-api-core
     #   grpcio-status
+greenlet==2.0.2
+    # via sqlalchemy
 grpcio==1.56.2
     # via
     #   google-api-core
@@ -57,25 +79,39 @@ itsdangerous==2.1.1
     # via flask
 jinja2==3.0.3
     # via flask
+kiwisolver==1.4.5
+    # via matplotlib
 loguru==0.7.0
     # via -r requirements.in
 markupsafe==2.1.3
     # via
     #   jinja2
     #   werkzeug
+matplotlib==3.7.2
+    # via polars
 numpy==1.25.1
     # via
+    #   connectorx
+    #   contourpy
     #   db-dtypes
+    #   matplotlib
     #   pandas
+    #   polars
     #   pyarrow
 packaging==23.1
     # via
     #   db-dtypes
     #   google-cloud-bigquery
+    #   matplotlib
 pandas==2.0.3
     # via
     #   -r requirements.in
     #   db-dtypes
+    #   polars
+pillow==10.0.0
+    # via matplotlib
+polars[adbc,all,cloudpickle,connectorx,deltalake,fsspec,matplotlib,numpy,pandas,pyarrow,pydantic,sqlalchemy,timezone,xlsx2csv,xlsxwriter]==0.18.15
+    # via -r requirements.in
 proto-plus==1.22.3
     # via google-cloud-bigquery
 protobuf==4.23.4
@@ -86,16 +122,26 @@ protobuf==4.23.4
     #   grpcio-status
     #   proto-plus
 pyarrow==12.0.1
-    # via db-dtypes
+    # via
+    #   db-dtypes
+    #   deltalake
+    #   polars
 pyasn1==0.5.0
     # via
     #   pyasn1-modules
     #   rsa
 pyasn1-modules==0.3.0
     # via google-auth
+pydantic==2.3.0
+    # via polars
+pydantic-core==2.6.3
+    # via pydantic
+pyparsing==3.0.9
+    # via matplotlib
 python-dateutil==2.8.2
     # via
     #   google-cloud-bigquery
+    #   matplotlib
     #   pandas
 pytz==2021.3
     # via pandas
@@ -111,6 +157,13 @@ six==1.16.0
     # via
     #   google-auth
     #   python-dateutil
+sqlalchemy==2.0.20
+    # via polars
+typing-extensions==4.7.1
+    # via
+    #   pydantic
+    #   pydantic-core
+    #   sqlalchemy
 tzdata==2023.3
     # via pandas
 urllib3==1.26.16
@@ -120,3 +173,7 @@ urllib3==1.26.16
     #   sentry-sdk
 werkzeug==2.3.6
     # via flask
+xlsx2csv==0.8.1
+    # via polars
+xlsxwriter==3.1.2
+    # via polars

@@ -1,16 +1,14 @@
 import datetime
 import itertools
 import json
-import multiprocessing as mp
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
-from functools import partial
 from itertools import combinations
-from multiprocessing import Pool
 from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+import polars as polars
 from loguru import logger
 
 
@@ -98,37 +96,108 @@ def analyze(df,
     return joined
 
 
-def toDimensionSliceInfo(df: pd.DataFrame, metrics_name, baselineCount: int, comparisonCount):
-    dimensions = [df.index.name] if df.index.name else list(df.index.names)
+def toDimensionSliceInfo(df: polars.DataFrame, metrics_name, baselineCount: int, comparisonCount, expected_value):
+    # calculate the change and std
+    df = df.with_columns(
+        polars.when(
+            polars.col(f"{metrics_name}_baseline") == 0
+        ).then(
+            polars.when(
+                polars.col(metrics_name) > 0
+            ).then(polars.lit(0.2)).otherwise(polars.lit(-1))
+        ).otherwise(
+            (polars.col(metrics_name) - polars.col(f"{metrics_name}_baseline")) / polars.col(f"{metrics_name}_baseline")
+        ).alias("change")
+    ).with_columns(
+        (polars.col(metrics_name) - polars.col(f"{metrics_name}_baseline")).abs().alias("impact")
+    )
 
-    def mapToObj(index, row):
-        index = index if (isinstance(index, list)
-                          or isinstance(index, tuple)) else [index]
+    lower_change, upper_change = df.select([
+        polars.quantile("change", 0.2, "nearest").alias("lower"),
+        polars.quantile("change", 0.8, "nearest").alias("upper")
+    ]).row(0)
 
-        key = tuple([DimensionValuePair(dimensions[i], str(index[i]))
+    change_std = df.select(polars.col("change")).filter(
+        (polars.col("change") >= polars.lit(lower_change)) & (polars.col("change") <= polars.lit(upper_change))
+    ).std().row(0)[0]
+
+    df = df.with_columns(
+        polars.when(
+            polars.col("dimension_names").list.lengths() == 1
+        ).then(polars.lit(1)).otherwise(polars.lit(0)).alias("dimension_weight")
+    ).sort([polars.col("dimension_weight"), polars.col("impact")], descending=True).limit(20000)
+
+    def mapToObj(row):
+        values = row["dimension_values"]
+        dimensions = row['dimension_names']
+
+        key = tuple([DimensionValuePair(dimensions[i], str(values[i]))
                      for i in range(len(dimensions))])
-
         sorted_key = sorted(key, key=lambda x: x.dimension)
-        serializedKey = '|'.join(
+        serialized_key = '|'.join(
             [f'{dimensionValuePair.dimension}:{dimensionValuePair.value}' for dimensionValuePair in sorted_key])
 
-        currentPeriodValue = PeriodValue(
+        current_period_value = PeriodValue(
             row['count'], row['count'] / comparisonCount, row[metrics_name])
-        lastPeriodValue = PeriodValue(
-            row[f'count_baseline'], row['count_baseline'] / baselineCount, row[f'{metrics_name}_baseline'])
+        last_period_value = PeriodValue(
+            row['count_baseline'], row['count_baseline'] / baselineCount,
+            row[f'{metrics_name}_baseline'])
 
-        sliceInfo = DimensionSliceInfo(
+        slice_info = DimensionSliceInfo(
             key,
-            serializedKey,
+            serialized_key,
             [],
-            lastPeriodValue,
-            currentPeriodValue,
-            currentPeriodValue.sliceValue - lastPeriodValue.sliceValue)
-        return sliceInfo
+            last_period_value,
+            current_period_value,
+            current_period_value.sliceValue - last_period_value.sliceValue,
+            row['change'],
+            abs(row['change'] - expected_value) / change_std
+        )
 
-    dimensionSliceInfos = df.apply(
-        lambda row: mapToObj(row.name, row), axis=1).tolist()
-    return dimensionSliceInfos
+        return slice_info
+
+    dimension_slice_info = [mapToObj(row) for row in df.rows(named=True)]
+    return dimension_slice_info
+
+
+def build_polars_agg(name: str, method: str):
+    if method == 'sum':
+        return polars.sum(name)
+    elif method == 'count':
+        return polars.count(name)
+    elif method == 'count distinct':
+        return polars.n_unique(name)
+
+
+def parAnalyzeHelper(
+        baseline_df: pd.DataFrame,
+        comparison_df: pd.DataFrame,
+        agg_method: Dict[str, str],
+        metrics_name: Dict[str, str],
+        columns_list: List[List[str]]):
+    po_agg_method = [build_polars_agg(name, method) for name, method in agg_method.items()]
+
+    res = polars.DataFrame()
+    for columns in columns_list:
+        columns = list(columns)
+        baseline = baseline_df.groupby(columns) \
+            .agg(po_agg_method).rename(metrics_name)
+        comparison = comparison_df.groupby(columns) \
+            .agg(po_agg_method).rename(metrics_name)
+
+        joined = comparison.join(
+            baseline,
+            on=columns,
+            suffix='_baseline',
+            how='outer'
+        ).fill_nan(0).fill_null(0) \
+            .with_columns(polars.lit([columns], dtype=polars.List).alias("dimension_names")) \
+            .with_columns(polars.concat_list([polars.col(column).cast(str) for column in columns]).alias("dimension_values")) \
+            .drop(columns)
+
+        res = polars.concat([res, joined])
+
+    return res
 
 
 class NpEncoder(json.JSONEncoder):
@@ -144,16 +213,6 @@ class NpEncoder(json.JSONEncoder):
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
-
-
-def parToDimensionSliceInfo(slices, metrics_name, baselineCount: int, comparisonCount) -> List[DimensionSliceInfo]:
-    func = partial(toDimensionSliceInfo, metrics_name=metrics_name,
-                   baselineCount=baselineCount, comparisonCount=comparisonCount)
-    all_dimension_slices = map(
-        func,
-        slices
-    )
-    return flatten(all_dimension_slices)
 
 
 def calculateTotalSegments(dimensions: Dict[str, Dimension]) -> int:
@@ -184,7 +243,6 @@ def process_single_dimension_df(df: pd.DataFrame) -> pd.DataFrame:
     }).reset_index().set_index('dimension_name')
     df = df.reset_index().set_index('dimension_name')
     df = df.reset_index().join(sum_df, how='inner', rsuffix='_sum', on='dimension_name')
-    print(df)
 
     df['weight'] = (df['metric_value_comparison'] + df['metric_value_baseline']) / (df['metric_value_comparison_sum'] + df['metric_value_baseline_sum'])
     df['change'] = np.where(df['metric_value_baseline'] == 0, 0,
@@ -205,6 +263,24 @@ def process_single_dimension_df(df: pd.DataFrame) -> pd.DataFrame:
     grouped_merged_df['result'] = np.sqrt(np.array(grouped_merged_df['weighted_change_std_input'], dtype=np.float64))
 
     return grouped_merged_df.reset_index()
+
+
+def split_list_into_chunks(lst, num_chunks):
+    chunk_size = len(lst) // num_chunks
+    remainder = len(lst) % num_chunks
+
+    sublists = []
+    index = 0
+    for _ in range(num_chunks):
+        if remainder > 0:
+            sublists.append(lst[index:index + chunk_size + 1])
+            index += chunk_size + 1
+            remainder -= 1
+        else:
+            sublists.append(lst[index:index + chunk_size])
+            index += chunk_size
+
+    return sublists
 
 
 class MetricsController(object):
@@ -229,7 +305,7 @@ class MetricsController(object):
                             date_column, agg_method, metrics_name, self.columns_of_interest)
         self.expected_value = expected_value
 
-        self.slices = []
+        self.slices_df = polars.DataFrame()
         self.keyDimensions = []
         logger.info('init')
         self.slice(baseline_date_range, comparison_date_range)
@@ -239,7 +315,7 @@ class MetricsController(object):
         columnsList = []
         for i in range(1, min(4, len(self.columns_of_interest) + 1)):
             columnsList.extend(list(combinations(self.columns_of_interest, i)))
-        self.slices, self.keyDimensions = self.parAnalyze(
+        self.slices_df, self.keyDimensions = self.parAnalyze(
             self.df, baseline_period, comparison_period,
             self.date_column, columnsList, self.agg_method, self.metrics_name
         )
@@ -288,24 +364,8 @@ class MetricsController(object):
         # Build dimension slice info
         logger.info(f'Building dimension slice info for {metricsName}')
 
-        all_dimension_slices = parToDimensionSliceInfo(
-            self.slices, metricsName, metrics.baselineNumRows, metrics.comparisonNumRows)
-
-        all_dimension_slices.sort(
-            key=lambda slice: abs(slice.impact), reverse=True)
-        for sliceInfo in all_dimension_slices:
-            sliceInfo.changePercentage = 0.2 if sliceInfo.baselineValue.sliceValue == 0 else (
-                                                                                                     sliceInfo.comparisonValue.sliceValue - sliceInfo.baselineValue.sliceValue) / sliceInfo.baselineValue.sliceValue
-        lower = np.percentile(
-            [sliceInfo.changePercentage for sliceInfo in all_dimension_slices], 20)
-        upper = np.percentile(
-            [sliceInfo.changePercentage for sliceInfo in all_dimension_slices], 80)
-        changes = [sliceInfo.changePercentage for sliceInfo in all_dimension_slices if sliceInfo.changePercentage >=
-                   lower and sliceInfo.changePercentage <= upper]
-        changeStdDev = np.std(changes)
-        for sliceInfo in all_dimension_slices:
-            sliceInfo.changeDev = abs(
-                (sliceInfo.changePercentage - self.expected_value) / changeStdDev)
+        all_dimension_slices = toDimensionSliceInfo(
+            self.slices_df, metricsName, metrics.baselineNumRows, metrics.comparisonNumRows, self.expected_value)
 
         logger.info('Building top driver slice keys')
         slices_suitable_for_top_slices = [
@@ -354,10 +414,11 @@ class MetricsController(object):
             "%Y-%m-%d"), self.comparison_date_range[1].strftime("%Y-%m-%d")]
 
         logger.info('Finished building metrics')
+
         return metrics
 
     def getSlices(self):
-        return self.slices
+        return self.slices_df
 
     def getMetrics(self) -> str:
         logger.info(f'Building metrics for {self.metrics_name}')
@@ -380,55 +441,39 @@ class MetricsController(object):
                    columns: List[List[str]],
                    agg_method: Dict[str, str],
                    metrics_name: Dict[str, str]):
-        baseline_df = df.loc[df[date_column].between(
+        baseline_df = polars.from_pandas(df.loc[df[date_column].between(
             pd.to_datetime(baseline_period[0], utc=True),
-            pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
-        ]
-        comparison_df = df.loc[df[date_column].between(
+            pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))])
+        comparison_df = polars.from_pandas(df.loc[df[date_column].between(
             pd.to_datetime(comparison_period[0], utc=True),
-            pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))
-        ]
+            pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))])
 
-        def func(columns: List[str]):
-            columns = list(columns)
-
-            baseline = baseline_df.groupby(columns).agg(
-                agg_method).rename(columns=metrics_name)
-            comparison = comparison_df.groupby(columns).agg(
-                agg_method).rename(columns=metrics_name)
-
-            joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
-            joined.fillna(0, inplace=True)
-            return joined
-
-        single_dimension_df = pd.DataFrame()
+        single_dimension_df = polars.DataFrame()
         for column in self.columns_of_interest:
             metric_name, aggregation_method = next(iter(agg_method.items()))
 
-            baseline = baseline_df.rename(columns={
+            baseline = baseline_df.rename({
                 column: 'dimension_value',
                 metric_name: 'metric_value_baseline'
-            }).copy()
-            baseline['dimension_name'] = column
-            baseline = baseline.groupby(['dimension_value', 'dimension_name']).agg({
-                'metric_value_baseline': aggregation_method
-            })
+            }).with_columns(polars.col('dimension_value').cast(str)) \
+                .with_columns(polars.lit(column).alias('dimension_name'))
+            baseline = baseline.groupby(['dimension_value', 'dimension_name']).agg(
+                build_polars_agg('metric_value_baseline', aggregation_method)
+            )
 
-            comparison = comparison_df.rename(columns={
+            comparison = comparison_df.rename({
                 column: 'dimension_value',
                 metric_name: 'metric_value_comparison'
-            }).copy()
-            comparison['dimension_name'] = column
-            comparison = comparison.groupby(['dimension_value', 'dimension_name']).agg({
-                'metric_value_comparison': aggregation_method
-            })
+            }).with_columns(polars.col('dimension_value').cast(str)) \
+                .with_columns(polars.lit(column).alias('dimension_name'))
+            comparison = comparison.groupby(['dimension_value', 'dimension_name']).agg(
+                build_polars_agg('metric_value_comparison', aggregation_method)
+            )
 
-            joined = baseline.join(comparison, how='outer')
-            joined.fillna(0, inplace=True)
+            joined = baseline.join(comparison, on=['dimension_value', 'dimension_name'], how='outer')
+            joined.fill_nan(0).fill_null(0)
 
-            single_dimension_df = pd.concat([single_dimension_df, joined])
+            single_dimension_df = polars.concat([single_dimension_df, joined])
 
-        multi_dimension_grouping_futures = [parallel_analysis_executor.submit(func, column) for column in columns]
-        wait(multi_dimension_grouping_futures)
-        multi_dimension_grouping_result = [future.result() for future in multi_dimension_grouping_futures]
-        return multi_dimension_grouping_result, find_key_dimensions(single_dimension_df)
+        multi_dimension_grouping_result = parAnalyzeHelper(baseline_df, comparison_df, agg_method, metrics_name, columns)
+        return multi_dimension_grouping_result, find_key_dimensions(single_dimension_df.to_pandas())

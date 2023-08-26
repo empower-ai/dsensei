@@ -6,3 +6,4 @@ google-cloud-bigquery==3.11.4
 db-dtypes==1.1.1
 sentry-sdk==1.29.2
 blinker==1.6.2
+polars[all]==0.18.15

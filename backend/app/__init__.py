@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 import pandas as pd
+import polars
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
@@ -134,7 +135,7 @@ def getInsight():
     dimensions = [k for k, v in dimensions]
 
     logger.info('Reading file')
-    df = pd.read_csv(f'/tmp/dsensei/{fileId}')
+    df = polars.read_csv(f'/tmp/dsensei/{fileId}').to_pandas()
     logger.info('File loaded')
     df[date_column] = pd.to_datetime(df[date_column], utc=True)
     df['date'] = df[date_column].dt.date
