@@ -367,7 +367,7 @@ class MetricsController(object):
         metrics.baselineNumRows = self.aggs['count_baseline'].sum()
         metrics.comparisonNumRows = self.aggs['count'].sum()
         metrics.dimensions = self.getDimensions()
-        metrics.totalSegments = calculateTotalSegments(metrics.dimensions)
+        metrics.totalSegments = len(self.slices_df.rows())
         metrics.keyDimensions = self.keyDimensions
         # Build dimension slice info
         logger.info(f'Building dimension slice info for {metricsName}')
