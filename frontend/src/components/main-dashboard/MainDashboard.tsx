@@ -44,7 +44,7 @@ enum ReportingType {
 export default function MainDashboard() {
   const dispatch = useDispatch();
   const routerState = useLocation().state;
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState<string>();
   const [reportingType, setReportingType] = useState<ReportingType>(
     ReportingType.OVERVIEW
   );
@@ -59,7 +59,7 @@ export default function MainDashboard() {
   } = routerState;
 
   useEffect(() => {
-    const start = new Date().getSeconds();
+    const start = Date.now();
     async function loadInsight() {
       let apiPath = "";
       switch (dataSourceType) {
@@ -94,7 +94,7 @@ export default function MainDashboard() {
 
       const jsonResult = await res.json();
       dispatch(updateMetrics(jsonResult));
-      setDuration(new Date().getSeconds() - start);
+      setDuration(formatNumber((Date.now() - start) / 1000));
     }
 
     loadInsight().catch((e) => {
