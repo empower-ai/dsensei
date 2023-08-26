@@ -165,7 +165,7 @@ def build_polars_agg(name: str, method: str):
         return polars.sum(name)
     elif method == 'count':
         return polars.count(name)
-    elif method == 'count distinct':
+    elif method == 'nunique':
         return polars.n_unique(name)
 
 
@@ -457,6 +457,7 @@ class MetricsController(object):
                 metric_name: 'metric_value_baseline'
             }).with_columns(polars.col('dimension_value').cast(str)) \
                 .with_columns(polars.lit(column).alias('dimension_name'))
+
             baseline = baseline.groupby(['dimension_value', 'dimension_name']).agg(
                 build_polars_agg('metric_value_baseline', aggregation_method)
             )
