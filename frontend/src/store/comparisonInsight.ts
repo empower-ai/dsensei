@@ -176,11 +176,17 @@ function buildRowStatusMap(
     metric,
     selectedDimensions
   );
+  const overallChange = Math.abs(metric.baselineValue - metric.comparisonValue);
+
 
   const topDriverSliceKeys = filteredTopDriverSliceKeys.filter((key) => {
     const sliceInfo = metric.dimensionSliceInfo[key];
 
-    return mode === "impact" || sliceInfo.changeDev > 0.3;
+    // Only show the slice if it has a significant impact or is an outlier
+    const changeToOverallRatio = Math.abs(sliceInfo.baselineValue.sliceValue - sliceInfo.comparisonValue.sliceValue) / overallChange;
+    const changeDev = sliceInfo.changeDev;
+
+    return mode === "impact" || (changeToOverallRatio > 0.2 && changeDev > 0.5);
   });
 
   if (!groupRows) {
