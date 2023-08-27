@@ -1,5 +1,5 @@
 import { Col, Grid, MultiSelect, MultiSelectItem, Text } from "@tremor/react";
-import { ReactElement } from "react";
+import { ReactElement, useState } from "react";
 
 type MultiSelectorProps = {
   title: string | ReactElement;
@@ -8,7 +8,10 @@ type MultiSelectorProps = {
   selectedValues: string[];
   onValueChange: (value: string[]) => void;
   instruction?: ReactElement;
+  includeSelectAll?: boolean;
 };
+
+const keySelectAll = "_select_all";
 
 function MultiSelector({
   title,
@@ -17,12 +20,43 @@ function MultiSelector({
   selectedValues,
   onValueChange,
   instruction,
+  includeSelectAll,
 }: MultiSelectorProps) {
-  const options = values.map((v, i) => (
-    <MultiSelectItem value={v} key={v}>
-      {labels[i]}
-    </MultiSelectItem>
-  ));
+  const [wrappedSelectedValues, setWrappedSelectedValues] =
+    useState<string[]>(selectedValues);
+  let options: ReactElement[] = [];
+  if (includeSelectAll) {
+    options = [
+      <MultiSelectItem value={keySelectAll} key={keySelectAll}>
+        Select All
+      </MultiSelectItem>,
+    ];
+  }
+  options = options.concat(
+    values.map((v, i) => (
+      <MultiSelectItem value={v} key={v}>
+        {labels[i]}
+      </MultiSelectItem>
+    ))
+  );
+
+  function onValueChangeWrapper(newValue: string[]) {
+    const existingValue = wrappedSelectedValues;
+
+    const valueAdded = newValue.find((v) => !existingValue.includes(v));
+    const valueRemoved = existingValue.find((v) => !newValue.includes(v));
+
+    if (valueAdded === keySelectAll) {
+      setWrappedSelectedValues(values.concat(keySelectAll));
+      onValueChange(values);
+    } else if (valueRemoved) {
+      setWrappedSelectedValues(newValue.filter((v) => v !== keySelectAll));
+      onValueChange(newValue.filter((v) => v !== keySelectAll));
+    } else {
+      setWrappedSelectedValues(newValue);
+      onValueChange(newValue);
+    }
+  }
 
   return (
     <Grid numItems={5}>
@@ -34,7 +68,10 @@ function MultiSelector({
         )}
       </Col>
       <Col className="flex items-center" numColSpan={3}>
-        <MultiSelect value={selectedValues} onValueChange={onValueChange}>
+        <MultiSelect
+          value={wrappedSelectedValues}
+          onValueChange={onValueChangeWrapper}
+        >
           {options}
         </MultiSelect>
       </Col>

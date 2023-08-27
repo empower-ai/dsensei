@@ -434,6 +434,7 @@ function ReportConfig({
         {/* Dimension columns multi selector */}
         <MultiSelector
           title={"Select group by columns"}
+          includeSelectAll={true}
           labels={getValidDimensionColumns().map(
             (h) => `${h} - ${rowCountByColumn[h]} distinct values`
           )}
