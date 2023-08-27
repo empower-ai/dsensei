@@ -256,6 +256,19 @@ function ReportConfig({
     );
   }
 
+  function getValidMetricColumns() {
+    return schema.fields
+      .map((h) => h.name)
+      .filter((h) => rowCountByColumn[h] > 0)
+      .filter(
+        (h) =>
+          !(
+            selectedColumns.hasOwnProperty(h) &&
+            selectedColumns[h]["type"] === "date"
+          )
+      );
+  }
+
   function getValidDimensionColumns() {
     return schema.fields
       .map((h) => h.name)
@@ -264,7 +277,8 @@ function ReportConfig({
           !(
             selectedColumns.hasOwnProperty(h) &&
             (selectedColumns[h]["type"] === "metric" ||
-              selectedColumns[h]["type"] === "supporting_metric")
+              selectedColumns[h]["type"] === "supporting_metric" ||
+              selectedColumns[h]["type"] === "date")
           )
       )
       .filter((h) => {
@@ -372,12 +386,8 @@ function ReportConfig({
               {"Select the metric column"}
             </Text>
           }
-          labels={schema.fields
-            .map((h) => h.name)
-            .filter((h) => rowCountByColumn[h] > 0)}
-          values={schema.fields
-            .map((h) => h.name)
-            .filter((h) => rowCountByColumn[h] > 0)}
+          labels={getValidMetricColumns()}
+          values={getValidMetricColumns()}
           selectedValue={
             Object.keys(selectedColumns).filter(
               (c) => selectedColumns[c]["type"] === "metric"
