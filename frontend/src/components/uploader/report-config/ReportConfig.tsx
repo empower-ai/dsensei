@@ -22,6 +22,7 @@ import {
   PrefillConfig,
   RowCountByColumn,
   RowCountByDateAndColumn,
+  TargetDirection,
 } from "../../../types/report-config";
 import DatePicker, { DateRangeData } from "../DatePicker";
 import MultiSelector from "../MultiSelector";
@@ -40,7 +41,8 @@ type Props = {
       [key: string]: ColumnConfig;
     },
     baseDateRange: DateRangeConfig,
-    comparisonDateRange: DateRangeConfig
+    comparisonDateRange: DateRangeConfig,
+    targetDirection: TargetDirection
   ) => Promise<void>;
 };
 
@@ -66,6 +68,8 @@ function ReportConfig({
     range: {},
     stats: {},
   });
+  const [targetDirection, setTargetDirection] =
+    useState<TargetDirection>("increasing");
 
   useEffect(() => {
     if (prefilledConfigs) {
@@ -399,6 +403,22 @@ function ReportConfig({
           }
           onValueChange={(metric) => onSelectMetrics([metric], "metric")}
         />
+        <SingleSelector
+          title={
+            <Text className="pr-4 text-black">Target metric direction</Text>
+          }
+          labels={["Increasing", "Decreasing"]}
+          values={["increasing", "decreasing"]}
+          selectedValue={targetDirection}
+          onValueChange={(v) => setTargetDirection(v as TargetDirection)}
+          key="target-metric-direction"
+          instruction={
+            <Text>
+              Target direction of the metric movement. E.g: "Increasing" for
+              revenue and "Decreasing" for canceled orders.
+            </Text>
+          }
+        />
         {Object.keys(selectedColumns)
           .filter((c) => selectedColumns[c]["type"] === "metric")
           .map((m) => (
@@ -522,7 +542,8 @@ function ReportConfig({
             await onSubmit(
               selectedColumns,
               baseDateRangeData.range,
-              comparisonDateRangeData.range
+              comparisonDateRangeData.range,
+              targetDirection
             );
           }}
           loading={isUploading}

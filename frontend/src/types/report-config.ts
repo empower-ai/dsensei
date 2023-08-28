@@ -3,6 +3,7 @@ import { FieldType } from "./data-source";
 
 export type ColumnType = "metric" | "supporting_metric" | "dimension" | "date";
 export type AggregationType = "sum" | "count" | "distinct";
+export type TargetDirection = "increasing" | "decreasing";
 
 export interface ColumnConfig {
   type: ColumnType;

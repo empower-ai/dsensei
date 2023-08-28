@@ -13,6 +13,7 @@ import {
 } from "@tremor/react";
 import { ReactNode } from "react";
 import { formatDateString, formatNumber } from "../../common/utils";
+import { TargetDirection } from "../../types/report-config";
 
 interface Props {
   baseDateRange: [string, string];
@@ -27,12 +28,14 @@ interface Props {
     comparisonValue: number;
   }[];
   metricName: string;
+  targetDirection: TargetDirection;
 }
 
 function getChangePercentageBadge(
   num1: number,
   num2: number,
-  additionalClasses: string = ""
+  additionalClasses: string = "",
+  targetDirection: TargetDirection
 ): ReactNode {
   if (num1 === 0) {
     return <Badge color="gray">N/A</Badge>;
@@ -63,6 +66,7 @@ function getChangePercentageBadge(
     <BadgeDelta
       size="xs"
       deltaType={deltaType}
+      isIncreasePositive={targetDirection === "increasing"}
       className={`align-middle ${additionalClasses}`}
     >
       {content}
@@ -79,6 +83,7 @@ export function MetricOverviewTable({
   comparisonValue,
   supportingMetrics,
   metricName,
+  targetDirection,
 }: Props) {
   return (
     <Card className="overflow-overlay">
@@ -120,7 +125,8 @@ export function MetricOverviewTable({
                 {getChangePercentageBadge(
                   baseNumRows,
                   comparisonNumRows,
-                  "mb-1"
+                  "mb-1",
+                  targetDirection
                 )}
               </Flex>
             </TableCell>
@@ -130,7 +136,12 @@ export function MetricOverviewTable({
                 justifyContent="start"
               >
                 {formatNumber(comparisonValue)}
-                {getChangePercentageBadge(baseValue, comparisonValue, "mb-1")}
+                {getChangePercentageBadge(
+                  baseValue,
+                  comparisonValue,
+                  "mb-1",
+                  targetDirection
+                )}
               </Flex>
             </TableCell>
           </TableRow>

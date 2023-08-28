@@ -5,10 +5,15 @@ import {
   formatMetricName,
 } from "../../../common/utils";
 import { RootState } from "../../../store";
+import { TargetDirection } from "../../../types/report-config";
 import { MetricOverviewTable } from "../MetricOverviewTable";
 import { DimensionSliceDetailModalMetricCard } from "./DimensionSliceDetailModalMetricCard";
 
-export function DimensionSliceDetailModal() {
+interface Props {
+  targetDirection: TargetDirection;
+}
+
+export function DimensionSliceDetailModal({ targetDirection }: Props) {
   const { analyzingMetrics, relatedMetrics, selectedSliceKey, isLoading } =
     useSelector((state: RootState) => state.comparisonInsight);
 
@@ -61,6 +66,7 @@ export function DimensionSliceDetailModal() {
                     .sliceValue,
               }))}
               metricName={formatMetricName(analyzingMetrics)}
+              targetDirection={targetDirection}
             />
           </Flex>
         </Flex>

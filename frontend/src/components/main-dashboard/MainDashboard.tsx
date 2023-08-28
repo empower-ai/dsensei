@@ -56,6 +56,7 @@ export default function MainDashboard() {
     comparisonDateRange,
     selectedColumns,
     dataSourceType,
+    targetDirection,
   } = routerState;
 
   useEffect(() => {
@@ -241,6 +242,7 @@ export default function MainDashboard() {
                   comparisonValue: metric.comparisonValue,
                 }))}
                 metricName={formatMetricName(analyzingMetrics)}
+                targetDirection={targetDirection}
               />
               <Card className="col-span-4">
                 <Title>Day by Day Value</Title>
@@ -311,6 +313,7 @@ export default function MainDashboard() {
                 enableGroupToggle={true}
                 showDimensionSelector={true}
                 showCalculationMode={true}
+                targetDirection={targetDirection}
               />
             </Flex>
           )}
@@ -337,11 +340,12 @@ export default function MainDashboard() {
                       <Divider />
                     </>
                   }
+                  targetDirection={targetDirection}
                 />
               ))}
             </Flex>
           )}
-          <DimensionSliceDetailModal />
+          <DimensionSliceDetailModal targetDirection={targetDirection} />
         </div>
       </main>
     </>

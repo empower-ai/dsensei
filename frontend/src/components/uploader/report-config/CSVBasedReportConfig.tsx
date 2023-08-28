@@ -8,6 +8,7 @@ import {
   DateRangeConfig,
   PrefillConfig,
   RowCountByDateAndColumn,
+  TargetDirection,
 } from "../../../types/report-config";
 import ReportConfig from "./ReportConfig";
 
@@ -128,7 +129,8 @@ export default function CSVBasedReportConfig({
       [key: string]: ColumnConfig;
     },
     baseDateRange: DateRangeConfig,
-    comparisonDateRange: DateRangeConfig
+    comparisonDateRange: DateRangeConfig,
+    targetDirection: TargetDirection
   ) => {
     setIsUploading(true);
 
@@ -153,6 +155,7 @@ export default function CSVBasedReportConfig({
         selectedColumns,
         baseDateRange,
         comparisonDateRange,
+        targetDirection,
       },
     });
   };

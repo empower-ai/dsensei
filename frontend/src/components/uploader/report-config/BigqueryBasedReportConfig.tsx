@@ -1,6 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { BigquerySchema } from "../../../types/data-source";
-import { ColumnConfig, DateRangeConfig } from "../../../types/report-config";
+import {
+  ColumnConfig,
+  DateRangeConfig,
+  TargetDirection,
+} from "../../../types/report-config";
 import ReportConfig from "./ReportConfig";
 
 interface Props {
@@ -19,7 +23,8 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
       [key: string]: ColumnConfig;
     },
     baseDateRange: DateRangeConfig,
-    comparisonDateRange: DateRangeConfig
+    comparisonDateRange: DateRangeConfig,
+    targetDirection: TargetDirection
   ) => {
     navigate("/dashboard", {
       state: {
@@ -28,6 +33,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
         selectedColumns,
         baseDateRange,
         comparisonDateRange,
+        targetDirection,
       },
     });
   };

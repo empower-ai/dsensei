@@ -2,6 +2,7 @@ import { Card, Divider, Flex, Subtitle, TabPanel, Title } from "@tremor/react";
 import { DimensionSliceKey, InsightMetric } from "../../../../common/types";
 import { serializeDimensionSliceKey } from "../../../../common/utils";
 import { csvHeader } from "../../../../store/comparisonInsight";
+import { TargetDirection } from "../../../../types/report-config";
 import TopDimensionSlicesTable from "../../TopDimensionSlicesTable";
 import WaterfallChart from "./WaterfallChart";
 
@@ -11,9 +12,14 @@ interface Props {
     impact: number;
   }[];
   metric: InsightMetric;
+  targetDirection: TargetDirection;
 }
 
-export function WaterfallPanel({ metric, waterfallRows }: Props) {
+export function WaterfallPanel({
+  metric,
+  waterfallRows,
+  targetDirection,
+}: Props) {
   const rowStatus = Object.fromEntries(
     waterfallRows.map((row) => {
       const serializedKey = serializeDimensionSliceKey(row.key);
@@ -75,6 +81,7 @@ export function WaterfallPanel({ metric, waterfallRows }: Props) {
               <Divider />
             </>
           }
+          targetDirection={targetDirection}
         />
       </Card>
     </TabPanel>

@@ -21,6 +21,7 @@ import {
   setMode,
   toggleGroupRows,
 } from "../../store/comparisonInsight";
+import { TargetDirection } from "../../types/report-config";
 import TopDimensionSlicesTableRow from "./TopDimensionSlicesTableRow";
 
 type Props = {
@@ -34,6 +35,7 @@ type Props = {
   enableGroupToggle?: boolean;
   showDimensionSelector: boolean;
   showCalculationMode: boolean;
+  targetDirection: TargetDirection;
 };
 
 export default function TopDimensionSlicesTable({
@@ -46,6 +48,7 @@ export default function TopDimensionSlicesTable({
   groupRows,
   enableGroupToggle,
   showCalculationMode,
+  targetDirection,
 }: Props) {
   const dispatch = useDispatch();
   const [isCollapsed, setIsCollapse] = useState(true);
@@ -202,6 +205,7 @@ export default function TopDimensionSlicesTable({
                 dimensionSlice={dimensionSlice}
                 overallChange={overallChange}
                 dimension={dimension}
+                targetDirection={targetDirection}
               />
             );
           })}

@@ -26,6 +26,7 @@ import {
   selectSliceForDetail,
   toggleRow,
 } from "../../store/comparisonInsight";
+import { TargetDirection } from "../../types/report-config";
 
 type Props = {
   dimensionSlice: DimensionSliceInfo;
@@ -33,6 +34,7 @@ type Props = {
   parentDimensionSliceKey?: DimensionSliceKey;
   dimension?: string;
   overallChange: number;
+  targetDirection: TargetDirection;
 };
 
 function getChangePercentage(num1: number, num2: number): ReactNode {
@@ -48,7 +50,8 @@ function getChangePercentage(num1: number, num2: number): ReactNode {
 function getPerformanceComparedWithAvg(
   num1: number,
   num2: number,
-  avgPerf: number
+  avgPerf: number,
+  targetDirection: TargetDirection
 ): ReactNode {
   if (num1 === 0) {
     return "N/A";
@@ -56,21 +59,40 @@ function getPerformanceComparedWithAvg(
 
   const changePct = (num2 - num1) / num1;
 
-  return getImpact((changePct - avgPerf) * 100, (n) => `${formatNumber(n)}%`);
+  return getImpact(
+    (changePct - avgPerf) * 100,
+    (n) => `${formatNumber(n)}%`,
+    targetDirection
+  );
 }
 
 function getImpact(
   impact: number,
   formatter: (n: number) => string = function (n: number) {
     return formatNumber(n);
-  }
+  },
+  targetDirection: TargetDirection
 ): ReactNode {
   if (impact > 0) {
-    return <BadgeDelta deltaType="increase">+{formatter(impact)}</BadgeDelta>;
+    return (
+      <BadgeDelta
+        deltaType="increase"
+        isIncreasePositive={targetDirection === "increasing"}
+      >
+        +{formatter(impact)}
+      </BadgeDelta>
+    );
   } else if (impact === 0) {
     return <BadgeDelta deltaType="unchanged">{formatter(impact)}</BadgeDelta>;
   } else {
-    return <BadgeDelta deltaType="decrease">{formatter(impact)}</BadgeDelta>;
+    return (
+      <BadgeDelta
+        deltaType="decrease"
+        isIncreasePositive={targetDirection === "increasing"}
+      >
+        {formatter(impact)}
+      </BadgeDelta>
+    );
   }
 }
 
@@ -80,6 +102,7 @@ export default function TopDimensionSlicesTableRow({
   parentDimensionSliceKey,
   overallChange,
   dimension,
+  targetDirection,
 }: Props) {
   const allDimensionSliceInfo = useSelector(
     (state: RootState) =>
@@ -97,6 +120,7 @@ export default function TopDimensionSlicesTableRow({
           parentDimensionSliceKey={dimensionSlice.key}
           overallChange={overallChange}
           dimension={dimension}
+          targetDirection={targetDirection}
         />
       );
     });
@@ -179,14 +203,19 @@ export default function TopDimensionSlicesTableRow({
         </TableCell>
         <TableCell>
           <Flex className="justify-start items-center">
-            {getImpact(dimensionSlice?.impact ?? 0)}
+            {getImpact(
+              dimensionSlice?.impact ?? 0,
+              (n: number) => formatNumber(n),
+              targetDirection
+            )}
           </Flex>
         </TableCell>
         <TableCell>
           {getPerformanceComparedWithAvg(
             dimensionSlice?.baselineValue.sliceValue,
             dimensionSlice?.comparisonValue.sliceValue,
-            overallChange
+            overallChange,
+            targetDirection
           )}
         </TableCell>
       </TableRow>
