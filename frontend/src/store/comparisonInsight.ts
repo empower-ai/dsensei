@@ -185,8 +185,9 @@ function buildRowStatusMap(
     // Only show the slice if it has a significant impact or is an outlier
     const changeToOverallRatio = Math.abs(sliceInfo.baselineValue.sliceValue - sliceInfo.comparisonValue.sliceValue) / overallChange;
     const changeDev = sliceInfo.changeDev;
+    const value = Math.abs(changeDev * changeToOverallRatio);
 
-    return mode === "impact" || (changeToOverallRatio > 0.2 && changeDev > 0.5);
+    return mode === "impact" || (value > 0.5);
   });
 
   if (!groupRows) {
