@@ -168,7 +168,7 @@ def build_polars_agg(name: str, method: str):
     elif method == 'count':
         return polars.count(name)
     elif method == 'nunique':
-        return polars.n_unique(name)
+        return polars.n_unique(name).cast(int)
 
 
 def parAnalyzeHelper(
