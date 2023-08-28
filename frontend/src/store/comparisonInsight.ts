@@ -24,7 +24,7 @@ export type RowStatus = {
 export interface ComparisonInsightState {
   analyzingMetrics: InsightMetric;
   relatedMetrics: InsightMetric[];
-  selectedSliceKey?: string;
+  selectedSliceKey?: DimensionSliceKey;
   tableRowStatus: {
     [key: string]: RowStatus;
   };
@@ -178,16 +178,19 @@ function buildRowStatusMap(
   );
   const overallChange = Math.abs(metric.baselineValue - metric.comparisonValue);
 
-
   const topDriverSliceKeys = filteredTopDriverSliceKeys.filter((key) => {
     const sliceInfo = metric.dimensionSliceInfo[key];
 
     // Only show the slice if it has a significant impact or is an outlier
-    const changeToOverallRatio = Math.abs(sliceInfo.baselineValue.sliceValue - sliceInfo.comparisonValue.sliceValue) / overallChange;
+    const changeToOverallRatio =
+      Math.abs(
+        sliceInfo.baselineValue.sliceValue -
+          sliceInfo.comparisonValue.sliceValue
+      ) / overallChange;
     const changeDev = sliceInfo.changeDev;
     const value = Math.abs(changeDev * changeToOverallRatio);
 
-    return mode === "impact" || (value > 0.5);
+    return mode === "impact" || value > 0.5;
   });
 
   if (!groupRows) {
@@ -441,7 +444,7 @@ export const comparisonMetricsSlice = createSlice({
         rowStatus.isExpanded = !rowStatus.isExpanded;
       }
     },
-    selectSliceForDetail: (state, action: PayloadAction<string>) => {
+    selectSliceForDetail: (state, action: PayloadAction<DimensionSliceKey>) => {
       state.selectedSliceKey = action.payload;
     },
     updateSelectedDimensions: (state, action: PayloadAction<string[]>) => {

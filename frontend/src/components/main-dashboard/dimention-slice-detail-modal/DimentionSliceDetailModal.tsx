@@ -1,23 +1,135 @@
-import { Bold, Divider, Flex, Subtitle, Text, Title } from "@tremor/react";
+import {
+  Bold,
+  Divider,
+  Flex,
+  LineChart,
+  Subtitle,
+  Text,
+  Title,
+} from "@tremor/react";
+import { Range } from "immutable";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
+  formatDateString,
   formatDimensionSliceKeyForRendering,
   formatMetricName,
+  formatNumber,
+  serializeDimensionSliceKey,
 } from "../../../common/utils";
 import { RootState } from "../../../store";
-import { TargetDirection } from "../../../types/report-config";
+import { DataSourceType } from "../../../types/data-source";
+import {
+  ColumnConfig,
+  DateRangeConfig,
+  TargetDirection,
+} from "../../../types/report-config";
 import { MetricOverviewTable } from "../MetricOverviewTable";
 import { DimensionSliceDetailModalMetricCard } from "./DimensionSliceDetailModalMetricCard";
 
 interface Props {
   targetDirection: TargetDirection;
+  fileId: string;
+  selectedColumns: {
+    [key: string]: ColumnConfig;
+  };
+  baseDateRange: DateRangeConfig;
+  comparisonDateRange: DateRangeConfig;
+  dataSourceType: DataSourceType;
 }
 
-export function DimensionSliceDetailModal({ targetDirection }: Props) {
+export function DimensionSliceDetailModal({
+  targetDirection,
+  fileId,
+  selectedColumns,
+  baseDateRange,
+  comparisonDateRange,
+  dataSourceType,
+}: Props) {
   const { analyzingMetrics, relatedMetrics, selectedSliceKey, isLoading } =
     useSelector((state: RootState) => state.comparisonInsight);
+  const [chartData, setChartData] = useState<
+    {
+      date: string;
+      Base: number;
+      Comparison: number;
+    }[]
+  >([]);
+  const supportTImeSeries = dataSourceType === "csv"; // csv for now
 
-  if (isLoading) {
+  useEffect(() => {
+    async function loadInsight() {
+      const apiPath = "/api/segment-insight";
+      const response = await fetch(
+        process.env.NODE_ENV === "development"
+          ? `http://127.0.0.1:5001${apiPath}`
+          : apiPath,
+        {
+          mode: "cors",
+          method: "POST",
+          body: JSON.stringify({
+            fileId,
+            baseDateRange,
+            comparisonDateRange,
+            selectedColumns,
+            segmentKey: selectedSliceKey,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const insight = await response.json();
+
+      const maxIdx = Math.max(
+        insight.baselineValueByDate.length,
+        insight.comparisonValueByDate.length
+      );
+
+      setChartData(
+        Range(0, maxIdx)
+          .toArray()
+          .map((idx) => {
+            const baselineValue = insight.baselineValueByDate[idx];
+            const comparisonValue = insight.comparisonValueByDate[idx];
+            let date, change;
+            if (baselineValue && comparisonValue) {
+              date = [
+                formatDateString(baselineValue.date),
+                formatDateString(comparisonValue.date),
+              ].join(" / ");
+
+              if (baselineValue.value !== 0) {
+                change =
+                  ((comparisonValue.value - baselineValue.value) /
+                    baselineValue.value) *
+                  100;
+              }
+            } else if (baselineValue) {
+              date = formatDateString(baselineValue.date);
+            } else {
+              date = formatDateString(comparisonValue.date);
+            }
+
+            return {
+              date,
+              Base: baselineValue?.value,
+              Comparison: comparisonValue?.value,
+              Difference: change,
+            };
+          })
+      );
+    }
+
+    if (selectedSliceKey && supportTImeSeries) {
+      loadInsight().catch((e) => {
+        throw e;
+      });
+    }
+  }, [selectedSliceKey]);
+
+  if (!selectedSliceKey && isLoading) {
     return null;
   }
 
@@ -27,7 +139,9 @@ export function DimensionSliceDetailModal({ targetDirection }: Props) {
     return <dialog id="slice_detail" className="modal"></dialog>;
   }
 
-  const sliceInfo = analyzingMetrics.dimensionSliceInfo[selectedSliceKey];
+  const serializedKey = serializeDimensionSliceKey(selectedSliceKey);
+  const sliceInfo = analyzingMetrics.dimensionSliceInfo[serializedKey];
+
   return (
     <dialog id="slice_detail" className="modal">
       <form method="dialog" className="modal-box max-w-[60%]">
@@ -48,7 +162,7 @@ export function DimensionSliceDetailModal({ targetDirection }: Props) {
         <Divider />
         <Title>Metric Value</Title>
         <Flex justifyContent="center">
-          <Flex className="pt-3 gap-6">
+          <Flex className="pt-3 gap-6" flexDirection="col">
             <MetricOverviewTable
               baseDateRange={analyzingMetrics.baselineDateRange}
               comparisonDateRange={analyzingMetrics.comparisonDateRange}
@@ -59,15 +173,26 @@ export function DimensionSliceDetailModal({ targetDirection }: Props) {
               supportingMetrics={relatedMetrics.map((metric) => ({
                 name: formatMetricName(metric),
                 baseValue:
-                  metric.dimensionSliceInfo[selectedSliceKey].baselineValue
+                  metric.dimensionSliceInfo[serializedKey].baselineValue
                     .sliceValue,
                 comparisonValue:
-                  metric.dimensionSliceInfo[selectedSliceKey].comparisonValue
+                  metric.dimensionSliceInfo[serializedKey].comparisonValue
                     .sliceValue,
               }))}
               metricName={formatMetricName(analyzingMetrics)}
               targetDirection={targetDirection}
             />
+            {supportTImeSeries && (
+              <LineChart
+                className="mt-6"
+                data={chartData}
+                index="date"
+                categories={["Base", "Comparison"]}
+                colors={["orange", "sky"]}
+                yAxisWidth={100}
+                valueFormatter={formatNumber}
+              />
+            )}
           </Flex>
         </Flex>
         <Divider />

@@ -49,6 +49,12 @@ class DimensionSliceInfo:
 
 
 @dataclass
+class ValueByDate:
+    date: str
+    value: float
+
+
+@dataclass
 class Metric:
     name: str = None
     totalSegments: int = None
@@ -58,8 +64,8 @@ class Metric:
     comparisonNumRows: int = None
     baselineValue: float = None
     comparisonValue: float = None
-    baselineValueByDate: Dict[str, float] = None
-    comparisonValueByDate: Dict[str, float] = None
+    baselineValueByDate: list[ValueByDate] = None
+    comparisonValueByDate: list[ValueByDate] = None
     baselineDateRange: List[str] = None
     comparisonDateRange: List[str] = None
     topDriverSliceKeys: List[str] = None

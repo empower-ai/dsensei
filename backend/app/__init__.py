@@ -1,5 +1,6 @@
 import json
 import os
+from dataclasses import asdict
 from datetime import datetime
 
 import pandas as pd
@@ -10,7 +11,8 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from app.data_source import bp as data_source_bp
 from app.file_upload.services.file_upload import FileUploadService
 from app.insight.datasource.bqMetrics import BqMetrics
-from app.insight.services.metrics import MetricsController
+from app.insight.services.metrics import MetricsController, NpEncoder
+from app.insight.services.segmentInsight import get_segment_insight
 from config import Config
 from flask import Flask, request
 from flask_cors import CORS
@@ -99,9 +101,10 @@ def getBqInsight():
     return bq_metric.get_metrics()
 
 
-@app.route('/api/insight', methods=['POST'])
-def getInsight():
+@app.route('/api/segment-insight', methods=['POST'])
+def get_time_series():
     data = request.get_json()
+
     fileId = data['fileId']
     baseDateRange = data['baseDateRange']
     comparisonDateRange = data['comparisonDateRange']
@@ -115,13 +118,65 @@ def getInsight():
         comparisonDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
     comparisonEnd = datetime.strptime(
         comparisonDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-
     date_column = list(
-        filter(lambda x: x[1]['type'] == 'date', selectedColumns.items()))[0][0].strip()
+        filter(lambda x: x[1]['type'] == 'date', selectedColumns.items())
+    )[0][0].strip()
 
     agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
     ['type'] == 'supporting_metric', selectedColumns.items()))
-    expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))[
+
+    metrics_name = {k: k for k, v in agg_method}
+    metrics_name.update({date_column: 'count'})
+    agg_method = {k: agg_method_map[v['aggregationOption']]
+                  for k, v in agg_method}
+    agg_method.update({date_column: 'count'})
+
+    segment_key = data['segmentKey']
+    filtering_clause = polars.lit(True)
+    for sub_key in segment_key:
+        filtering_clause = filtering_clause & (polars.col(sub_key['dimension']).cast(str).eq(polars.lit(sub_key['value'])))
+
+    df = polars.read_csv(f'/tmp/dsensei/{fileId}') \
+        .filter(filtering_clause) \
+        .to_pandas()
+    df[date_column] = pd.to_datetime(df[date_column], utc=True)
+    df['date'] = df[date_column].dt.date
+
+    return json.dumps(
+        asdict(get_segment_insight(
+            df,
+            date_column,
+            (baselineStart, baselineEnd),
+            (comparisonStart, comparisonEnd),
+            agg_method,
+            metrics_name
+        )), default=str, allow_nan=False
+    )
+
+
+@app.route('/api/insight', methods=['POST'])
+def getInsight():
+    data = request.get_json()
+    file_id = data['fileId']
+    base_date_range = data['baseDateRange']
+    comparison_date_range = data['comparisonDateRange']
+    selected_columns = data['selectedColumns']
+
+    baseline_start = datetime.strptime(
+        base_date_range['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    baseline_end = datetime.strptime(
+        base_date_range['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    comparison_start = datetime.strptime(
+        comparison_date_range['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+    comparison_end = datetime.strptime(
+        comparison_date_range['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
+
+    date_column = list(
+        filter(lambda x: x[1]['type'] == 'date', selected_columns.items()))[0][0].strip()
+
+    agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
+    ['type'] == 'supporting_metric', selected_columns.items()))
+    expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selected_columns.items()))[
         0][1]['expectedValue']
 
     metrics_name = {k: k for k, v in agg_method}
@@ -131,19 +186,19 @@ def getInsight():
     agg_method.update({date_column: 'count'})
 
     dimensions = list(
-        filter(lambda x: x[1]['type'] == 'dimension', selectedColumns.items()))
+        filter(lambda x: x[1]['type'] == 'dimension', selected_columns.items()))
     dimensions = [k for k, v in dimensions]
 
     logger.info('Reading file')
-    df = polars.read_csv(f'/tmp/dsensei/{fileId}').to_pandas()
+    df = polars.read_csv(f'/tmp/dsensei/{file_id}').to_pandas()
     logger.info('File loaded')
     df[date_column] = pd.to_datetime(df[date_column], utc=True)
     df['date'] = df[date_column].dt.date
 
     metrics = MetricsController(
         df,
-        (baselineStart, baselineEnd),
-        (comparisonStart, comparisonEnd),
+        (baseline_start, baseline_end),
+        (comparison_start, comparison_end),
         date_column,
         dimensions,
         agg_method,

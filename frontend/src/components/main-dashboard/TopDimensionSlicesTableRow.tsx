@@ -126,7 +126,7 @@ export default function TopDimensionSlicesTableRow({
     });
   }
 
-  function toggleSliceDetailModal(key: string) {
+  function toggleSliceDetailModal(key: DimensionSliceKey) {
     dispatch(selectSliceForDetail(key));
     (window as any).slice_detail.showModal();
   }
@@ -173,7 +173,7 @@ export default function TopDimensionSlicesTableRow({
             )}
           </p>
           <span
-            onClick={() => toggleSliceDetailModal(dimensionSlice.serializedKey)}
+            onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
             className="w-6 cursor-pointer"
           >
             <DocumentMagnifyingGlassIcon />

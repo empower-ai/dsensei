@@ -267,7 +267,7 @@ export default function MainDashboard() {
                           index="date"
                           categories={["Base", "Comparison"]}
                           colors={["orange", "sky"]}
-                          yAxisWidth={40}
+                          yAxisWidth={100}
                           valueFormatter={formatNumber}
                         />
                       </TabPanel>
@@ -349,7 +349,14 @@ export default function MainDashboard() {
               ))}
             </Flex>
           )}
-          <DimensionSliceDetailModal targetDirection={targetDirection} />
+          <DimensionSliceDetailModal
+            fileId={fileId}
+            targetDirection={targetDirection}
+            selectedColumns={selectedColumns}
+            baseDateRange={baseDateRange}
+            comparisonDateRange={comparisonDateRange}
+            dataSourceType={dataSourceType}
+          />
         </div>
       </main>
     </>
