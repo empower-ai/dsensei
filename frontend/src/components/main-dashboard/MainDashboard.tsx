@@ -215,8 +215,12 @@ export default function MainDashboard() {
                 <Card className="text-center flex flex-col gap-y-4">
                   <Title>Dimensions</Title>
                   <Text>
+                    {Object.keys(analyzingMetrics.dimensions).length} total
+                  </Text>
+                  <Text>
                     {Object.values(analyzingMetrics.dimensions)
                       .map((dimension) => dimension.name)
+                      .sort()
                       .join(", ")}
                   </Text>
                 </Card>
