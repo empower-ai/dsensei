@@ -125,7 +125,9 @@ def toDimensionSliceInfo(df: polars.DataFrame, metrics_name, baselineCount: int,
         polars.when(
             polars.col("dimension_names").list.lengths() == 1
         ).then(polars.lit(1)).otherwise(polars.lit(0)).alias("dimension_weight")
-    ).sort([polars.col("dimension_weight"), polars.col("impact")], descending=True).limit(20000)
+    ).sort([polars.col("dimension_weight"), polars.col("impact")], descending=True) \
+        .limit(20000) \
+        .sort([polars.col("impact").abs()], descending=True)
 
     def mapToObj(row):
         values = row["dimension_values"]
