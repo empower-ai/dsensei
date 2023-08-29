@@ -47,7 +47,7 @@ function MultiSelector({
     const valueRemoved = existingValue.find((v) => !newValue.includes(v));
 
     if (valueAdded === keySelectAll) {
-      setWrappedSelectedValues(values.concat(keySelectAll));
+      setWrappedSelectedValues(values);
       onValueChange(values);
     } else if (valueRemoved) {
       setWrappedSelectedValues(newValue.filter((v) => v !== keySelectAll));
