@@ -439,25 +439,27 @@ function ReportConfig({
             </div>
           ))}
         {/* Dimension columns multi selector */}
-        <MultiSelector
-          title={"Select group by columns"}
-          includeSelectAll={true}
-          labels={getValidDimensionColumns().map(
-            (h) => `${h} - ${rowCountByColumn[h]} distinct values`
-          )}
-          values={getValidDimensionColumns()}
-          selectedValues={Object.keys(selectedColumns).filter(
-            (c) => selectedColumns[c]["type"] === "dimension"
-          )}
-          onValueChange={onSelectDimension}
-          instruction={
-            <Text>
-              A list of column to aggregate the metrics based on. For instance
-              user demographics (gender, age group, ...), product attributes
-              (brand, category, ...).
-            </Text>
-          }
-        />
+        {(!prefilledConfigs || Object.keys(selectedColumns).length > 0) && (
+          <MultiSelector
+            title={"Select group by columns"}
+            includeSelectAll={true}
+            labels={getValidDimensionColumns().map(
+              (h) => `${h} - ${rowCountByColumn[h]} distinct values`
+            )}
+            values={getValidDimensionColumns()}
+            selectedValues={Object.keys(selectedColumns).filter(
+              (c) => selectedColumns[c]["type"] === "dimension"
+            )}
+            onValueChange={onSelectDimension}
+            instruction={
+              <Text>
+                A list of column to aggregate the metrics based on. For instance
+                user demographics (gender, age group, ...), product attributes
+                (brand, category, ...).
+              </Text>
+            }
+          />
+        )}
         <Divider className="my-2" />
         <Accordion className="border-0">
           <AccordionHeader>

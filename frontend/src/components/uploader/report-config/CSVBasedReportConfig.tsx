@@ -40,6 +40,18 @@ const sampleDataPrefills: PrefillConfig = {
       type: "dimension",
       fieldType: "VARCHAR",
     },
+    age: {
+      type: "dimension",
+      fieldType: "VARCHAR",
+    },
+    language: {
+      type: "dimension",
+      fieldType: "VARCHAR",
+    },
+    platform: {
+      type: "dimension",
+      fieldType: "VARCHAR",
+    },
   },
   baseDateRange: {
     from: createNewDateWithBrowserTimeZone("2022-07-01"),
