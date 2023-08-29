@@ -465,7 +465,7 @@ function ReportConfig({
               Advanced settings <Bold>[optional]</Bold>
             </Title>
           </AccordionHeader>
-          <AccordionBody>
+          <AccordionBody className="overflow-auto">
             {/* Supporting metrics multi selector */}
             <MultiSelector
               title={
