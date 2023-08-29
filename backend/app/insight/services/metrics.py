@@ -105,27 +105,8 @@ def analyze(df,
 def toDimensionSliceInfo(df: polars.DataFrame, metrics_name, baselineCount: int, comparisonCount, expected_value):
     # calculate the change and std
     df = df.with_columns(
-        polars.when(
-            polars.col(f"{metrics_name}_baseline") == 0
-        ).then(
-            polars.when(
-                polars.col(metrics_name) > 0
-            ).then(polars.lit(0.2)).otherwise(polars.lit(-1))
-        ).otherwise(
-            (polars.col(metrics_name) - polars.col(f"{metrics_name}_baseline")) / polars.col(f"{metrics_name}_baseline")
-        ).alias("change")
-    ).with_columns(
         (polars.col(metrics_name) - polars.col(f"{metrics_name}_baseline")).abs().alias("impact")
     )
-
-    lower_change, upper_change = df.select([
-        polars.quantile("change", 0.2, "nearest").alias("lower"),
-        polars.quantile("change", 0.8, "nearest").alias("upper")
-    ]).row(0)
-
-    change_std = df.select(polars.col("change")).filter(
-        (polars.col("change") >= polars.lit(lower_change)) & (polars.col("change") <= polars.lit(upper_change))
-    ).std().row(0)[0]
 
     df = df.with_columns(
         polars.when(
@@ -159,7 +140,7 @@ def toDimensionSliceInfo(df: polars.DataFrame, metrics_name, baselineCount: int,
             current_period_value,
             current_period_value.sliceValue - last_period_value.sliceValue,
             row['change'],
-            abs(row['change'] - expected_value) / change_std
+            abs(row['weighted_change']) / row['weighted_std']
         )
 
         return slice_info
@@ -182,7 +163,8 @@ def parAnalyzeHelper(
         comparison_df: pd.DataFrame,
         agg_method: Dict[str, str],
         metrics_name: Dict[str, str],
-        columns_list: List[List[str]]):
+        columns_list: List[List[str]],
+        expected_value: float):
     po_agg_method = [build_polars_agg(name, method) for name, method in agg_method.items()]
 
     res = polars.DataFrame()
@@ -194,7 +176,7 @@ def parAnalyzeHelper(
         comparison = comparison_df.groupby(columns) \
             .agg(po_agg_method).rename(metrics_name)
 
-        return comparison.join(
+        joined: polars.DataFrame = comparison.join(
             baseline,
             on=columns,
             suffix='_baseline',
@@ -203,6 +185,44 @@ def parAnalyzeHelper(
             .with_columns(polars.lit([columns], dtype=polars.List).alias("dimension_names")) \
             .with_columns(polars.concat_list([polars.col(column).cast(str) for column in columns]).alias("dimension_values")) \
             .drop(columns)
+
+        analyzing_metric_name = next(iter(metrics_name.values()))
+        metric_value_sum, baseline_metric_value_sum = joined.select((polars.col(analyzing_metric_name, f"{analyzing_metric_name}_baseline").sum())).row(0)
+
+        joined = joined \
+            .with_columns((polars.lit(metric_value_sum) + polars.lit(baseline_metric_value_sum)).alias("sum")) \
+            .with_columns(
+            ((polars.col(analyzing_metric_name) + polars.col(f"{analyzing_metric_name}_baseline")) / (
+                    polars.lit(metric_value_sum) + polars.lit(baseline_metric_value_sum))
+             ).alias("weight"),
+            polars.when(
+                polars.col(f"{analyzing_metric_name}_baseline") == 0
+            ).then(
+                polars.when(
+                    polars.col(analyzing_metric_name) > 0
+                ).then(polars.lit(1)).otherwise(polars.lit(-1))
+            ).otherwise(
+                (polars.col(analyzing_metric_name) - polars.col(f"{analyzing_metric_name}_baseline")) / polars.col(
+                    f"{analyzing_metric_name}_baseline")
+            ).alias("change")
+        ).with_columns(
+            (polars.col("change") - polars.lit(expected_value)).alias("calibrated_change")
+        ).with_columns(
+            (polars.col("weight") * polars.col("calibrated_change")).alias("weighted_change")
+        )
+
+        weighted_change_mean = joined.select(polars.col("weighted_change").sum()).row(0)
+        weighted_std = (joined.select(
+            (polars.col("weight") * (polars.col("weighted_change") - polars.lit(weighted_change_mean)).pow(2)).sum().sqrt()
+        )).row(0)
+        joined = joined.with_columns(
+            polars.lit(weighted_std).alias("weighted_std")
+        )
+
+        if columns == ["platform"]:
+            print(joined)
+
+        return joined
 
     futures = [parallel_analysis_executor.submit(
         func, columns
@@ -366,7 +386,6 @@ class MetricsController(object):
 
         slice_info = [slice_info_dict[key]
                       for key in childSliceKey if key in slice_info_dict]
-        slice_info.sort(key=lambda slice: abs(slice.impact), reverse=True)
         return list(map(lambda slice: slice.serializedKey, slice_info[:topN]))
 
     def buildMetrics(self, metricsName: str, skip_details: bool) -> Metric:
@@ -493,5 +512,5 @@ class MetricsController(object):
 
             single_dimension_df = polars.concat([single_dimension_df, joined])
 
-        multi_dimension_grouping_result = parAnalyzeHelper(baseline_df, comparison_df, agg_method, metrics_name, columns)
+        multi_dimension_grouping_result = parAnalyzeHelper(baseline_df, comparison_df, agg_method, metrics_name, columns, self.expected_value)
         return multi_dimension_grouping_result, find_key_dimensions(single_dimension_df.to_pandas())
