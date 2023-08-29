@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Dict, Tuple
 
@@ -22,7 +22,7 @@ def get_segment_insight(
         comparison_date_range: Tuple[datetime.date, datetime.date],
         agg_method: Dict[str, str],
         metric_names: Dict[str, str]
-) -> TimeSeriesInsight:
+):
     baseline = df.loc[df[date_column].between(
         pd.to_datetime(baseline_date_range[0], utc=True),
         pd.to_datetime(baseline_date_range[1] + pd.DateOffset(1), utc=True))
@@ -32,22 +32,20 @@ def get_segment_insight(
         pd.to_datetime(comparison_date_range[1] + pd.DateOffset(1), utc=True))
     ].groupby('date').agg(agg_method)
 
-    metricName = next(iter(metric_names.values()))
-
-    return TimeSeriesInsight(
-        name=metricName,
+    return [asdict(TimeSeriesInsight(
+        name=metric_name,
         baselineValueByDate=[
             ValueByDate(
                 index.strftime("%Y-%m-%d"),
-                row[f'{metricName}']
+                row[f'{metric_name}']
             )
             for index, row in baseline.iterrows()
         ],
         comparisonValueByDate=[
             ValueByDate(
                 index.strftime("%Y-%m-%d"),
-                row[f'{metricName}']
+                row[f'{metric_name}']
             )
             for index, row in comparison.iterrows()
         ]
-    )
+    )) for metric_name in metric_names.keys() if metric_name != date_column]

@@ -369,7 +369,7 @@ class MetricsController(object):
         slice_info.sort(key=lambda slice: abs(slice.impact), reverse=True)
         return list(map(lambda slice: slice.serializedKey, slice_info[:topN]))
 
-    def buildMetrics(self, metricsName: str) -> Metric:
+    def buildMetrics(self, metricsName: str, skip_details: bool) -> Metric:
         metrics = Metric()
         metrics.name = metricsName
         metrics.baselineNumRows = self.aggs['count_baseline'].sum()
@@ -377,6 +377,7 @@ class MetricsController(object):
         metrics.dimensions = self.getDimensions()
         metrics.totalSegments = len(self.slices_df.rows())
         metrics.keyDimensions = self.keyDimensions
+
         # Build dimension slice info
         logger.info(f'Building dimension slice info for {metricsName}')
 
@@ -396,8 +397,8 @@ class MetricsController(object):
                                       }
         metrics.baselineValue = self.aggs[f'{metricsName}_baseline'].sum()
         metrics.comparisonValue = self.aggs[metricsName].sum()
-        logger.info('Building baseline value by date')
 
+        logger.info('Building baseline value by date')
         baseline = self.df.loc[self.df[self.date_column].between(
             pd.to_datetime(self.baseline_date_range[0], utc=True),
             pd.to_datetime(self.baseline_date_range[1] + pd.DateOffset(1), utc=True))
@@ -439,8 +440,8 @@ class MetricsController(object):
     def getMetrics(self) -> str:
         logger.info(f'Building metrics for {self.metrics_name}')
         ret = {
-            k: asdict(self.buildMetrics(k))
-            for k, v in self.metrics_name.items()
+            k: asdict(self.buildMetrics(k, idx > 0))
+            for idx, (k, v) in enumerate(self.metrics_name.items())
             if k != self.date_column
         }
 

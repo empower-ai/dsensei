@@ -438,21 +438,6 @@ function ReportConfig({
               />
             </div>
           ))}
-        {Object.keys(selectedColumns)
-          .filter((c) => selectedColumns[c]["type"] === "supporting_metric")
-          .map((m) => (
-            <SingleSelector
-              title={<Subtitle className="pr-4">{m}</Subtitle>}
-              labels={["Sum", "Count", "Distinct Count"]}
-              values={["sum", "count", "distinct"]}
-              selectedValue={selectedColumns[m]["aggregationOption"]!}
-              onValueChange={(v) =>
-                onSelectMetricAggregationOption(m, v as AggregationType)
-              }
-              key={m}
-              instruction={<Text>How to aggregation the metric.</Text>}
-            />
-          ))}
         {/* Dimension columns multi selector */}
         <MultiSelector
           title={"Select group by columns"}
@@ -482,7 +467,7 @@ function ReportConfig({
           </AccordionHeader>
           <AccordionBody>
             {/* Supporting metrics multi selector */}
-            {/* <MultiSelector
+            <MultiSelector
               title={
                 <Text className="pr-4 text-black">
                   Select related metric columns <Bold>[optional]</Bold>
@@ -519,7 +504,22 @@ function ReportConfig({
                   orders when analyzing the total sales revenue.
                 </Text>
               }
-            /> */}
+            />
+            {Object.keys(selectedColumns)
+              .filter((c) => selectedColumns[c]["type"] === "supporting_metric")
+              .map((m) => (
+                <SingleSelector
+                  title={<Subtitle className="pr-4">{m}</Subtitle>}
+                  labels={["Sum", "Count", "Distinct Count"]}
+                  values={["sum", "count", "distinct"]}
+                  selectedValue={selectedColumns[m]["aggregationOption"]!}
+                  onValueChange={(v) =>
+                    onSelectMetricAggregationOption(m, v as AggregationType)
+                  }
+                  key={m}
+                  instruction={<Text>How to aggregation the metric.</Text>}
+                />
+              ))}
             {Object.keys(selectedColumns)
               .filter((c) => selectedColumns[c]["type"] === "metric")
               .map((m) => (

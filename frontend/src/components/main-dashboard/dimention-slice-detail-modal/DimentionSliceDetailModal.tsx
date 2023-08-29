@@ -1,9 +1,15 @@
 import {
   Bold,
+  Card,
   Divider,
   Flex,
   LineChart,
   Subtitle,
+  Tab,
+  TabGroup,
+  TabList,
+  TabPanel,
+  TabPanels,
   Text,
   Title,
 } from "@tremor/react";
@@ -53,7 +59,7 @@ export function DimensionSliceDetailModal({
       date: string;
       Base: number;
       Comparison: number;
-    }[]
+    }[][]
   >([]);
   const supportTImeSeries = dataSourceType === "csv"; // csv for now
 
@@ -83,42 +89,44 @@ export function DimensionSliceDetailModal({
       const insight = await response.json();
 
       const maxIdx = Math.max(
-        insight.baselineValueByDate.length,
-        insight.comparisonValueByDate.length
+        insight[0].baselineValueByDate.length,
+        insight[0].comparisonValueByDate.length
       );
 
       setChartData(
-        Range(0, maxIdx)
-          .toArray()
-          .map((idx) => {
-            const baselineValue = insight.baselineValueByDate[idx];
-            const comparisonValue = insight.comparisonValueByDate[idx];
-            let date, change;
-            if (baselineValue && comparisonValue) {
-              date = [
-                formatDateString(baselineValue.date),
-                formatDateString(comparisonValue.date),
-              ].join(" / ");
+        allMetrics.map((metric, i) =>
+          Range(0, maxIdx)
+            .toArray()
+            .map((idx) => {
+              const baselineValue = insight[i].baselineValueByDate[idx];
+              const comparisonValue = insight[i].comparisonValueByDate[idx];
+              let date, change;
+              if (baselineValue && comparisonValue) {
+                date = [
+                  formatDateString(baselineValue.date),
+                  formatDateString(comparisonValue.date),
+                ].join(" / ");
 
-              if (baselineValue.value !== 0) {
-                change =
-                  ((comparisonValue.value - baselineValue.value) /
-                    baselineValue.value) *
-                  100;
+                if (baselineValue.value !== 0) {
+                  change =
+                    ((comparisonValue.value - baselineValue.value) /
+                      baselineValue.value) *
+                    100;
+                }
+              } else if (baselineValue) {
+                date = formatDateString(baselineValue.date);
+              } else {
+                date = formatDateString(comparisonValue.date);
               }
-            } else if (baselineValue) {
-              date = formatDateString(baselineValue.date);
-            } else {
-              date = formatDateString(comparisonValue.date);
-            }
 
-            return {
-              date,
-              Base: baselineValue?.value,
-              Comparison: comparisonValue?.value,
-              Difference: change,
-            };
-          })
+              return {
+                date,
+                Base: baselineValue?.value,
+                Comparison: comparisonValue?.value,
+                Difference: change,
+              };
+            })
+        )
       );
     }
 
@@ -183,15 +191,33 @@ export function DimensionSliceDetailModal({
               targetDirection={targetDirection}
             />
             {supportTImeSeries && (
-              <LineChart
-                className="mt-6"
-                data={chartData}
-                index="date"
-                categories={["Base", "Comparison"]}
-                colors={["orange", "sky"]}
-                yAxisWidth={100}
-                valueFormatter={formatNumber}
-              />
+              <Card className="col-span-4">
+                <Title>Day by Day Value</Title>
+                <TabGroup>
+                  <TabList>
+                    {allMetrics.map((metric) => (
+                      <Tab key={formatMetricName(metric)}>
+                        {formatMetricName(metric)}
+                      </Tab>
+                    ))}
+                  </TabList>
+                  <TabPanels>
+                    {chartData.map((data) => (
+                      <TabPanel>
+                        <LineChart
+                          className="mt-6"
+                          data={data}
+                          index="date"
+                          categories={["Base", "Comparison"]}
+                          colors={["orange", "sky"]}
+                          yAxisWidth={100}
+                          valueFormatter={formatNumber}
+                        />
+                      </TabPanel>
+                    ))}
+                  </TabPanels>
+                </TabGroup>
+              </Card>
             )}
           </Flex>
         </Flex>

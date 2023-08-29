@@ -209,15 +209,32 @@ export default function MainDashboard() {
                 className="gap-2"
               >
                 <Card className="text-center flex flex-col gap-y-4">
-                  <Title>Metric</Title>
-                  <Flex
-                    className="h-[100%]"
-                    justifyContent="center"
-                    alignItems="center"
-                    flexDirection="col"
-                  >
-                    <Text>{formatMetricName(analyzingMetrics)}</Text>
-                  </Flex>
+                  <Title>Metrics</Title>
+                  {relatedMetrics.length === 0 && (
+                    <Flex
+                      className="h-[100%]"
+                      justifyContent="center"
+                      alignItems="center"
+                      flexDirection="col"
+                    >
+                      <Text>{formatMetricName(analyzingMetrics)}</Text>
+                    </Flex>
+                  )}
+                  {relatedMetrics.length > 0 && (
+                    <Flex
+                      className="h-[100%] gap-y-2"
+                      justifyContent="center"
+                      alignItems="center"
+                      flexDirection="col"
+                    >
+                      <Text className="text-black">Main:</Text>
+                      <Text>{formatMetricName(analyzingMetrics)}</Text>
+                      <Text className="text-black">Additional:</Text>
+                      {relatedMetrics.map((metric) => (
+                        <Text>{formatMetricName(metric)}</Text>
+                      ))}
+                    </Flex>
+                  )}
                 </Card>
                 <Card className="text-center flex flex-col gap-y-4">
                   <Flex justifyContent="center" className="gap-2">

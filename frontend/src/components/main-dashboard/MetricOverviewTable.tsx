@@ -94,6 +94,9 @@ export function MetricOverviewTable({
             <TableHeaderCell>Period</TableHeaderCell>
             <TableHeaderCell>Rows</TableHeaderCell>
             <TableHeaderCell>{metricName}</TableHeaderCell>
+            {supportingMetrics.map((metric) => (
+              <TableHeaderCell>{metric.name}</TableHeaderCell>
+            ))}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -107,6 +110,9 @@ export function MetricOverviewTable({
             </TableCell>
             <TableCell>{formatNumber(baseNumRows)}</TableCell>
             <TableCell>{formatNumber(baseValue)}</TableCell>
+            {supportingMetrics.map((metric) => (
+              <TableCell>{formatNumber(metric.baseValue)}</TableCell>
+            ))}
           </TableRow>
           <TableRow>
             <TableCell>
@@ -144,6 +150,22 @@ export function MetricOverviewTable({
                 )}
               </Flex>
             </TableCell>
+            {supportingMetrics.map((metric) => (
+              <TableCell className="gap-3">
+                <Flex
+                  className="self-center text-center content-center gap-2"
+                  justifyContent="start"
+                >
+                  {formatNumber(metric.comparisonValue)}
+                  {getChangePercentageBadge(
+                    metric.baseValue,
+                    metric.comparisonValue,
+                    "mb-1",
+                    targetDirection
+                  )}
+                </Flex>
+              </TableCell>
+            ))}
           </TableRow>
         </TableBody>
       </Table>

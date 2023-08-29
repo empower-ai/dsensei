@@ -143,14 +143,14 @@ def get_time_series():
     df['date'] = df[date_column].dt.date
 
     return json.dumps(
-        asdict(get_segment_insight(
+        get_segment_insight(
             df,
             date_column,
             (baselineStart, baselineEnd),
             (comparisonStart, comparisonEnd),
             agg_method,
             metrics_name
-        )), default=str, allow_nan=False
+        ), default=str, allow_nan=False
     )
 
 
