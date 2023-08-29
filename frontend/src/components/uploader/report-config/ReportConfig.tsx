@@ -1,3 +1,4 @@
+import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import {
   Accordion,
   AccordionBody,
@@ -409,6 +410,7 @@ function ReportConfig({
           }
           labels={["Increasing", "Decreasing"]}
           values={["increasing", "decreasing"]}
+          icons={[ArrowUpIcon, ArrowDownIcon]}
           selectedValue={targetDirection}
           onValueChange={(v) => setTargetDirection(v as TargetDirection)}
           key="target-metric-direction"

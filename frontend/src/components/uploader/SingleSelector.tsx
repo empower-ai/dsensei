@@ -5,6 +5,7 @@ type SingleSelectorProps = {
   title: ReactElement | null;
   labels: string[];
   values: string[];
+  icons?: React.ElementType[];
   selectedValue: string;
   onValueChange: (value: string) => void;
   instruction?: ReactElement;
@@ -15,13 +16,19 @@ function SingleSelector({
   title,
   labels,
   values,
+  icons,
   selectedValue,
   onValueChange,
   instruction,
   disabled,
 }: SingleSelectorProps) {
   const options = values.map((v, i) => (
-    <SelectItem value={v} key={v}>
+    <SelectItem
+      value={v}
+      key={v}
+      icon={icons ? icons[i] : undefined}
+      className="cursor-pointer"
+    >
       {labels[i]}
     </SelectItem>
   ));

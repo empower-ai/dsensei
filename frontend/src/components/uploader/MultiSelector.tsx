@@ -27,14 +27,18 @@ function MultiSelector({
   let options: ReactElement[] = [];
   if (includeSelectAll) {
     options = [
-      <MultiSelectItem value={keySelectAll} key={keySelectAll}>
+      <MultiSelectItem
+        value={keySelectAll}
+        key={keySelectAll}
+        className="cursor-pointer"
+      >
         Select All
       </MultiSelectItem>,
     ];
   }
   options = options.concat(
     values.map((v, i) => (
-      <MultiSelectItem value={v} key={v}>
+      <MultiSelectItem value={v} key={v} className="cursor-pointer">
         {labels[i]}
       </MultiSelectItem>
     ))
