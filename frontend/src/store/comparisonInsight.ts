@@ -340,7 +340,7 @@ const initialState: ComparisonInsightState = {
   isLoading: true,
   groupRows: true,
   selectedDimensions: [],
-  mode: "impact",
+  mode: "outlier",
 };
 
 export const comparisonMetricsSlice = createSlice({

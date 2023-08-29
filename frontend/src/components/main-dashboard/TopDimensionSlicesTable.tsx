@@ -108,20 +108,19 @@ export default function TopDimensionSlicesTable({
         <Flex justifyContent="start" className="gap-2 w-auto">
           {showCalculationMode && (
             <>
-              <Text>Calculation Mode:</Text>
+              <Text>Mode:</Text>
               <Select
-                className="w-[150px] min-w-[160px]"
                 value={mode}
                 onValueChange={(e) => {
                   setTopDriverMode(e as any);
                 }}
               >
-                <SelectItem value="impact">Impact Mode</SelectItem>
-                <SelectItem value="outlier">Outlier Mode</SelectItem>
+                <SelectItem value="impact">All Top Segments</SelectItem>
+                <SelectItem value="outlier">Noticeable Only</SelectItem>
               </Select>
               <TooltipIcon
-                text="Impact Mode: Show segments with the highest impact on the metric.
-              Outlier Mode: Show segments with the highest outlier score."
+                text="All Top Segments: Show all segments with the top change on the metric.
+               Noticeable Only: Show noticeable segments recommended by the algorithm."
               />
             </>
           )}
