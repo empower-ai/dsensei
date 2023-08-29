@@ -210,27 +210,57 @@ export default function MainDashboard() {
               >
                 <Card className="text-center flex flex-col gap-y-4">
                   <Title>Metric</Title>
-                  <Text>{formatMetricName(analyzingMetrics)}</Text>
+                  <Flex
+                    className="h-[100%]"
+                    justifyContent="center"
+                    alignItems="center"
+                    flexDirection="col"
+                  >
+                    <Text>{formatMetricName(analyzingMetrics)}</Text>
+                  </Flex>
                 </Card>
                 <Card className="text-center flex flex-col gap-y-4">
-                  <Title>Dimensions</Title>
-                  <Text>
-                    {Object.keys(analyzingMetrics.dimensions).length} total
-                  </Text>
-                  <Text>
-                    {Object.values(analyzingMetrics.dimensions)
-                      .map((dimension) => dimension.name)
-                      .sort()
-                      .join(", ")}
-                  </Text>
+                  <Flex justifyContent="center" className="gap-2">
+                    <Title>Dimensions</Title>
+                    <Text>
+                      {Object.keys(analyzingMetrics.dimensions).length} in total
+                    </Text>
+                  </Flex>
+                  <Flex
+                    className="h-[100%]"
+                    justifyContent="center"
+                    alignItems="center"
+                    flexDirection="col"
+                  >
+                    <Text>
+                      {Object.values(analyzingMetrics.dimensions)
+                        .map((dimension) => dimension.name)
+                        .sort()
+                        .join(", ")}
+                    </Text>
+                  </Flex>
                 </Card>
                 <Card className="text-center flex flex-col gap-y-4">
                   <Title>Total Segments</Title>
-                  <Text>{formatNumber(analyzingMetrics.totalSegments)}</Text>
+                  <Flex
+                    className="h-[100%]"
+                    justifyContent="center"
+                    alignItems="center"
+                    flexDirection="col"
+                  >
+                    <Text>{formatNumber(analyzingMetrics.totalSegments)}</Text>
+                  </Flex>
                 </Card>
                 <Card className="text-center flex flex-col gap-y-4">
                   <Title>Time Taken</Title>
-                  <Text>{duration} seconds</Text>
+                  <Flex
+                    className="h-[100%]"
+                    justifyContent="center"
+                    alignItems="center"
+                    flexDirection="col"
+                  >
+                    <Text>{duration} seconds</Text>
+                  </Flex>
                 </Card>
               </Grid>
               <MetricOverviewTable
