@@ -112,7 +112,7 @@ def toDimensionSliceInfo(df: polars.DataFrame, metrics_name, baselineCount: int,
         polars.when(
             polars.col("dimension_names").list.lengths() == 1
         ).then(polars.lit(1)).otherwise(polars.lit(0)).alias("dimension_weight")
-    ).sort([polars.col("dimension_weight"), polars.col("impact")], descending=True) \
+    ).sort([polars.col("dimension_weight"), polars.col("impact").abs()], descending=True) \
         .limit(20000) \
         .sort([polars.col("impact").abs()], descending=True)
 
@@ -218,9 +218,6 @@ def parAnalyzeHelper(
         joined = joined.with_columns(
             polars.lit(weighted_std).alias("weighted_std")
         )
-
-        if columns == ["platform"]:
-            print(joined)
 
         return joined
 

@@ -85,6 +85,64 @@ function helper(
   return true;
 }
 
+function buildRowStatusTree(
+  topDriverSliceKeys: string[],
+  keysToFilter: string[],
+  appendOnce?: boolean
+) {
+  const result: {
+    [key: string]: RowStatus;
+  } = {};
+  topDriverSliceKeys
+    .filter((key) => !keysToFilter.includes(key))
+    .forEach((key) => {
+      const keyComponents = key.split("|");
+      let hasMatching = false;
+
+      for (const child of Object.values(result)) {
+        if (helper(child, key, keyComponents)) {
+          hasMatching = true;
+        }
+
+        if (hasMatching && appendOnce) {
+          break;
+        }
+      }
+
+      if (!hasMatching) {
+        result[key] = {
+          key: [key],
+          keyComponents: keyComponents,
+          isExpanded: false,
+          children: {},
+          hasCalculatedChildren: true,
+        };
+      }
+    });
+
+  return result;
+}
+
+function trimBranchHelper(row: RowStatus, rowKey: string): string[] {
+  const numChildren = Object.keys(row.children).length;
+  if (numChildren === 0) {
+    return [];
+  } else {
+    const result = [];
+    if (numChildren === 1) {
+      result.push(rowKey);
+    }
+
+    return [
+      ...result,
+      ...Object.entries(row.children).flatMap((child) => {
+        const [childKey, childValue] = child;
+        return trimBranchHelper(childValue, childKey);
+      }),
+    ];
+  }
+}
+
 function buildWaterfall(
   metric: InsightMetric,
   selectedDimensions: string[]
@@ -170,7 +228,7 @@ function buildRowStatusMap(
   },
   (number | string)[][]
 ] {
-  const result: { [key: string]: RowStatus } = {};
+  let result: { [key: string]: RowStatus } = {};
   const resultInCSV: (number | string)[][] = [csvHeader];
   const filteredTopDriverSliceKeys = getFilteredTopDriverSliceKeys(
     metric,
@@ -184,37 +242,75 @@ function buildRowStatusMap(
     return mode === "impact" || changeDev > 0.2;
   });
 
-  if (!groupRows) {
-    topDriverSliceKeys.forEach((key) => {
-      result[key] = {
-        key: [key],
-        keyComponents: key.split("|"),
-        isExpanded: false,
-        children: {},
-        hasCalculatedChildren: true,
-      };
+  const keysToFilter: string[] = [];
+  if (mode === "outlier") {
+    const sortedTopDriverKeys = topDriverSliceKeys.sort((key1, key2) => {
+      const keyComponents1 = key1.split("|");
+      const keyComponents2 = key2.split("|");
+
+      return keyComponents1.length - keyComponents2.length;
     });
-  } else {
-    topDriverSliceKeys.forEach((key) => {
+
+    sortedTopDriverKeys.forEach((key, idx) => {
       const keyComponents = key.split("|");
-      let hasMatching = false;
+      const sliceInfo = metric.dimensionSliceInfo[key];
+      for (let i = 0; i < idx; ++i) {
+        const checkingKey = sortedTopDriverKeys[i];
+        const checkingKeyComponents = checkingKey.split("|");
 
-      Object.values(result).forEach((child) => {
-        if (helper(child, key, keyComponents)) {
-          hasMatching = true;
+        if (
+          checkingKeyComponents.every((component) =>
+            keyComponents.includes(component)
+          )
+        ) {
+          const checkingSliceInfo = metric.dimensionSliceInfo[checkingKey];
+          const sliceValue =
+            sliceInfo.comparisonValue.sliceValue +
+            sliceInfo.baselineValue.sliceValue;
+          const checkingSliceValue =
+            checkingSliceInfo.comparisonValue.sliceValue +
+            checkingSliceInfo.baselineValue.sliceValue;
+
+          if (
+            Math.abs((sliceValue - checkingSliceValue) / checkingSliceValue) <
+            0.05
+          ) {
+            keysToFilter.push(checkingKey);
+          }
         }
-      });
+      }
+    });
 
-      if (!hasMatching) {
+    let additionalKeysToFilter: string[] = [];
+    let tempRowStatusTree: {
+      [key: string]: RowStatus;
+    } = {};
+    do {
+      tempRowStatusTree = buildRowStatusTree(topDriverSliceKeys, keysToFilter);
+      additionalKeysToFilter = Object.entries(tempRowStatusTree).flatMap(
+        (resultEntry) => {
+          const [key, value] = resultEntry;
+          return trimBranchHelper(value, key);
+        }
+      );
+      keysToFilter.push(...additionalKeysToFilter);
+    } while (additionalKeysToFilter.length > 0);
+  }
+
+  if (!groupRows) {
+    topDriverSliceKeys
+      .filter((key) => !keysToFilter.includes(key))
+      .forEach((key) => {
         result[key] = {
           key: [key],
-          keyComponents: keyComponents,
+          keyComponents: key.split("|"),
           isExpanded: false,
           children: {},
           hasCalculatedChildren: true,
         };
-      }
-    });
+      });
+  } else {
+    result = buildRowStatusTree(topDriverSliceKeys, keysToFilter, true);
   }
 
   Object.keys(result).forEach((sliceKey) => {
