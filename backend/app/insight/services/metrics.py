@@ -7,6 +7,7 @@ from itertools import combinations
 from typing import Dict, List, Tuple
 
 import numpy as np
+import orjson
 import pandas as pd
 import polars as polars
 from loguru import logger
@@ -77,31 +78,6 @@ class Metric:
 parallel_analysis_executor = ThreadPoolExecutor()
 
 
-def analyze(df,
-            baseline_period: Tuple[datetime.date, datetime.date],
-            comparison_period: Tuple[datetime.date, datetime.date],
-            date_column,
-            agg_method: Dict[str, str],
-            metrics_name: Dict[str, str],
-            columns: List[str]):
-    baseline = pd.DataFrame(
-        df.loc[
-            df[date_column].between(
-                pd.to_datetime(baseline_period[0], utc=True),
-                pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))
-        ].agg(agg_method)).transpose().rename(columns=metrics_name)
-    comparison = pd.DataFrame(
-        df.loc[
-            df[date_column].between(
-                pd.to_datetime(comparison_period[0], utc=True),
-                pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))
-        ].agg(agg_method)).transpose().rename(columns=metrics_name)
-
-    joined = baseline.join(comparison, lsuffix='_baseline', how='outer')
-    joined.fillna(0, inplace=True)
-    return joined
-
-
 def toDimensionSliceInfo(df: polars.DataFrame, metrics_name, baselineCount: int, comparisonCount, expected_value):
     # calculate the change and std
     df = df.with_columns(
@@ -110,15 +86,15 @@ def toDimensionSliceInfo(df: polars.DataFrame, metrics_name, baselineCount: int,
 
     df = df.with_columns(
         polars.when(
-            polars.col("dimension_names").list.lengths() == 1
+            polars.col("dimension_name").list.lengths() == 1
         ).then(polars.lit(1)).otherwise(polars.lit(0)).alias("dimension_weight")
     ).sort([polars.col("dimension_weight"), polars.col("impact").abs()], descending=True) \
         .limit(20000) \
         .sort([polars.col("impact").abs()], descending=True)
 
     def mapToObj(row):
-        values = row["dimension_values"]
-        dimensions = row['dimension_names']
+        values = row["dimension_value"]
+        dimensions = row['dimension_name']
 
         key = tuple([DimensionValuePair(dimensions[i], str(values[i]))
                      for i in range(len(dimensions))])
@@ -171,10 +147,8 @@ def parAnalyzeHelper(
 
     def func(columns):
         columns = list(columns)
-        baseline = baseline_df.groupby(columns) \
-            .agg(po_agg_method).rename(metrics_name)
-        comparison = comparison_df.groupby(columns) \
-            .agg(po_agg_method).rename(metrics_name)
+        baseline = baseline_df.groupby(columns).agg(po_agg_method).rename(metrics_name)
+        comparison = comparison_df.groupby(columns).agg(po_agg_method).rename(metrics_name)
 
         joined: polars.DataFrame = comparison.join(
             baseline,
@@ -182,8 +156,8 @@ def parAnalyzeHelper(
             suffix='_baseline',
             how='outer'
         ).fill_nan(0).fill_null(0) \
-            .with_columns(polars.lit([columns], dtype=polars.List).alias("dimension_names")) \
-            .with_columns(polars.concat_list([polars.col(column).cast(str) for column in columns]).alias("dimension_values")) \
+            .with_columns(polars.lit([columns], dtype=polars.List).alias("dimension_name")) \
+            .with_columns(polars.concat_list([polars.col(column).cast(str) for column in columns]).alias("dimension_value")) \
             .drop(columns)
 
         analyzing_metric_name = next(iter(metrics_name.values()))
@@ -318,7 +292,7 @@ def split_list_into_chunks(lst, num_chunks):
 
 class MetricsController(object):
     def __init__(self,
-                 data: pd.DataFrame,
+                 data: polars.DataFrame,
                  baseline_date_range: Tuple[datetime.date, datetime.date],
                  comparison_date_range: Tuple[datetime.date, datetime.date],
                  date_column: str,
@@ -334,24 +308,56 @@ class MetricsController(object):
         self.baseline_date_range = baseline_date_range
         self.comparison_date_range = comparison_date_range
 
-        self.aggs = analyze(self.df, baseline_date_range, comparison_date_range,
-                            date_column, agg_method, metrics_name, self.columns_of_interest)
         self.expected_value = expected_value
 
         self.slices_df = polars.DataFrame()
         self.keyDimensions = []
+
         logger.info('init')
-        self.slice(baseline_date_range, comparison_date_range)
+        self.baseline_df = self.df.filter(
+            polars.col('date').is_between(
+                polars.lit(self.baseline_date_range[0]),
+                polars.lit(self.baseline_date_range[1])
+            )
+        )
+        self.comparison_df = self.df.filter(
+            polars.col('date').is_between(
+                polars.lit(self.comparison_date_range[0]),
+                polars.lit(self.comparison_date_range[1])
+            )
+        )
+        self.slice()
+        self.aggs = self.gen_agg_df()
         logger.info('init done')
 
-    def slice(self, baseline_period, comparison_period):
-        columnsList = []
+    def gen_agg_df(self):
+        po_agg_method = self.po_agg_method()
+        baseline = self.baseline_df.select(po_agg_method).rename(self.metrics_name)
+        comparison = self.comparison_df.select(po_agg_method).rename(self.metrics_name)
+
+        return comparison.join(baseline, suffix='_baseline', how='cross').fill_nan(0).fill_null(0)
+
+    def po_agg_method(self):
+        return [build_polars_agg(name, method) for name, method in self.agg_method.items()]
+
+    def gen_value_by_date(self, df: polars.DataFrame, metric_name: str):
+        aggregated_df = df.groupby('date').agg(self.po_agg_method()) \
+            .sort('date') \
+            .with_columns(polars.col('date').cast(polars.Utf8))
+
+        return [
+            {
+                "date": row['date'],
+                "value": row[f'{metric_name}']
+            }
+            for row in aggregated_df.rows(named=True)
+        ]
+
+    def slice(self):
+        columns_list = []
         for i in range(1, min(4, len(self.columns_of_interest) + 1)):
-            columnsList.extend(list(combinations(self.columns_of_interest, i)))
-        self.slices_df, self.keyDimensions = self.parAnalyze(
-            self.df, baseline_period, comparison_period,
-            self.date_column, columnsList, self.agg_method, self.metrics_name
-        )
+            columns_list.extend(combinations(self.columns_of_interest, i))
+        self.slices_df, self.keyDimensions = self.par_analyze(columns_list, self.metrics_name)
 
     def getDimensions(self) -> Dict[str, Dimension]:
         dimensions = {}
@@ -415,31 +421,11 @@ class MetricsController(object):
         metrics.comparisonValue = self.aggs[metricsName].sum()
 
         logger.info('Building baseline value by date')
-        baseline = self.df.loc[self.df[self.date_column].between(
-            pd.to_datetime(self.baseline_date_range[0], utc=True),
-            pd.to_datetime(self.baseline_date_range[1] + pd.DateOffset(1), utc=True))
-        ].groupby('date').agg(self.agg_method)
-        comparison = self.df.loc[self.df[self.date_column].between(
-            pd.to_datetime(self.comparison_date_range[0], utc=True),
-            pd.to_datetime(self.comparison_date_range[1] + pd.DateOffset(1), utc=True))
-        ].groupby('date').agg(self.agg_method)
 
         metrics.aggregationMethod = self.agg_method[metricsName]
         metrics.expectedChangePercentage = self.expected_value
-        metrics.baselineValueByDate = [
-            {
-                "date": index.strftime("%Y-%m-%d"),
-                "value": row[f'{metricsName}']
-            }
-            for index, row in baseline.iterrows()
-        ]
-        metrics.comparisonValueByDate = [
-            {
-                "date": index.strftime("%Y-%m-%d"),
-                "value": row[f'{metricsName}']
-            }
-            for index, row in comparison.iterrows()
-        ]
+        metrics.baselineValueByDate = self.gen_value_by_date(self.baseline_df, metricsName)
+        metrics.comparisonValueByDate = self.gen_value_by_date(self.comparison_df, metricsName)
 
         metrics.baselineDateRange = [self.baseline_date_range[0].strftime(
             "%Y-%m-%d"), self.baseline_date_range[1].strftime("%Y-%m-%d")]
@@ -456,36 +442,24 @@ class MetricsController(object):
     def getMetrics(self) -> str:
         logger.info(f'Building metrics for {self.metrics_name}')
         ret = {
-            k: asdict(self.buildMetrics(k, idx > 0))
+            k: self.buildMetrics(k, idx > 0)
             for idx, (k, v) in enumerate(self.metrics_name.items())
             if k != self.date_column
         }
 
         logger.info(f'Finished building metrics for {self.metrics_name}')
-        ret = json.dumps(ret, cls=NpEncoder, allow_nan=False)
+        ret = orjson.dumps(ret)
         logger.info(f'Finished dumping metrics for {self.metrics_name}')
         return ret
 
-    def parAnalyze(self,
-                   df: pd.DataFrame,
-                   baseline_period: Tuple[datetime.date, datetime.date],
-                   comparison_period: Tuple[datetime.date, datetime.date],
-                   date_column: str,
-                   columns: List[List[str]],
-                   agg_method: Dict[str, str],
-                   metrics_name: Dict[str, str]):
-        baseline_df = polars.from_pandas(df.loc[df[date_column].between(
-            pd.to_datetime(baseline_period[0], utc=True),
-            pd.to_datetime(baseline_period[1] + pd.DateOffset(1), utc=True))])
-        comparison_df = polars.from_pandas(df.loc[df[date_column].between(
-            pd.to_datetime(comparison_period[0], utc=True),
-            pd.to_datetime(comparison_period[1] + pd.DateOffset(1), utc=True))])
-
+    def par_analyze(self,
+                    columns: List[List[str]],
+                    metrics_name: Dict[str, str]):
         single_dimension_df = polars.DataFrame()
         for column in self.columns_of_interest:
-            metric_name, aggregation_method = next(iter(agg_method.items()))
+            metric_name, aggregation_method = next(iter(self.agg_method.items()))
 
-            baseline = baseline_df.rename({
+            baseline = self.baseline_df.rename({
                 column: 'dimension_value',
                 metric_name: 'metric_value_baseline'
             }).with_columns(polars.col('dimension_value').cast(str)) \
@@ -495,7 +469,7 @@ class MetricsController(object):
                 build_polars_agg('metric_value_baseline', aggregation_method)
             )
 
-            comparison = comparison_df.rename({
+            comparison = self.comparison_df.rename({
                 column: 'dimension_value',
                 metric_name: 'metric_value_comparison'
             }).with_columns(polars.col('dimension_value').cast(str)) \
@@ -507,7 +481,16 @@ class MetricsController(object):
             joined = baseline.join(comparison, on=['dimension_value', 'dimension_name'], how='outer')
             joined.fill_nan(0).fill_null(0)
 
+
             single_dimension_df = polars.concat([single_dimension_df, joined])
 
-        multi_dimension_grouping_result = parAnalyzeHelper(baseline_df, comparison_df, agg_method, metrics_name, columns, self.expected_value)
+        multi_dimension_grouping_result = parAnalyzeHelper(
+            self.baseline_df,
+            self.comparison_df,
+            self.agg_method,
+            metrics_name,
+            columns,
+            self.expected_value
+        )
+
         return multi_dimension_grouping_result, find_key_dimensions(single_dimension_df.to_pandas())

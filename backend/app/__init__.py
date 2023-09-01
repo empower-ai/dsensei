@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 import polars
 import sentry_sdk
+from orjson import orjson
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from app.data_source import bp as data_source_bp
@@ -137,12 +138,9 @@ def get_time_series():
         filtering_clause = filtering_clause & (polars.col(sub_key['dimension']).cast(str).eq(polars.lit(sub_key['value'])))
 
     df = polars.read_csv(f'/tmp/dsensei/{fileId}') \
-        .filter(filtering_clause) \
-        .to_pandas()
-    df[date_column] = pd.to_datetime(df[date_column], utc=True)
-    df['date'] = df[date_column].dt.date
+        .with_columns(polars.col(date_column).str.slice(0, 10).str.to_date().alias("date"))
 
-    return json.dumps(
+    return orjson.dumps(
         get_segment_insight(
             df,
             date_column,
@@ -150,7 +148,7 @@ def get_time_series():
             (comparisonStart, comparisonEnd),
             agg_method,
             metrics_name
-        ), default=str, allow_nan=False
+        )
     )
 
 
@@ -190,10 +188,9 @@ def getInsight():
     dimensions = [k for k, v in dimensions]
 
     logger.info('Reading file')
-    df = polars.read_csv(f'/tmp/dsensei/{file_id}').to_pandas()
+    df = polars.read_csv(f'/tmp/dsensei/{file_id}') \
+        .with_columns(polars.col(date_column).str.slice(0, 10).str.to_date().alias("date"))
     logger.info('File loaded')
-    df[date_column] = pd.to_datetime(df[date_column], utc=True)
-    df['date'] = df[date_column].dt.date
 
     metrics = MetricsController(
         df,

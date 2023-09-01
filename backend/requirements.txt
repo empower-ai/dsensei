@@ -98,6 +98,8 @@ numpy==1.25.1
     #   pandas
     #   polars
     #   pyarrow
+orjson==3.9.5
+    # via -r requirements.in
 packaging==23.1
     # via
     #   db-dtypes

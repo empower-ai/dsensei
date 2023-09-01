@@ -2,10 +2,9 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Dict, Tuple
 
-import pandas as pd
-import polars
+import polars as pl
 
-from app.insight.services.metrics import ValueByDate
+from app.insight.services.metrics import ValueByDate, build_polars_agg
 
 
 @dataclass
@@ -16,36 +15,38 @@ class TimeSeriesInsight:
 
 
 def get_segment_insight(
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         date_column: str,
         baseline_date_range: Tuple[datetime.date, datetime.date],
         comparison_date_range: Tuple[datetime.date, datetime.date],
         agg_method: Dict[str, str],
         metric_names: Dict[str, str]
 ):
-    baseline = df.loc[df[date_column].between(
-        pd.to_datetime(baseline_date_range[0], utc=True),
-        pd.to_datetime(baseline_date_range[1] + pd.DateOffset(1), utc=True))
-    ].groupby('date').agg(agg_method)
-    comparison = df.loc[df[date_column].between(
-        pd.to_datetime(comparison_date_range[0], utc=True),
-        pd.to_datetime(comparison_date_range[1] + pd.DateOffset(1), utc=True))
-    ].groupby('date').agg(agg_method)
+    agg_method = [build_polars_agg(name, method) for name, method in agg_method.items()]
+    baseline = df.filter(pl.col('date').is_between(
+        pl.lit(baseline_date_range[0]),
+        pl.lit(baseline_date_range[1])
+    )).groupby('date').agg(agg_method).sort('date').with_columns(pl.col('date').cast(pl.Utf8))
 
-    return [asdict(TimeSeriesInsight(
+    comparison = df.filter(pl.col('date').is_between(
+        pl.lit(comparison_date_range[0]),
+        pl.lit(comparison_date_range[1])
+    )).groupby('date').agg(agg_method).sort('date').with_columns(pl.col('date').cast(pl.Utf8))
+
+    return [TimeSeriesInsight(
         name=metric_name,
         baselineValueByDate=[
             ValueByDate(
-                index.strftime("%Y-%m-%d"),
+                row['date'],
                 row[f'{metric_name}']
             )
-            for index, row in baseline.iterrows()
+            for row in baseline.rows(named=True)
         ],
         comparisonValueByDate=[
             ValueByDate(
-                index.strftime("%Y-%m-%d"),
+                row['date'],
                 row[f'{metric_name}']
             )
-            for index, row in comparison.iterrows()
+            for row in comparison.rows(named=True)
         ]
-    )) for metric_name in metric_names.keys() if metric_name != date_column]
+    ) for metric_name in metric_names.keys() if metric_name != date_column]
