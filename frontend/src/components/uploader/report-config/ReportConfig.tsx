@@ -1,4 +1,3 @@
-import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import {
   Accordion,
   AccordionBody,
@@ -29,6 +28,7 @@ import DatePicker, { DateRangeData } from "../DatePicker";
 import MultiSelector from "../MultiSelector";
 import { ExpectedChangeInput } from "../NumberInput";
 import SingleSelector from "../SingleSelector";
+import MetricConfig from "./MetricConfig";
 
 type Props = {
   schema: Schema;
@@ -385,59 +385,12 @@ function ReportConfig({
         {/* Date pickers */}
         {renderDatePicker()}
         {/* Analysing metric single selector */}
-        <SingleSelector
-          title={
-            <Text className="pr-4 text-black">
-              {"Select the metric column"}
-            </Text>
-          }
-          labels={getValidMetricColumns()}
-          values={getValidMetricColumns()}
-          selectedValue={
-            Object.keys(selectedColumns).filter(
-              (c) => selectedColumns[c]["type"] === "metric"
-            ).length > 0
-              ? Object.keys(selectedColumns).filter(
-                  (c) => selectedColumns[c]["type"] === "metric"
-                )[0]
-              : ""
-          }
-          onValueChange={(metric) => onSelectMetrics([metric], "metric")}
+        <MetricConfig
+          getValidMetricColumns={getValidMetricColumns}
+          selectedColumns={selectedColumns}
+          onSelectMetrics={onSelectMetrics}
+          onSelectMetricAggregationOption={onSelectMetricAggregationOption}
         />
-        <SingleSelector
-          title={
-            <Text className="pr-4 text-black">Target metric direction</Text>
-          }
-          labels={["Increasing", "Decreasing"]}
-          values={["increasing", "decreasing"]}
-          icons={[ArrowUpIcon, ArrowDownIcon]}
-          selectedValue={targetDirection}
-          onValueChange={(v) => setTargetDirection(v as TargetDirection)}
-          key="target-metric-direction"
-          instruction={
-            <Text>
-              Target direction of the metric movement. E.g: "Increasing" for
-              revenue and "Decreasing" for canceled orders.
-            </Text>
-          }
-        />
-        {Object.keys(selectedColumns)
-          .filter((c) => selectedColumns[c]["type"] === "metric")
-          .map((m) => (
-            <div key={m}>
-              <SingleSelector
-                title={<Subtitle className="pr-4">{m}</Subtitle>}
-                labels={["Sum", "Count", "Distinct Count"]}
-                values={["sum", "count", "distinct"]}
-                selectedValue={selectedColumns[m]["aggregationOption"]!}
-                onValueChange={(v) =>
-                  onSelectMetricAggregationOption(m, v as AggregationType)
-                }
-                key={`${m}-selector`}
-                instruction={<Text>How to aggregation the metric.</Text>}
-              />
-            </div>
-          ))}
         {/* Dimension columns multi selector */}
         {(!prefilledConfigs || Object.keys(selectedColumns).length > 0) && (
           <MultiSelector
