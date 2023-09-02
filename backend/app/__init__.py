@@ -138,7 +138,8 @@ def get_time_series():
         filtering_clause = filtering_clause & (polars.col(sub_key['dimension']).cast(str).eq(polars.lit(sub_key['value'])))
 
     df = polars.read_csv(f'/tmp/dsensei/{fileId}') \
-        .with_columns(polars.col(date_column).str.slice(0, 10).str.to_date().alias("date"))
+        .with_columns(polars.col(date_column).str.slice(0, 10).str.to_date().alias("date")) \
+        .filter(filtering_clause)
 
     return orjson.dumps(
         get_segment_insight(
