@@ -3,6 +3,7 @@ import { BigquerySchema } from "../../../types/data-source";
 import {
   ColumnConfig,
   DateRangeConfig,
+  MetricColumn,
   TargetDirection,
 } from "../../../types/report-config";
 import ReportConfig from "./ReportConfig";
@@ -23,6 +24,8 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
       [key: string]: ColumnConfig;
     },
     dateColumn: string,
+    metricColumn: MetricColumn,
+    supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
@@ -32,6 +35,8 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
       state: {
         tableName: name,
         dataSourceType: "bigquery",
+        metricColumn,
+        supportingMetricColumn,
         dateColumn,
         groupByColumns,
         selectedColumns,

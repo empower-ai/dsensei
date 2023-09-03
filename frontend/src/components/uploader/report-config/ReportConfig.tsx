@@ -43,6 +43,8 @@ type Props = {
       [key: string]: ColumnConfig;
     },
     dateColumn: string,
+    metricColumn: MetricColumn,
+    supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
@@ -64,7 +66,7 @@ function ReportConfig({
   const [dateColumn, setDateColumn] = useState<string>("");
   const [groupByColumns, setGroupByColumns] = useState<string[]>([]);
   const [metricColumn, setMetricColumn] = useState<MetricColumn | undefined>(undefined);
-  const [relevantMetricColumns, setRelevantMetricColumns] = useState<string[]>([]);
+  const [relevantMetricColumns, setRelevantMetricColumns] = useState<MetricColumn[]>([]);
 
 
   const [selectedColumns, setSelectedColumns] = useState<{
@@ -114,21 +116,12 @@ function ReportConfig({
     setSelectedColumns(selectedColumnsClone);
   };
 
-  const onSelectMetricAggregationOption = (
-    metric: string,
-    aggregationOption: AggregationType
-  ) => {
-    const selectedColumnsClone = Object.assign({}, selectedColumns);
-    if (
-      selectedColumnsClone[metric]["type"] !== "metric" &&
-      selectedColumnsClone[metric]["type"] !== "supporting_metric"
-    ) {
-      throw new Error(
-        "Invalid aggregation option update on non-metric columns."
-      );
+  const onSelectMetricAggregationOption = (metricColumn: MetricColumn, supportingMetric = false) => {
+    if (supportingMetric) {
+      setRelevantMetricColumns([...relevantMetricColumns, metricColumn]);
+    } else {
+      setMetricColumn(metricColumn);
     }
-    selectedColumnsClone[metric]["aggregationOption"] = aggregationOption;
-    setSelectedColumns(selectedColumnsClone);
   };
 
   const onSelectMetricExpectedChange = (
@@ -232,10 +225,7 @@ function ReportConfig({
   }
 
   function canSubmit() {
-    const hasMetricColumn =
-      Object.values(selectedColumns).filter(
-        (column) => column.type === "metric"
-      ).length > 0;
+    const hasMetricColumn = metricColumn !== undefined && metricColumn.columnNames.length > 0;
 
     const hasDimensionColumn = groupByColumns.length > 0;
 
@@ -280,6 +270,8 @@ function ReportConfig({
               selectedColumns[h]["type"] === "date")
           )
       )
+      .filter((h) => !metricColumn || metricColumn.columnNames.indexOf(h) === -1)
+      .filter((h) => dateColumn !== h)
       .filter((h) => {
         if (Object.keys(rowCountByColumn).length === 0) {
           return true;
@@ -463,7 +455,10 @@ function ReportConfig({
                   values={["sum", "count", "distinct"]}
                   selectedValue={selectedColumns[m]["aggregationOption"]!}
                   onValueChange={(v) =>
-                    onSelectMetricAggregationOption(m, v as AggregationType)
+                    onSelectMetricAggregationOption({
+                      columnNames: [m],
+                      aggregationOption: v as AggregationType,
+                    } as MetricColumn, true)
                   }
                   key={m}
                   instruction={<Text>How to aggregation the metric.</Text>}
@@ -489,10 +484,16 @@ function ReportConfig({
         <Divider />
         <Button
           onClick={async () => {
+            if (!metricColumn) {
+              return;
+            }
+
             trackSubmit();
             await onSubmit(
               selectedColumns,
               dateColumn,
+              metricColumn,
+              relevantMetricColumns,
               groupByColumns,
               baseDateRangeData.range,
               comparisonDateRangeData.range,

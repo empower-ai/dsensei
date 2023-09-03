@@ -55,6 +55,8 @@ export default function MainDashboard() {
     baseDateRange,
     comparisonDateRange,
     selectedColumns,
+    metricColumn,
+    supportingMetricColumn,
     dateColumn,
     groupByColumns,
     dataSourceType,
@@ -89,6 +91,8 @@ export default function MainDashboard() {
             comparisonDateRange,
             selectedColumns,
             dateColumn,
+            metricColumn,
+            supportingMetricColumn,
             groupByColumns,
           }),
           headers: {

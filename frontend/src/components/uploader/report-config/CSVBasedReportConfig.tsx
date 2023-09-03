@@ -6,6 +6,7 @@ import { CSVSchema } from "../../../types/data-source";
 import {
   ColumnConfig,
   DateRangeConfig,
+  MetricColumn,
   PrefillConfig,
   RowCountByDateAndColumn,
   TargetDirection,
@@ -111,6 +112,8 @@ export default function CSVBasedReportConfig({
       [key: string]: ColumnConfig;
     },
     dateColumn: string,
+    metricColumn: MetricColumn,
+    supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
@@ -139,6 +142,8 @@ export default function CSVBasedReportConfig({
         dateColumn,
         groupByColumns,
         selectedColumns,
+        metricColumn,
+        supportingMetricColumn,
         baseDateRange,
         comparisonDateRange,
         targetDirection,
