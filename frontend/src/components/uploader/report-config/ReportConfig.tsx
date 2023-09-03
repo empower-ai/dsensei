@@ -85,6 +85,8 @@ function ReportConfig({
   useEffect(() => {
     if (prefilledConfigs) {
       setSelectedColumns(prefilledConfigs.selectedColumns);
+      setDateColumn(prefilledConfigs.dateColumn);
+      setGroupByColumns(prefilledConfigs.groupByColumns);
     }
   }, [prefilledConfigs]);
 
@@ -394,9 +396,7 @@ function ReportConfig({
               (h) => `${h} - ${rowCountByColumn[h]} distinct values`
             )}
             values={getValidDimensionColumns()}
-            selectedValues={Object.keys(selectedColumns).filter(
-              (c) => selectedColumns[c]["type"] === "dimension"
-            )}
+            selectedValues={groupByColumns}
             onValueChange={onSelectDimension}
             instruction={
               <Text>

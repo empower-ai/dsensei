@@ -34,6 +34,8 @@ export interface PrefillConfig {
   selectedColumns: {
     [key: string]: ColumnConfig;
   };
+  dateColumn: string;
+  groupByColumns: string[];
   baseDateRange: DateRangePickerValue;
   comparisonDateRange: DateRangePickerValue;
 }

@@ -19,40 +19,10 @@ const sampleDataPrefills: PrefillConfig = {
       aggregationOption: "distinct",
       expectedValue: 0.03,
       fieldType: "VARCHAR",
-    },
-    eventTime: {
-      type: "date",
-      fieldType: "TIMESTAMP",
-    },
-    country: {
-      type: "dimension",
-      fieldType: "VARCHAR",
-    },
-    gender: {
-      type: "dimension",
-      fieldType: "VARCHAR",
-    },
-    majorOsVersion: {
-      type: "dimension",
-      fieldType: "VARCHAR",
-    },
-    phoneBrand: {
-      type: "dimension",
-      fieldType: "VARCHAR",
-    },
-    age: {
-      type: "dimension",
-      fieldType: "VARCHAR",
-    },
-    language: {
-      type: "dimension",
-      fieldType: "VARCHAR",
-    },
-    platform: {
-      type: "dimension",
-      fieldType: "VARCHAR",
-    },
+    }
   },
+  dateColumn: "eventTime",
+  groupByColumns: ["country", "gender", "majorOsVersion", "phoneBrand", "age", "language", "platform"],
   baseDateRange: {
     from: createNewDateWithBrowserTimeZone("2022-07-01"),
     to: createNewDateWithBrowserTimeZone("2022-07-31"),
