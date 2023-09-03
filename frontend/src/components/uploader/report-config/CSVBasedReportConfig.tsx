@@ -140,6 +140,8 @@ export default function CSVBasedReportConfig({
     selectedColumns: {
       [key: string]: ColumnConfig;
     },
+    dateColumn: string,
+    groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
     targetDirection: TargetDirection
@@ -164,6 +166,8 @@ export default function CSVBasedReportConfig({
       state: {
         fileId: id,
         dataSourceType: "csv",
+        dateColumn,
+        groupByColumns,
         selectedColumns,
         baseDateRange,
         comparisonDateRange,

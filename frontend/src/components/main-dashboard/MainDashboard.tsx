@@ -55,6 +55,8 @@ export default function MainDashboard() {
     baseDateRange,
     comparisonDateRange,
     selectedColumns,
+    dateColumn,
+    groupByColumns,
     dataSourceType,
     targetDirection,
   } = routerState;
@@ -86,6 +88,8 @@ export default function MainDashboard() {
             baseDateRange,
             comparisonDateRange,
             selectedColumns,
+            dateColumn,
+            groupByColumns,
           }),
           headers: {
             "Content-Type": "application/json",

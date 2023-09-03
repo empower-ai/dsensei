@@ -22,6 +22,8 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
     selectedColumns: {
       [key: string]: ColumnConfig;
     },
+    dateColumn: string,
+    groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
     targetDirection: TargetDirection
@@ -30,6 +32,8 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
       state: {
         tableName: name,
         dataSourceType: "bigquery",
+        dateColumn,
+        groupByColumns,
         selectedColumns,
         baseDateRange,
         comparisonDateRange,

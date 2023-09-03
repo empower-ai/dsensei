@@ -19,6 +19,7 @@ import {
   ColumnConfig,
   ColumnType,
   DateRangeConfig,
+  MetricColumn,
   PrefillConfig,
   RowCountByColumn,
   RowCountByDateAndColumn,
@@ -41,6 +42,8 @@ type Props = {
     selectedColumns: {
       [key: string]: ColumnConfig;
     },
+    dateColumn: string,
+    groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
     targetDirection: TargetDirection
@@ -57,6 +60,13 @@ function ReportConfig({
   onSubmit,
 }: Props) {
   const { trackEvent } = useTracking();
+
+  const [dateColumn, setDateColumn] = useState<string>("");
+  const [groupByColumns, setGroupByColumns] = useState<string[]>([]);
+  const [metricColumn, setMetricColumn] = useState<MetricColumn | undefined>(undefined);
+  const [relevantMetricColumns, setRelevantMetricColumns] = useState<string[]>([]);
+
+
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: ColumnConfig;
   }>({});
@@ -156,30 +166,15 @@ function ReportConfig({
     );
     removedDimension.map((m) => delete selectedColumnsClone[m]);
     setSelectedColumns(selectedColumnsClone);
+    setGroupByColumns(dimensions);
   };
 
   const onSelectDateColumn = (dateCol: string) => {
-    const selectedColumnsClone = Object.assign({}, selectedColumns);
-    const prevDateColumns = Object.keys(selectedColumnsClone).filter(
-      (m) => selectedColumnsClone[m]["type"] === "date"
-    );
-    if (prevDateColumns.length > 1) {
-      throw new Error("Found more than 1 date columns.");
-    }
-    prevDateColumns.map((d) => delete selectedColumnsClone[d]);
-    selectedColumnsClone[dateCol] = {
-      type: "date",
-      fieldType: schema.fields.find((f) => f.name === dateCol)!.type,
-    };
-    setSelectedColumns(selectedColumnsClone);
+    setDateColumn(dateCol);
 
     setBaseDateRangeData({ range: {}, stats: {} });
     setComparisonDateRangeData({ range: {}, stats: {} });
   };
-
-  const selectedDateColumn = Object.keys(selectedColumns).find(
-    (c) => selectedColumns[c]["type"] === "date"
-  );
 
   function getDateColumns() {
     const dateColumnsByType = schema.fields.filter(
@@ -240,10 +235,7 @@ function ReportConfig({
         (column) => column.type === "metric"
       ).length > 0;
 
-    const hasDimensionColumn =
-      Object.values(selectedColumns).filter(
-        (column) => column.type === "dimension"
-      ).length > 0;
+    const hasDimensionColumn = groupByColumns.length > 0;
 
     const hasRows =
       !rowCountByDateColumn ||
@@ -301,13 +293,13 @@ function ReportConfig({
   }
 
   function renderDatePicker() {
-    if (rowCountByDateColumn && !selectedDateColumn) {
+    if (rowCountByDateColumn && !dateColumn) {
       return null;
     }
 
     let countByDate;
-    if (rowCountByDateColumn && selectedDateColumn) {
-      countByDate = rowCountByDateColumn[selectedDateColumn];
+    if (rowCountByDateColumn && dateColumn) {
+      countByDate = rowCountByDateColumn[dateColumn];
       if (!countByDate) {
         return null;
       }
@@ -364,7 +356,7 @@ function ReportConfig({
               ? schema.fields.map((h) => h.name)
               : getDateColumns().map((h) => h.name)
           }
-          selectedValue={selectedDateColumn ? selectedDateColumn : ""}
+          selectedValue={dateColumn ? dateColumn : ""}
           onValueChange={onSelectDateColumn}
           instruction={
             <Text>
@@ -500,6 +492,8 @@ function ReportConfig({
             trackSubmit();
             await onSubmit(
               selectedColumns,
+              dateColumn,
+              groupByColumns,
               baseDateRangeData.range,
               comparisonDateRangeData.range,
               targetDirection
