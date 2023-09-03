@@ -6,8 +6,9 @@ export type AggregationType = "sum" | "count" | "distinct" | "ratio";
 export type TargetDirection = "increasing" | "decreasing";
 
 export interface MetricColumn {
-  columnNames: string[];
   aggregationOption: AggregationType;
+  columnNames: string[];
+  columnAggregationTypes?: AggregationType[];
   expectedValue?: number;
 }
 

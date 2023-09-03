@@ -22,18 +22,20 @@ type Props = {
 
 
 const MetricConfig = (props: Props) => {
-  const { getValidMetricColumns, selectedColumns, onSelectMetrics, onSelectMetricAggregationOption, targetDirection, setTargetDirection } = props;
+  const { getValidMetricColumns, onSelectMetricAggregationOption, targetDirection, setTargetDirection } = props;
   const [metricType, setMetricType] = useState<AggregationType>("sum");
-  const [metricColumns, setMetricColumns] = useState<string[]>([]);
+  const [metricColumns, setMetricColumns] = useState<string[]>(["", ""]);
+  const [metricColumnsType, setMetricColumnsType] = useState<AggregationType[]>(["sum", "sum"]);
 
   useEffect(() => {
     if (metricColumns.length > 0) {
       onSelectMetricAggregationOption({
         columnNames: metricColumns,
         aggregationOption: metricType,
+        columnAggregationTypes: metricType === "ratio" ? metricColumnsType : undefined,
       } as MetricColumn, false);
     }
-  }, [metricColumns, metricType, onSelectMetricAggregationOption]);
+  }, [metricColumns, metricType, metricColumnsType, onSelectMetricAggregationOption]);
 
   const singularMetrics = () => {
     return (
@@ -45,18 +47,9 @@ const MetricConfig = (props: Props) => {
         }
         labels={getValidMetricColumns()}
         values={getValidMetricColumns()}
-        selectedValue={
-          Object.keys(selectedColumns).filter(
-            (c) => selectedColumns[c]["type"] === "metric"
-          ).length > 0
-            ? Object.keys(selectedColumns).filter(
-                (c) => selectedColumns[c]["type"] === "metric"
-              )[0]
-            : ""
-        }
+        selectedValue={metricColumns[0]}
         onValueChange={(metric) => {
-          setMetricColumns([metric]);
-          onSelectMetrics([metric], "metric");
+          setMetricColumns([metric])
         }}
     />);
   };
@@ -64,6 +57,61 @@ const MetricConfig = (props: Props) => {
   const complexMetrics = () => {
     return (
       <>
+        {/* Numerator config */}
+        <SingleSelector
+          title={
+            <Text className="pr-4 text-black">
+              Select the numerator metric type
+            </Text>
+          }
+          labels={["Sum", "Count", "Distinct"]}
+          values={["sum", "count", "nunique"]}
+          selectedValue={metricColumnsType[0]}
+          onValueChange={(metric) => {
+            setMetricColumnsType([metric as AggregationType, metricColumnsType[1]]);
+          }}
+        />
+        <SingleSelector
+          title={
+            <Text className="pr-4 text-black">
+              Select the numerator metric column
+            </Text>
+          }
+          labels={getValidMetricColumns()}
+          values={getValidMetricColumns()}
+          selectedValue={metricColumns[0]}
+          onValueChange={(metric) => {
+            setMetricColumns([metric, metricColumns[1]])
+          }}
+        />
+
+        {/* Demoninator config */}
+        <SingleSelector
+          title={
+            <Text className="pr-4 text-black">
+              Select the denominator metric type
+            </Text>
+          }
+          labels={["Sum", "Count", "Distinct"]}
+          values={["sum", "count", "nunique"]}
+          selectedValue={metricColumnsType[1]}
+          onValueChange={(metric) => {
+            setMetricColumnsType([metricColumnsType[0], metric as AggregationType]);
+          }}
+        />
+        <SingleSelector
+          title={
+            <Text className="pr-4 text-black">
+              Select the denominator metric column
+            </Text>
+          }
+          labels={getValidMetricColumns()}
+          values={getValidMetricColumns()}
+          selectedValue={metricColumns[1]}
+          onValueChange={(metric) => {
+            setMetricColumns([metricColumns[0], metric])
+          }}
+        />
 
       </>
     );
@@ -77,8 +125,8 @@ const MetricConfig = (props: Props) => {
             Select the metric type
           </Text>
         }
-        labels={["Sum", "Count", "Count Distinct", "Ratio"]}
-        values={["sum", "count", "count_distinct", "ratio"]}
+        labels={["Sum", "Count", "Distinct", "Ratio"]}
+        values={["sum", "count", "nunique", "ratio"]}
         selectedValue={metricType}
         onValueChange={(metric) => {
           setMetricType(metric as AggregationType);

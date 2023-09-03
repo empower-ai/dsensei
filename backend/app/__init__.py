@@ -53,18 +53,14 @@ def dashboard():
     return app.send_static_file('index.html')
 
 
-@app.route('/api/bqinsight', methods=['POST'])
-def getBqInsight():
-    data = request.get_json()
-
-    table_name = data['tableName']
+def parse_data(data):
     baseDateRange = data['baseDateRange']
     comparisonDateRange = data['comparisonDateRange']
-    selectedColumns = data['selectedColumns']
     date_column = data['dateColumn']
     # TODO(liuyl): Fix this, right now did not pass this value to backend
-    date_column_type = data['dateColumnType']
+    date_column_type = data['dateColumnType'] if 'dateColumnType' in data else 'date'
     group_by_columns = data['groupByColumns']
+    metric_column = data['metricColumn']
 
     baselineStart = datetime.strptime(
         baseDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
@@ -75,15 +71,26 @@ def getBqInsight():
     comparisonEnd = datetime.strptime(
         comparisonDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
 
-    agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
-                             ['type'] == 'supporting_metric', selectedColumns.items()))
-    expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selectedColumns.items()))[
-        0][1]['expectedValue']
-
-    metrics_name = {k: k for k, v in agg_method}
+    metrics_name = {metric_column['columnNames']
+                    [0]: metric_column['columnNames'][0]}
+    agg_method = {metric_column['columnNames']
+                  [0]: metric_column['aggregationOption']}
     metrics_name.update({date_column: 'count'})
-    agg_method = {k: agg_method_map[v['aggregationOption']]
-                  for k, v in agg_method}
+    agg_method.update({date_column: 'count'})
+
+    # TODO: Fix this, right now did not pass this value to backend
+    expected_value = 0
+
+    return (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, agg_method, metrics_name, group_by_columns, expected_value)
+
+
+@app.route('/api/bqinsight', methods=['POST'])
+def getBqInsight():
+    data = request.get_json()
+    table_name = data['tableName']
+
+    (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type,
+        agg_method, metrics_name, group_by_columns, expected_value) = parse_data(data)
 
     bq_metric = BqMetrics(
         table_name=table_name,
@@ -103,28 +110,9 @@ def get_time_series():
     data = request.get_json()
 
     fileId = data['fileId']
-    baseDateRange = data['baseDateRange']
-    comparisonDateRange = data['comparisonDateRange']
-    selectedColumns = data['selectedColumns']
-    date_column = data['dateColumn']
 
-    baselineStart = datetime.strptime(
-        baseDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-    baselineEnd = datetime.strptime(
-        baseDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-    comparisonStart = datetime.strptime(
-        comparisonDateRange['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-    comparisonEnd = datetime.strptime(
-        comparisonDateRange['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-
-    agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
-                             ['type'] == 'supporting_metric', selectedColumns.items()))
-
-    metrics_name = {k: k for k, v in agg_method}
-    metrics_name.update({date_column: 'count'})
-    agg_method = {k: agg_method_map[v['aggregationOption']]
-                  for k, v in agg_method}
-    agg_method.update({date_column: 'count'})
+    (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type,
+        agg_method, metrics_name, group_by_columns, expected_value) = parse_data(data)
 
     segment_key = data['segmentKey']
     filtering_clause = polars.lit(True)
@@ -152,31 +140,9 @@ def get_time_series():
 def getInsight():
     data = request.get_json()
     file_id = data['fileId']
-    base_date_range = data['baseDateRange']
-    comparison_date_range = data['comparisonDateRange']
-    selected_columns = data['selectedColumns']
-    date_column = data['dateColumn']
-    group_by_columns = data['groupByColumns']
 
-    baseline_start = datetime.strptime(
-        base_date_range['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-    baseline_end = datetime.strptime(
-        base_date_range['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-    comparison_start = datetime.strptime(
-        comparison_date_range['from'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-    comparison_end = datetime.strptime(
-        comparison_date_range['to'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-
-    agg_method = list(filter(lambda x: x[1]['type'] == 'metric' or x[1]
-                             ['type'] == 'supporting_metric', selected_columns.items()))
-    expected_value = list(filter(lambda x: x[1]['type'] == 'metric', selected_columns.items()))[
-        0][1]['expectedValue']
-
-    metrics_name = {k: k for k, v in agg_method}
-    metrics_name.update({date_column: 'count'})
-    agg_method = {k: agg_method_map[v['aggregationOption']]
-                  for k, v in agg_method}
-    agg_method.update({date_column: 'count'})
+    (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type,
+        agg_method, metrics_name, group_by_columns, expected_value) = parse_data(data)
 
     logger.info('Reading file')
     df = polars.read_csv(f'/tmp/dsensei/{file_id}') \
@@ -185,8 +151,8 @@ def getInsight():
 
     metrics = MetricsController(
         df,
-        (baseline_start, baseline_end),
-        (comparison_start, comparison_end),
+        (baselineStart, baselineEnd),
+        (comparisonStart, comparisonEnd),
         date_column,
         group_by_columns,
         agg_method,
