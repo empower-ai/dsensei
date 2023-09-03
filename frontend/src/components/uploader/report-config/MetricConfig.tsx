@@ -2,7 +2,7 @@ import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import {
   Text
 } from "@tremor/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AggregationType,
   ColumnType,
@@ -15,21 +15,21 @@ type Props = {
   selectedColumns: { [key: string]: { type: string } };
   onSelectMetrics: (metrics: string[], type: ColumnType) => void;
   onSelectMetricAggregationOption: (metric: string, option: AggregationType) => void;
+  targetDirection: TargetDirection;
+  setTargetDirection: (direction: TargetDirection) => void;
 }
 
 
 const MetricConfig = (props: Props) => {
-  const { getValidMetricColumns, selectedColumns, onSelectMetrics, onSelectMetricAggregationOption } = props;
-  const [targetDirection, setTargetDirection] =
-    useState<TargetDirection>("increasing");
+  const { getValidMetricColumns, selectedColumns, onSelectMetrics, onSelectMetricAggregationOption, targetDirection, setTargetDirection } = props;
   const [metricType, setMetricType] = useState<AggregationType>("sum");
   const [metricColumn, setMetricColumn] = useState<string>("");
 
-  const updateMetric = () => {
+  useEffect(() => {
     if (metricColumn !== "") {
       onSelectMetricAggregationOption(metricColumn, metricType);
     }
-  }
+  }, [metricColumn, metricType, onSelectMetricAggregationOption]);
 
   return (
     <>
@@ -44,7 +44,6 @@ const MetricConfig = (props: Props) => {
         selectedValue={metricType}
         onValueChange={(metric) => {
           setMetricType(metric as AggregationType);
-          updateMetric();
         }}
       />
 
@@ -68,7 +67,6 @@ const MetricConfig = (props: Props) => {
         onValueChange={(metric) => {
           setMetricColumn(metric);
           onSelectMetrics([metric], "metric");
-          updateMetric();
         }}
       />
       <SingleSelector

@@ -390,6 +390,8 @@ function ReportConfig({
           selectedColumns={selectedColumns}
           onSelectMetrics={onSelectMetrics}
           onSelectMetricAggregationOption={onSelectMetricAggregationOption}
+          targetDirection={targetDirection}
+          setTargetDirection={setTargetDirection}
         />
         {/* Dimension columns multi selector */}
         {(!prefilledConfigs || Object.keys(selectedColumns).length > 0) && (
