@@ -2,12 +2,12 @@ import { DateRangePickerValue } from "@tremor/react";
 import { FieldType } from "./data-source";
 
 export type ColumnType = "metric" | "supporting_metric" | "dimension" | "date";
-export type AggregationType = "sum" | "count" | "distinct" | "ratio";
+export type AggregationType = "sum" | "count" | "nunique" | "ratio";
 export type TargetDirection = "increasing" | "decreasing";
 
 export interface MetricColumn {
-  aggregationOption: AggregationType;
-  columnNames: string[];
+  aggregationOption?: AggregationType;
+  columnNames?: string[];
   columnAggregationTypes?: AggregationType[];
   expectedValue?: number;
 }
@@ -35,6 +35,7 @@ export interface PrefillConfig {
   selectedColumns: {
     [key: string]: ColumnConfig;
   };
+  metricColumn: MetricColumn;
   dateColumn: string;
   groupByColumns: string[];
   baseDateRange: DateRangePickerValue;

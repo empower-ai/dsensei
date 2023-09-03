@@ -2,10 +2,8 @@ import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import {
   Text
 } from "@tremor/react";
-import { useEffect, useState } from "react";
 import {
   AggregationType,
-  ColumnType,
   MetricColumn,
   TargetDirection
 } from "../../../types/report-config";
@@ -13,29 +11,18 @@ import SingleSelector from "../SingleSelector";
 
 type Props = {
   getValidMetricColumns: () => string[];
-  selectedColumns: { [key: string]: { type: string } };
-  onSelectMetrics: (metrics: string[], type: ColumnType) => void;
-  onSelectMetricAggregationOption: (metricColumn: MetricColumn, supportingMetric: boolean) => void;
+  metricColumn?: MetricColumn;
+  setMetricColumn: (metricColumn: MetricColumn) => void;
   targetDirection: TargetDirection;
   setTargetDirection: (direction: TargetDirection) => void;
 }
 
 
 const MetricConfig = (props: Props) => {
-  const { getValidMetricColumns, onSelectMetricAggregationOption, targetDirection, setTargetDirection } = props;
-  const [metricType, setMetricType] = useState<AggregationType>("sum");
-  const [metricColumns, setMetricColumns] = useState<string[]>(["", ""]);
-  const [metricColumnsType, setMetricColumnsType] = useState<AggregationType[]>(["sum", "sum"]);
-
-  useEffect(() => {
-    if (metricColumns.length > 0) {
-      onSelectMetricAggregationOption({
-        columnNames: metricColumns,
-        aggregationOption: metricType,
-        columnAggregationTypes: metricType === "ratio" ? metricColumnsType : undefined,
-      } as MetricColumn, false);
-    }
-  }, [metricColumns, metricType, metricColumnsType, onSelectMetricAggregationOption]);
+  const { getValidMetricColumns, metricColumn, setMetricColumn, targetDirection, setTargetDirection } = props;
+  const metricType = metricColumn?.aggregationOption;
+  const metricColumns = metricColumn?.columnNames;
+  const metricColumnsType = metricColumn?.columnAggregationTypes;
 
   const singularMetrics = () => {
     return (
@@ -47,9 +34,12 @@ const MetricConfig = (props: Props) => {
         }
         labels={getValidMetricColumns()}
         values={getValidMetricColumns()}
-        selectedValue={metricColumns[0]}
+        selectedValue={metricColumns ? metricColumns[0] : ""}
         onValueChange={(metric) => {
-          setMetricColumns([metric])
+          setMetricColumn({
+            ...metricColumn,
+            columnNames: [metric],
+          })
         }}
     />);
   };
@@ -66,9 +56,13 @@ const MetricConfig = (props: Props) => {
           }
           labels={["Sum", "Count", "Distinct"]}
           values={["sum", "count", "nunique"]}
-          selectedValue={metricColumnsType[0]}
+          selectedValue={metricColumnsType ? metricColumnsType[0] : ""}
           onValueChange={(metric) => {
-            setMetricColumnsType([metric as AggregationType, metricColumnsType[1]]);
+            // setMetricColumnsType([metric as AggregationType, metricColumnsType[1]]);
+            setMetricColumn({
+              ...metricColumn,
+              columnAggregationTypes: [metric as AggregationType, metricColumnsType ? metricColumnsType[1] : "sum"],
+            })
           }}
         />
         <SingleSelector
@@ -79,9 +73,12 @@ const MetricConfig = (props: Props) => {
           }
           labels={getValidMetricColumns()}
           values={getValidMetricColumns()}
-          selectedValue={metricColumns[0]}
+          selectedValue={metricColumns ? metricColumns[0] : ""}
           onValueChange={(metric) => {
-            setMetricColumns([metric, metricColumns[1]])
+            setMetricColumn({
+              ...metricColumn,
+              columnNames: [metric, metricColumns ? metricColumns[1] : ""],
+            })
           }}
         />
 
@@ -94,9 +91,12 @@ const MetricConfig = (props: Props) => {
           }
           labels={["Sum", "Count", "Distinct"]}
           values={["sum", "count", "nunique"]}
-          selectedValue={metricColumnsType[1]}
+          selectedValue={metricColumnsType ? metricColumnsType[1] : ""}
           onValueChange={(metric) => {
-            setMetricColumnsType([metricColumnsType[0], metric as AggregationType]);
+            setMetricColumn({
+              ...metricColumn,
+              columnAggregationTypes: [metricColumnsType ? metricColumnsType[0] : "sum", metric as AggregationType],
+            })
           }}
         />
         <SingleSelector
@@ -107,9 +107,12 @@ const MetricConfig = (props: Props) => {
           }
           labels={getValidMetricColumns()}
           values={getValidMetricColumns()}
-          selectedValue={metricColumns[1]}
+          selectedValue={metricColumns ? metricColumns[1] : ""}
           onValueChange={(metric) => {
-            setMetricColumns([metricColumns[0], metric])
+            setMetricColumn({
+              ...metricColumn,
+              columnNames: [metricColumns ? metricColumns[0] : "", metric],
+            })
           }}
         />
 
@@ -127,9 +130,12 @@ const MetricConfig = (props: Props) => {
         }
         labels={["Sum", "Count", "Distinct", "Ratio"]}
         values={["sum", "count", "nunique", "ratio"]}
-        selectedValue={metricType}
+        selectedValue={metricType ? metricType : ""}
         onValueChange={(metric) => {
-          setMetricType(metric as AggregationType);
+          setMetricColumn({
+            ...metricColumn,
+            aggregationOption: metric as AggregationType,
+          })
         }}
       />
 

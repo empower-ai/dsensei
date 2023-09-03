@@ -87,6 +87,7 @@ function ReportConfig({
   useEffect(() => {
     if (prefilledConfigs) {
       setSelectedColumns(prefilledConfigs.selectedColumns);
+      setMetricColumn(prefilledConfigs.metricColumn);
       setDateColumn(prefilledConfigs.dateColumn);
       setGroupByColumns(prefilledConfigs.groupByColumns);
     }
@@ -225,7 +226,7 @@ function ReportConfig({
   }
 
   function canSubmit() {
-    const hasMetricColumn = metricColumn !== undefined && metricColumn.columnNames.length > 0;
+    const hasMetricColumn = metricColumn !== undefined && metricColumn.columnNames && metricColumn.columnNames.length > 0;
 
     const hasDimensionColumn = groupByColumns.length > 0;
 
@@ -270,7 +271,7 @@ function ReportConfig({
               selectedColumns[h]["type"] === "date")
           )
       )
-      .filter((h) => !metricColumn || metricColumn.columnNames.indexOf(h) === -1)
+      .filter((h) => !metricColumn || metricColumn.columnNames?.indexOf(h) === -1)
       .filter((h) => dateColumn !== h)
       .filter((h) => {
         if (Object.keys(rowCountByColumn).length === 0) {
@@ -373,9 +374,8 @@ function ReportConfig({
         {/* Analysing metric single selector */}
         <MetricConfig
           getValidMetricColumns={getValidMetricColumns}
-          selectedColumns={selectedColumns}
-          onSelectMetrics={onSelectMetrics}
-          onSelectMetricAggregationOption={onSelectMetricAggregationOption}
+          metricColumn={metricColumn}
+          setMetricColumn={setMetricColumn}
           targetDirection={targetDirection}
           setTargetDirection={setTargetDirection}
         />

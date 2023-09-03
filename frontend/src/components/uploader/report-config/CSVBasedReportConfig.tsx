@@ -17,10 +17,14 @@ const sampleDataPrefills: PrefillConfig = {
   selectedColumns: {
     userId: {
       type: "metric",
-      aggregationOption: "distinct",
+      aggregationOption: "nunique",
       expectedValue: 0.03,
       fieldType: "VARCHAR",
     }
+  },
+  metricColumn: {
+    columnNames: ["userId"],
+    aggregationOption: "nunique",
   },
   dateColumn: "eventTime",
   groupByColumns: ["country", "gender", "majorOsVersion", "phoneBrand", "age", "language", "platform"],
