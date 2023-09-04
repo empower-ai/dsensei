@@ -1,6 +1,6 @@
 # <img valign="middle" src="https://github.com/logunify/dsensei/blob/main/docs/images/logo.png" width="65" height="65"/> DSensei
 
-[![Discord](https://img.shields.io/badge/discord-@DSensei-blue.svg?logo=discord)](https://discord.gg/B96nhQzX)
+[![Discord](https://img.shields.io/badge/discord-@DSensei-blue.svg?logo=discord)](https://discord.gg/6h5cdNhK)
 
 ## Introduction
 
@@ -50,6 +50,7 @@ There are multiple ways to run DSensei on your machine.
 The recommended way is to use the official Docker image. Make sure you have Docker installed on your system, then run the following command:
 
 If you use CSV data source:
+
 ```shell
 docker run -p 5001:5001 dsenseiapp/dsensei:latest
 ```
@@ -76,4 +77,4 @@ To run the application locally without Docker, you need to have `python3` and `n
 
 ## Contact
 
-Please submit your bug report or feature request directly on github or in our [discord group](https://discord.gg/B96nhQzX). We appreciate all your feedback!
+Please submit your bug report or feature request directly on github or in our [discord group](https://discord.gg/6h5cdNhK). We appreciate all your feedback!

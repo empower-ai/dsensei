@@ -21,11 +21,11 @@ export default function InformationCard() {
         </AccordionHeader>
         <AccordionBody>
           <iframe
-            className="w-[100%] h-[550px]"
+            className="w-[100%] h-[710px]"
             title="Demo"
             allowFullScreen={true}
             seamless={true}
-            src="https://www.loom.com/embed/35ee267d3815405b95836ad809807128?sid=b735c758-3ac2-4e9a-9a75-ea046962a9db"
+            src="https://www.loom.com/embed/e511f8cdbd9245248dbda63e3b037792?sid=dd6dc9db-b8a4-49b3-bc29-daa0d6b713e6"
           />
           <br />
           DSensei is an AI-powered key driver analysis engine that can pinpoint
@@ -81,7 +81,7 @@ export default function InformationCard() {
           </a>{" "}
           or{" "}
           <a
-            href="https://discord.gg/B96nhQzX"
+            href="https://discord.gg/6h5cdNhK"
             target="_blank"
             rel="noreferrer"
             className="text-blue-500"
@@ -103,7 +103,7 @@ export default function InformationCard() {
           </a>{" "}
           or{" "}
           <a
-            href="https://discord.gg/B96nhQzX"
+            href="https://discord.gg/6h5cdNhK"
             target="_blank"
             rel="noreferrer"
             className="text-blue-500"
