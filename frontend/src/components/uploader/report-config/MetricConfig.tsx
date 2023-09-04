@@ -128,8 +128,8 @@ const MetricConfig = (props: Props) => {
             Select the metric type
           </Text>
         }
-        labels={["Sum", "Count", "Distinct", "Ratio"]}
-        values={["sum", "count", "nunique", "ratio"]}
+        labels={["Sum", "Count", "Distinct"]}
+        values={["sum", "count", "nunique"]}
         selectedValue={metricType ? metricType : ""}
         onValueChange={(metric) => {
           setMetricColumn({
