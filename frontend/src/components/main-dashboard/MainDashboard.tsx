@@ -408,6 +408,9 @@ export default function MainDashboard() {
             fileId={fileId}
             targetDirection={targetDirection}
             selectedColumns={selectedColumns}
+            dateColumn={dateColumn}
+            groupByColumns={groupByColumns}
+            metricColumn={metricColumn}
             baseDateRange={baseDateRange}
             comparisonDateRange={comparisonDateRange}
             dataSourceType={dataSourceType}

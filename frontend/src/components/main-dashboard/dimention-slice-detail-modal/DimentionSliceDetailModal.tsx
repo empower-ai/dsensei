@@ -28,6 +28,7 @@ import { DataSourceType } from "../../../types/data-source";
 import {
   ColumnConfig,
   DateRangeConfig,
+  MetricColumn,
   TargetDirection,
 } from "../../../types/report-config";
 import { MetricOverviewTable } from "../MetricOverviewTable";
@@ -39,6 +40,9 @@ interface Props {
   selectedColumns: {
     [key: string]: ColumnConfig;
   };
+  dateColumn: string;
+  metricColumn: MetricColumn,
+  groupByColumns: string[];
   baseDateRange: DateRangeConfig;
   comparisonDateRange: DateRangeConfig;
   dataSourceType: DataSourceType;
@@ -48,6 +52,9 @@ export function DimensionSliceDetailModal({
   targetDirection,
   fileId,
   selectedColumns,
+  dateColumn,
+  groupByColumns,
+  metricColumn,
   baseDateRange,
   comparisonDateRange,
   dataSourceType,
@@ -76,6 +83,9 @@ export function DimensionSliceDetailModal({
           body: JSON.stringify({
             fileId,
             baseDateRange,
+            dateColumn,
+            groupByColumns,
+            metricColumn,
             comparisonDateRange,
             selectedColumns,
             segmentKey: selectedSliceKey,
