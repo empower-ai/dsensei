@@ -1,15 +1,15 @@
 import datetime
+from dataclasses import asdict
 from typing import Dict, List, Tuple
 
 import pandas as pd
 import simplejson
-
-from app.data_source.datasource.snowflakeSource import SnowflakeSource, SnowflakeCredentials
-from app.insight.services.metrics import (Dimension, DimensionSliceInfo,
-                                          DimensionValuePair, Metric,
-                                          NpEncoder, PeriodValue, calculateTotalSegments, find_key_dimensions, NpEncoderForSimpleJson)
-from dataclasses import asdict
 from loguru import logger
+
+from app.data_source import SnowflakeSource, SnowflakeCredentials
+from app.insight.services.metrics import (Dimension, SegmentInfo,
+                                          DimensionValuePair, MetricInsight,
+                                          PeriodValue, calculate_total_segments, find_key_dimensions, NpEncoderForSimpleJson)
 
 SUB_QUERY_TEMPLATE = """
 SELECT
@@ -198,17 +198,18 @@ class SnowflakeMetrics:
             values = list(df[column].unique())
             if None in values:
                 values.remove(None)
-            dimensions[column] = Dimension(name=column, values=values)
+            # TODO
+            dimensions[column] = Dimension(name=column, score=0)
         return dimensions
 
-    def _get_dimension_slice_info(self, df: pd.DataFrame, metric_name: str, baseline_num_rows: int, comparison_num_rows: int) -> List[DimensionSliceInfo]:
+    def _get_dimension_slice_info(self, df: pd.DataFrame, metric_name: str, baseline_num_rows: int, comparison_num_rows: int) -> List[SegmentInfo]:
         def mapToObj(_, row):
             key = tuple(
                 [DimensionValuePair(self.columns[i], str(row[self.columns[i]]))
                  for i in range(len(self.columns))
                  if row[self.columns[i]] != 'ALL'])
             if len(key) == 0:
-                return DimensionSliceInfo()
+                return SegmentInfo()
             sorted_key = sorted(key, key=lambda x: x.dimension)
             serialized_key = '|'.join(
                 [f'{value_pair.dimension}:{value_pair.value}' for value_pair in sorted_key])
@@ -217,7 +218,7 @@ class SnowflakeMetrics:
                 row['_cnt_comparison'], row['_cnt_comparison'] / comparison_num_rows, row[metric_name + "_comparison"])
             last_period_value = PeriodValue(
                 row['_cnt_baseline'], row['_cnt_baseline'] / baseline_num_rows, row[metric_name + "_baseline"])
-            return DimensionSliceInfo(
+            return SegmentInfo(
                 key,
                 serialized_key,
                 [],
@@ -237,12 +238,12 @@ class SnowflakeMetrics:
     def build_metrics(self,
                       metric_name: str,
                       df: pd.DataFrame,
-                      value_by_date_df: pd.DataFrame) -> Metric:
-        metric = Metric()
+                      value_by_date_df: pd.DataFrame) -> MetricInsight:
+        metric = MetricInsight()
         metric.name = self.metrics_name[metric_name]
         metric.keyDimensions = self.find_key_dimensions(df)
         metric.dimensions = self._get_dimensions(df)
-        metric.totalSegments = calculateTotalSegments(metric.dimensions)
+        metric.totalSegments = calculate_total_segments(metric.dimensions)
 
         metric.baselineNumRows = df['_cnt_baseline'].max()
         metric.comparisonNumRows = df['_cnt_comparison'].max()
@@ -306,8 +307,6 @@ class SnowflakeMetrics:
     def find_key_dimensions(self, df: pd.DataFrame) -> List[str]:
         metric_name = next(iter(self.agg_method.keys()))
         single_dimension_df = df[df.apply(lambda row: (row == 'ALL').sum() == len(self.columns) - 1, axis=1)]
-
-        print(single_dimension_df)
 
         single_dimension_df['dimension_value'] = single_dimension_df.apply(lambda row: row[row.index[0] in self.columns and row != 'ALL'][0], axis=1)
         single_dimension_df['dimension_name'] = single_dimension_df.apply(lambda row: row[row.index[0] in self.columns and row != 'ALL'].index[0], axis=1)

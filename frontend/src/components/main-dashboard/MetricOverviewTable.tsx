@@ -12,7 +12,11 @@ import {
   Text,
 } from "@tremor/react";
 import { ReactNode } from "react";
-import { formatDateString, formatNumber } from "../../common/utils";
+import {
+  formatDateString,
+  formatMetricValue,
+  formatNumber,
+} from "../../common/utils";
 import { TargetDirection } from "../../types/report-config";
 
 interface Props {
@@ -22,10 +26,12 @@ interface Props {
   comparisonNumRows: number;
   baseValue: number;
   comparisonValue: number;
+  aggregationMethod: string;
   supportingMetrics: {
     name: string;
     baseValue: number;
     comparisonValue: number;
+    aggregationMethod: string;
   }[];
   metricName: string;
   targetDirection: TargetDirection;
@@ -35,7 +41,8 @@ function getChangePercentageBadge(
   num1: number,
   num2: number,
   additionalClasses: string = "",
-  targetDirection: TargetDirection
+  targetDirection: TargetDirection,
+  isPercentageMetrics: boolean = false
 ): ReactNode {
   if (num1 === 0) {
     return <Badge color="gray">N/A</Badge>;
@@ -55,10 +62,10 @@ function getChangePercentageBadge(
     content = "0";
     deltaType = "unchanged";
   } else if (num1 > num2) {
-    content = `${formatNumber(change)} (${changePct})`;
+    content = `${isPercentageMetrics ? formatNumber(change*100) + "%" : formatNumber(change)} (${changePct})`;
     deltaType = "decrease";
   } else {
-    content = `+${formatNumber(change)} (+${changePct})`;
+    content = `+${isPercentageMetrics ? formatNumber(change*100) + "%" : formatNumber(change)} (+${changePct})`;
     deltaType = "increase";
   }
 
@@ -84,6 +91,7 @@ export function MetricOverviewTable({
   supportingMetrics,
   metricName,
   targetDirection,
+  aggregationMethod,
 }: Props) {
   return (
     <Card className="overflow-overlay">
@@ -109,9 +117,13 @@ export function MetricOverviewTable({
               {formatDateString(baseDateRange[1])}
             </TableCell>
             <TableCell>{formatNumber(baseNumRows)}</TableCell>
-            <TableCell>{formatNumber(baseValue)}</TableCell>
+            <TableCell>
+              {formatMetricValue(baseValue, aggregationMethod)}
+            </TableCell>
             {supportingMetrics.map((metric) => (
-              <TableCell>{formatNumber(metric.baseValue)}</TableCell>
+              <TableCell>
+                {formatMetricValue(metric.baseValue, metric.aggregationMethod)}
+              </TableCell>
             ))}
           </TableRow>
           <TableRow>
@@ -141,12 +153,13 @@ export function MetricOverviewTable({
                 className="self-center text-center content-center gap-2"
                 justifyContent="start"
               >
-                {formatNumber(comparisonValue)}
+                {formatMetricValue(comparisonValue, aggregationMethod)}
                 {getChangePercentageBadge(
                   baseValue,
                   comparisonValue,
                   "mb-1",
-                  targetDirection
+                  targetDirection,
+                  aggregationMethod === "RATIO"
                 )}
               </Flex>
             </TableCell>
@@ -156,7 +169,10 @@ export function MetricOverviewTable({
                   className="self-center text-center content-center gap-2"
                   justifyContent="start"
                 >
-                  {formatNumber(metric.comparisonValue)}
+                  {formatMetricValue(
+                    metric.comparisonValue,
+                    metric.aggregationMethod
+                  )}
                   {getChangePercentageBadge(
                     metric.baseValue,
                     metric.comparisonValue,

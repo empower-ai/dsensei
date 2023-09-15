@@ -1,10 +1,10 @@
-import * as rd from "@duckdb/react-duckdb";
 import { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import { Flex, Text } from "@tremor/react";
 
-import { CSVSchema, FieldMode, FieldType } from "../../../types/data-source";
+import apiManager from "../../../common/apiManager";
+import { CSVSchema } from "../../../types/data-source";
 
 interface Props {
   useSampleFile?: boolean;
@@ -15,16 +15,8 @@ interface Props {
 function CSVLoader({ useSampleFile, onLoadingSchema, onSchemaLoaded }: Props) {
   const [error, setError] = useState<string>("");
 
-  const db = rd.useDuckDB();
-  const resolveDB = rd.useDuckDBResolver();
-  // Launch DuckDB
   useEffect(() => {
     async function init() {
-      if (!db.resolving()) {
-        resolveDB();
-        return;
-      }
-
       if (useSampleFile) {
         onLoadingSchema();
         const response = await fetch(
@@ -35,82 +27,30 @@ function CSVLoader({ useSampleFile, onLoadingSchema, onSchemaLoaded }: Props) {
           type: blobData.type,
         });
 
-        loadFile(file);
+        loadSchema(file);
       }
     }
     init();
-  }, [db, resolveDB, useSampleFile]);
+  }, [useSampleFile]);
 
-  const loadCSVFile = async (raw_string: string, file: File) => {
-    const preparedDB = db.value!;
-    preparedDB.reset();
-    const csvHeader = raw_string.slice(0, raw_string.indexOf("\n")).split(",");
-
-    const conn = await preparedDB.connect();
-    await preparedDB.registerFileText(`data.csv`, raw_string);
-    await conn.insertCSVFromPath("data.csv", {
-      schema: "main",
-      name: "uploaded_content",
-      detect: true,
-      header: true,
-      delimiter: ",",
-    });
-
-    const res = await conn.query("DESCRIBE uploaded_content");
-    const parsedHeaders = res.toArray().map((row) => {
-      const rowInJson = row.toJSON();
-      return {
-        name: rowInJson.column_name as string,
-        type: rowInJson.column_type as FieldType,
-        mode: "NULLABLE" as FieldMode,
-        numDistinctValues: 0,
-      };
-    });
-
-    // @TODO: get rid of this to load directly from duckdb
-    const csvRows = raw_string.slice(raw_string.indexOf("\n") + 1).split("\n");
-    const previewData = csvRows.slice(0, 10).map((i) => {
-      const values = i.split(",");
-      const obj = csvHeader.reduce(
-        (object: { [k: string]: string }, header, index) => {
-          object[header] = values[index];
-          return object;
-        },
-        {}
-      );
-      return obj;
-    });
-
-    onSchemaLoaded({
-      file: file,
-      countRows: csvRows.length,
-      name: file.name,
-      fields: parsedHeaders,
-      previewData,
-    });
-  };
-
-  async function loadFile(file: File) {
-    const fileReader = new FileReader();
-    fileReader.onload = async function (event) {
-      const text = event.target?.result;
-      if (!text || typeof text !== "string") {
-        throw new Error("failed to load CSV file");
-      }
-
-      await loadCSVFile(text, file);
-    };
-
+  async function loadSchema(file: File) {
+    const formData = new FormData();
+    formData.append("file", file!);
     try {
-      fileReader.readAsText(file);
+      const schema = await apiManager.postForm<CSVSchema>(
+        "/api/v1/source/file/schema",
+        formData
+      );
+      onSchemaLoaded(schema);
     } catch (e) {
       setError("Cannot load the file. Please upload a valid CSV file.");
+      return;
     }
   }
 
   const onDrop = async <T extends File>(acceptedFiles: T[]) => {
     onLoadingSchema();
-    loadFile(acceptedFiles[0]);
+    loadSchema(acceptedFiles[0]);
   };
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,

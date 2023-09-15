@@ -16,11 +16,17 @@ import {
 import { Range } from "immutable";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import apiManager from "../../../common/apiManager";
+import {
+  DimensionSliceInfo,
+  InsightMetric,
+  SegmentKeyComponent,
+} from "../../../common/types";
 import {
   formatDateString,
   formatDimensionSliceKeyForRendering,
   formatMetricName,
-  formatNumber,
+  formatMetricValue,
   serializeDimensionSliceKey,
 } from "../../../common/utils";
 import { RootState } from "../../../store";
@@ -41,7 +47,7 @@ interface Props {
     [key: string]: ColumnConfig;
   };
   dateColumn: string;
-  metricColumn: MetricColumn,
+  metricColumn: MetricColumn;
   groupByColumns: string[];
   baseDateRange: DateRangeConfig;
   comparisonDateRange: DateRangeConfig;
@@ -63,40 +69,57 @@ export function DimensionSliceDetailModal({
     useSelector((state: RootState) => state.comparisonInsight);
   const [chartData, setChartData] = useState<
     {
-      date: string;
-      Base: number;
-      Comparison: number;
-    }[][]
+      metric: InsightMetric;
+      data: {
+        date: string;
+        Base: number;
+        Comparison: number;
+      }[];
+    }[]
   >([]);
+  const [segmentInsightLoading, setSegmentInsightLoading] = useState(false);
+  const [relatedSegmentsLoading, setRelatedSegmentsLoading] = useState(false);
+  const [relatedSegmentsByMetricName, setRelatedSegmentsByMetricName] =
+    useState<{
+      [key: string]: DimensionSliceInfo[];
+    }>({});
+  const [filteringSegmentKeyComponents, setFilteringSegmentKeyComponents] =
+    useState<SegmentKeyComponent[]>([]);
   const supportTImeSeries = dataSourceType === "csv"; // csv for now
 
   useEffect(() => {
+    async function loadRelatedSegments() {
+      setRelatedSegmentsLoading(true);
+      const segments = await apiManager.post<{
+        [key: string]: DimensionSliceInfo[];
+      }>("/api/v1/insight/file/related-segments", {
+        fileId,
+        baseDateRange,
+        comparisonDateRange,
+        selectedColumns,
+        dateColumn,
+        metricColumn,
+        segmentKey: selectedSliceKey,
+      });
+
+      setRelatedSegmentsByMetricName(segments);
+      setRelatedSegmentsLoading(false);
+    }
     async function loadInsight() {
-      const apiPath = "/api/segment-insight";
-      const response = await fetch(
-        process.env.NODE_ENV === "development"
-          ? `http://127.0.0.1:5001${apiPath}`
-          : apiPath,
+      setSegmentInsightLoading(true);
+      const insight = await apiManager.post<any>(
+        "/api/v1/insight/file/segment",
         {
-          mode: "cors",
-          method: "POST",
-          body: JSON.stringify({
-            fileId,
-            baseDateRange,
-            dateColumn,
-            groupByColumns,
-            metricColumn,
-            comparisonDateRange,
-            selectedColumns,
-            segmentKey: selectedSliceKey,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
+          fileId,
+          baseDateRange,
+          comparisonDateRange,
+          selectedColumns,
+          dateColumn,
+          groupByColumns,
+          metricColumn,
+          segmentKey: selectedSliceKey,
         }
       );
-
-      const insight = await response.json();
 
       const maxIdx = Math.max(
         insight[0].baselineValueByDate.length,
@@ -104,8 +127,9 @@ export function DimensionSliceDetailModal({
       );
 
       setChartData(
-        allMetrics.map((metric, i) =>
-          Range(0, maxIdx)
+        allMetrics.map((metric, i) => ({
+          metric,
+          data: Range(0, maxIdx)
             .toArray()
             .map((idx) => {
               const baselineValue = insight[i].baselineValueByDate[idx];
@@ -135,15 +159,15 @@ export function DimensionSliceDetailModal({
                 Comparison: comparisonValue?.value,
                 Difference: change,
               };
-            })
-        )
+            }),
+        }))
       );
+      setSegmentInsightLoading(false);
     }
 
     if (selectedSliceKey && supportTImeSeries) {
-      loadInsight().catch((e) => {
-        throw e;
-      });
+      loadInsight();
+      loadRelatedSegments();
     }
   }, [selectedSliceKey]);
 
@@ -162,9 +186,9 @@ export function DimensionSliceDetailModal({
 
   return (
     <dialog id="slice_detail" className="modal">
-      <form method="dialog" className="modal-box max-w-[60%]">
+      <form method="dialog" className="modal-box max-w-[80%]">
         <Flex>
-          <Title>Slice Detail</Title>
+          <Title>Segment Detail</Title>
           <button className="btn btn-sm btn-ghost absolute right-2 top-2">
             ✕
           </button>
@@ -172,7 +196,7 @@ export function DimensionSliceDetailModal({
         <Flex>
           <p className="flex items-center gap-2">
             <Text>
-              <Bold>Dimension Slice:</Bold>
+              <Bold>Segment:</Bold>
             </Text>{" "}
             {formatDimensionSliceKeyForRendering(sliceInfo.key)}
           </p>
@@ -196,47 +220,61 @@ export function DimensionSliceDetailModal({
                 comparisonValue:
                   metric.dimensionSliceInfo[serializedKey].comparisonValue
                     .sliceValue,
+                aggregationMethod: metric.aggregationMethod,
               }))}
               metricName={formatMetricName(analyzingMetrics)}
+              aggregationMethod={analyzingMetrics.aggregationMethod}
               targetDirection={targetDirection}
             />
             {supportTImeSeries && (
               <Card className="col-span-4">
                 <Title>Day by Day Value</Title>
-                <TabGroup>
-                  <TabList>
-                    {allMetrics.map((metric) => (
-                      <Tab key={formatMetricName(metric)}>
-                        {formatMetricName(metric)}
-                      </Tab>
-                    ))}
-                  </TabList>
-                  <TabPanels>
-                    {chartData.map((data) => (
-                      <TabPanel>
-                        <LineChart
-                          className="mt-6"
-                          data={data}
-                          index="date"
-                          categories={["Base", "Comparison"]}
-                          colors={["orange", "sky"]}
-                          yAxisWidth={100}
-                          valueFormatter={formatNumber}
-                        />
-                      </TabPanel>
-                    ))}
-                  </TabPanels>
-                </TabGroup>
+                {segmentInsightLoading ? (
+                  <Flex className="gap-3" justifyContent="center">
+                    <p>Processing</p>
+                    <span className="loading loading-bars loading-lg"></span>
+                  </Flex>
+                ) : (
+                  <TabGroup>
+                    <TabList>
+                      {allMetrics.map((metric) => (
+                        <Tab key={formatMetricName(metric)}>
+                          {formatMetricName(metric)}
+                        </Tab>
+                      ))}
+                    </TabList>
+                    <TabPanels>
+                      {chartData.map((data) => (
+                        <TabPanel>
+                          <LineChart
+                            className="mt-6"
+                            data={data.data}
+                            index="date"
+                            categories={["Base", "Comparison"]}
+                            colors={["orange", "sky"]}
+                            yAxisWidth={100}
+                            valueFormatter={(v) =>
+                              formatMetricValue(
+                                v,
+                                data.metric.aggregationMethod
+                              )
+                            }
+                          />
+                        </TabPanel>
+                      ))}
+                    </TabPanels>
+                  </TabGroup>
+                )}
               </Card>
             )}
           </Flex>
         </Flex>
         <Divider />
-        <Flex justifyContent="start">
-          <div className="text-start">
-            <Title>Other Slices under the Same Dimension(s)</Title>
+        <Flex flexDirection="col" alignItems="start">
+          <Flex justifyContent="start" alignItems="start" flexDirection="col">
+            <Title>Other Segments under the Same Dimension(s)</Title>
             <Subtitle>
-              Showing the slices with significant impact under dimension(s):
+              Showing segments with under dimension(s):
               <span className="mx-1" />
               <Bold>
                 {sliceInfo.key
@@ -245,14 +283,91 @@ export function DimensionSliceDetailModal({
                   .join(", ")}
               </Bold>
             </Subtitle>
+          </Flex>
+          <div>
+            <Text>Filters:</Text>
+            <Flex
+              alignItems="start"
+              flexDirection="col"
+              className="gap-y-2 pt-2"
+            >
+              {sliceInfo.key.map((keyComponent) => (
+                <Flex
+                  justifyContent="start"
+                  className="gap-2 cursor-pointer"
+                  onClick={() => {
+                    if (
+                      filteringSegmentKeyComponents.find(
+                        (filteringComponent) =>
+                          filteringComponent.dimension ===
+                            keyComponent.dimension &&
+                          filteringComponent.value === keyComponent.value
+                      )
+                    ) {
+                      setFilteringSegmentKeyComponents(
+                        filteringSegmentKeyComponents.filter(
+                          (filteringComponent) =>
+                            filteringComponent.dimension !==
+                              keyComponent.dimension ||
+                            filteringComponent.value !== keyComponent.value
+                        )
+                      );
+                    } else {
+                      setFilteringSegmentKeyComponents(
+                        filteringSegmentKeyComponents.concat([keyComponent])
+                      );
+                    }
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      filteringSegmentKeyComponents.find(
+                        (filteringComponent) =>
+                          filteringComponent.dimension ===
+                            keyComponent.dimension &&
+                          filteringComponent.value === keyComponent.value
+                      ) !== undefined
+                    }
+                  />
+                  {formatDimensionSliceKeyForRendering([keyComponent])}
+                </Flex>
+              ))}
+            </Flex>
           </div>
         </Flex>
-        {allMetrics.map((metric) => (
-          <DimensionSliceDetailModalMetricCard
-            selectedSliceKey={sliceInfo.key}
-            metric={metric}
-          />
-        ))}
+        <Card className="mt-4 overflow-overlay">
+          {relatedSegmentsLoading ? (
+            <Flex className="gap-3" justifyContent="center">
+              <p>Processing</p>
+              <span className="loading loading-bars loading-lg"></span>
+            </Flex>
+          ) : (
+            <TabGroup>
+              <TabList>
+                {allMetrics.map((metric) => (
+                  <Tab key={formatMetricName(metric)}>
+                    {formatMetricName(metric)}
+                  </Tab>
+                ))}
+              </TabList>
+              <TabPanels>
+                {allMetrics.map((metric) => (
+                  <TabPanel>
+                    <DimensionSliceDetailModalMetricCard
+                      selectedSliceKey={sliceInfo.key}
+                      metric={metric}
+                      relatedSegmentsByMetricName={relatedSegmentsByMetricName}
+                      filteringSegmentKeyComponents={
+                        filteringSegmentKeyComponents
+                      }
+                    />
+                  </TabPanel>
+                ))}
+              </TabPanels>
+            </TabGroup>
+          )}
+        </Card>
       </form>
       <form method="dialog" className="modal-backdrop">
         <button>close</button>

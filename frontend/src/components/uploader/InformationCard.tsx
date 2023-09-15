@@ -8,6 +8,7 @@ import {
   Text,
   Title,
 } from "@tremor/react";
+import getSettings from "../../common/server-data/settings";
 import { useTracking } from "../../common/tracking";
 
 export default function InformationCard() {
@@ -115,20 +116,24 @@ export default function InformationCard() {
       </Accordion>
       <Divider className="mt-1 mb-1" />
       <Flex justifyContent="between">
-        <Flex justifyContent="start" className="gap-2">
-          <input
-            type="checkbox"
-            checked={isTrackingEnabled()}
-            onChange={() => {
-              if (isTrackingEnabled()) {
-                disableTracking();
-              } else {
-                enableTracking();
-              }
-            }}
-          />
-          <Text>Send anonymous usage data to help us improve the product.</Text>
-        </Flex>
+        {getSettings().enableTelemetry && (
+          <Flex justifyContent="start" className="gap-2">
+            <input
+              type="checkbox"
+              checked={isTrackingEnabled()}
+              onChange={() => {
+                if (isTrackingEnabled()) {
+                  disableTracking();
+                } else {
+                  enableTracking();
+                }
+              }}
+            />
+            <Text>
+              Send anonymous usage data to help us improve the product.
+            </Text>
+          </Flex>
+        )}
         <Flex justifyContent="end">
           <Text className="pt-1">
             Like the project? Star us on{" "}

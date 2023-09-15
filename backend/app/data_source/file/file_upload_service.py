@@ -1,6 +1,8 @@
 import hashlib
 import os
-import shutil
+
+from loguru import logger
+
 
 class FileUploadService:
     @staticmethod
@@ -19,9 +21,9 @@ class FileUploadService:
         if not os.path.exists(output_dir):
             try:
                 os.makedirs(output_dir)
-                print(f"Directory '{output_dir}' created successfully.")
+                logger.info(f"Directory '{output_dir}' created successfully.")
             except Exception as e:
-                print(f"Error creating directory: {e}")
+                logger.exception(f"Error creating directory: {e}")
 
         output_path = os.path.join(output_dir, filename_with_md5)
 

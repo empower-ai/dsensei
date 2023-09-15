@@ -1,21 +1,25 @@
-'use strict';
+"use strict";
 
-const fs = require('fs');
-const evalSourceMapMiddleware = require('react-dev-utils/evalSourceMapMiddleware');
-const noopServiceWorkerMiddleware = require('react-dev-utils/noopServiceWorkerMiddleware');
-const ignoredFiles = require('react-dev-utils/ignoredFiles');
-const redirectServedPath = require('react-dev-utils/redirectServedPathMiddleware');
-const paths = require('./paths');
-const getHttpsConfig = require('./getHttpsConfig');
+const fs = require("fs");
+const evalSourceMapMiddleware = require("react-dev-utils/evalSourceMapMiddleware");
+const noopServiceWorkerMiddleware = require("react-dev-utils/noopServiceWorkerMiddleware");
+const ignoredFiles = require("react-dev-utils/ignoredFiles");
+const redirectServedPath = require("react-dev-utils/redirectServedPathMiddleware");
+const paths = require("./paths");
+const getHttpsConfig = require("./getHttpsConfig");
+const getProxyConfig = require("./webpackProxyConfig");
+const { getCompilerHooks } = require("webpack-manifest-plugin");
 
-const host = process.env.HOST || '0.0.0.0';
+const host = process.env.HOST || "0.0.0.0";
 const sockHost = process.env.WDS_SOCKET_HOST;
 const sockPath = process.env.WDS_SOCKET_PATH; // default: '/ws'
 const sockPort = process.env.WDS_SOCKET_PORT;
 
+let proxyConfig = getProxyConfig();
+
 module.exports = function (proxy, allowedHost) {
   const disableFirewall =
-    !proxy || process.env.DANGEROUSLY_DISABLE_HOST_CHECK === 'true';
+    !proxy || process.env.DANGEROUSLY_DISABLE_HOST_CHECK === "true";
   return {
     // WebpackDevServer 2.4.3 introduced a security fix that prevents remote
     // websites from potentially accessing local content through DNS rebinding:
@@ -35,11 +39,11 @@ module.exports = function (proxy, allowedHost) {
     // really know what you're doing with a special environment variable.
     // Note: ["localhost", ".localhost"] will support subdomains - but we might
     // want to allow setting the allowedHosts manually for more complex setups
-    allowedHosts: disableFirewall ? 'all' : [allowedHost],
+    allowedHosts: disableFirewall ? "all" : [allowedHost],
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': '*',
-      'Access-Control-Allow-Headers': '*',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "*",
+      "Access-Control-Allow-Headers": "*",
     },
     // Enable gzip compression of generated files.
     compress: true,
@@ -100,12 +104,18 @@ module.exports = function (proxy, allowedHost) {
       index: paths.publicUrlOrPath,
     },
     // `proxy` is run between `before` and `after` `webpack-dev-server` hooks
-    proxy,
+    proxy: [() => proxyConfig],
     onBeforeSetupMiddleware(devServer) {
       // Keep `evalSourceMapMiddleware`
       // middlewares before `redirectServedPath` otherwise will not have any effect
       // This lets us fetch source contents from webpack for the error overlay
       devServer.app.use(evalSourceMapMiddleware(devServer));
+
+      // load proxy config when manifest updates
+      const { afterEmit } = getCompilerHooks(devServer.compiler);
+      afterEmit.tap("ManifestPlugin", (manifest) => {
+        proxyConfig = getProxyConfig(manifest);
+      });
 
       if (fs.existsSync(paths.proxySetup)) {
         // This registers user provided middleware for proxy reasons
@@ -115,7 +125,6 @@ module.exports = function (proxy, allowedHost) {
     onAfterSetupMiddleware(devServer) {
       // Redirect to `PUBLIC_URL` or `homepage` from `package.json` if url not match
       devServer.app.use(redirectServedPath(paths.publicUrlOrPath));
-
       // This service worker file is effectively a 'no-op' that will reset any
       // previous service worker registered for the same host:port combination.
       // We do this in development to avoid hitting the production cache if

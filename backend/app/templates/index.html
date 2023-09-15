@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <link rel="icon" href="/favicon.ico"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="theme-color" content="#000000"/>
+    <meta
+            name="description"
+            content="DSensei is an open source insight discovery engine to uncover hidden patterns and revelations in datasets."
+    />
+    <link rel="apple-touch-icon" href="/favicon.ico"/>
+    <link rel="manifest" href="/manifest.json"/>
+    <script
+            async
+            src="https://www.googletagmanager.com/gtag/js?id=G-62MJ7PYXWX"
+    ></script>
+    <script>
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      (window.dataLayer = window.dataLayer || []),
+        gtag("js", new Date()),
+        gtag("config", "G-62MJ7PYXWX");
+
+    </script>
+    <title>DSensei</title>
+    <!-- Bundle Import START -->
+    {%for bundle_import in bundle_imports%} {{ bundle_import|safe }} {%endfor%}
+    <!-- Bundle Import END -->
+</head>
+<body>
+<noscript>You need to enable JavaScript to run this app.</noscript>
+<div id="root" server-data="{{ server_data }}"></div>
+</body>
+</html>

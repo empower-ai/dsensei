@@ -26,6 +26,14 @@ export interface Field {
   numDistinctValues: number;
 }
 
+export interface DateField extends Field {
+  minDate: string;
+  maxDate: string;
+  numRowsByDate: {
+    [key: string]: number;
+  };
+}
+
 export interface BigquerySchema extends Schema {
   isDateSuffixPartitionTable: boolean;
 }

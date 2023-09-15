@@ -1,6 +1,7 @@
 import * as amplitude from "@amplitude/analytics-browser";
 import * as Sentry from "@sentry/react";
 import { useCookies } from "react-cookie";
+import getSettings from "./server-data/settings";
 
 const COOKIE_KEY_ENABLE_TRACKING = "send_usage_data";
 let initialized = false;
@@ -37,14 +38,17 @@ export function useTracking(): {
 
   function isTrackingEnabled(): boolean {
     return (
-      cookies[COOKIE_KEY_ENABLE_TRACKING] === "true" ||
-      cookies[COOKIE_KEY_ENABLE_TRACKING] === undefined
+      getSettings().enableTelemetry &&
+      (cookies[COOKIE_KEY_ENABLE_TRACKING] === "true" ||
+        cookies[COOKIE_KEY_ENABLE_TRACKING] === undefined)
     );
   }
 
   function enableTracking() {
-    setCookie(COOKIE_KEY_ENABLE_TRACKING, "true");
-    startAmplitude();
+    if (isTrackingEnabled()) {
+      setCookie(COOKIE_KEY_ENABLE_TRACKING, "true");
+      startAmplitude();
+    }
   }
 
   function disableTracking() {

@@ -8,8 +8,10 @@ type SingleSelectorProps = {
   icons?: React.ElementType[];
   selectedValue: string;
   onValueChange: (value: string) => void;
+  onFilterChange?: (value: boolean) => void;
   instruction?: ReactElement;
   disabled?: boolean;
+  filterCheckbox?: boolean;
 };
 
 function SingleSelector({
@@ -19,8 +21,10 @@ function SingleSelector({
   icons,
   selectedValue,
   onValueChange,
+  onFilterChange,
   instruction,
   disabled,
+  filterCheckbox: hasFilter
 }: SingleSelectorProps) {
   const options = values.map((v, i) => (
     <SelectItem
@@ -37,15 +41,24 @@ function SingleSelector({
       <Col className="flex items-center justify-end" numColSpan={2}>
         {title}
       </Col>
-      <Col className="items-center" numColSpan={3}>
+      <Col className="items-center flex" numColSpan={3}>
         <Select
-          className="row-span-full"
           value={selectedValue}
           onValueChange={onValueChange}
           disabled={disabled}
         >
           {options}
         </Select>
+
+        {hasFilter &&
+          <Col className="flex" numColSpan={1}>
+            <label className="ml-2">Has filter</label>
+            <input type="checkbox" className="ml-2" onChange={
+              (e) => {
+                onFilterChange && onFilterChange(e.target.checked)
+              }} />
+          </Col>
+        }
       </Col>
       <Col className="items-center col-start-3 pt-2 pl-2" numColSpan={3}>
         {instruction}

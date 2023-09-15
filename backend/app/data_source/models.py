@@ -1,7 +1,8 @@
+import datetime
 from dataclasses import dataclass
 from typing import Union, Optional
 
-FieldType = Union['DATE', 'TIMESTAMP', 'VARCHAR', 'FLOAT', 'INTEGER']
+FieldType = Union['DATE', 'TIMESTAMP', 'VARCHAR', 'FLOAT', 'INTEGER', 'BOOLEAN']
 FieldMode = Union['NULLABLE', 'REQUIRED', 'REPEATED']
 
 
@@ -12,6 +13,13 @@ class Field:
     type: FieldType
     mode: FieldMode
     numDistinctValues: int
+
+
+@dataclass(frozen=True)
+class DateField(Field):
+    minDate: datetime.date
+    maxDate: datetime.date
+    numRowsByDate: dict[datetime.date, int]
 
 
 @dataclass(frozen=True)
@@ -32,3 +40,8 @@ class Dataset:
 @dataclass(frozen=True)
 class BigquerySchema(Schema):
     isDateSuffixPartitionTable: bool
+
+
+@dataclass(frozen=True)
+class FileSchema(Schema):
+    pass

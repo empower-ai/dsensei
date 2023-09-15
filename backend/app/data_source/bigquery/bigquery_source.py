@@ -1,9 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor, wait
-from pprint import pprint
 
-from app.data_source.datasource import BigquerySchema, Dataset, Field
 from google.cloud import bigquery
 from google.cloud.bigquery.table import RowIterator
+
+from app.data_source.models import Field, Dataset, BigquerySchema
 
 query_executor = ThreadPoolExecutor(max_workers=10)
 

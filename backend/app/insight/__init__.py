@@ -1,5 +1,5 @@
 from flask import Blueprint
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 
 bp = Blueprint('insight', __name__)
 CORS(bp)

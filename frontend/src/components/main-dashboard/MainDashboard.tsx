@@ -22,12 +22,15 @@ import { Range } from "immutable";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+import getSettings from "../../common/server-data/settings";
 import Sidebar from "../../common/sidebar/Sidebar";
 import SidebarElement from "../../common/sidebar/SidebarElement";
 import {
   formatDateString,
   formatMetricName,
+  formatMetricValue,
   formatNumber,
+  renderDebugInfo,
 } from "../../common/utils";
 import { RootState } from "../../store";
 import { setLoadingStatus, updateMetrics } from "../../store/comparisonInsight";
@@ -58,6 +61,7 @@ export default function MainDashboard() {
     metricColumn,
     supportingMetricColumn,
     dateColumn,
+    dateColumnType,
     groupByColumns,
     dataSourceType,
     targetDirection,
@@ -69,10 +73,10 @@ export default function MainDashboard() {
       let apiPath = "";
       switch (dataSourceType) {
         case "csv":
-          apiPath = "/api/insight";
+          apiPath = "/api/v1/insight/file/metric";
           break;
         case "bigquery":
-          apiPath = "/api/bqinsight";
+          apiPath = "/api/v1/insight/bigquery/metric";
           break;
       }
 
@@ -91,6 +95,7 @@ export default function MainDashboard() {
             comparisonDateRange,
             selectedColumns,
             dateColumn,
+            dateColumnType,
             metricColumn,
             supportingMetricColumn,
             groupByColumns,
@@ -120,7 +125,6 @@ export default function MainDashboard() {
     isLoading,
     groupRows,
     waterfallRows,
-    selectedDimensions,
   } = useSelector((state: RootState) => state.comparisonInsight);
 
   if (isLoading) {
@@ -138,8 +142,9 @@ export default function MainDashboard() {
     allMetrics[0].comparisonValueByDate.length
   );
 
-  const chartData = allMetrics.map((metric) =>
-    Range(0, maxIdx)
+  const chartData = allMetrics.map((metric) => ({
+    metric,
+    data: Range(0, maxIdx)
       .toArray()
       .map((idx) => {
         const baselineValue = metric.baselineValueByDate[idx];
@@ -169,8 +174,8 @@ export default function MainDashboard() {
           Comparison: comparisonValue?.value,
           Difference: change,
         };
-      })
-  );
+      }),
+  }));
 
   return (
     <>
@@ -299,8 +304,10 @@ export default function MainDashboard() {
                   name: formatMetricName(metric),
                   baseValue: metric.baselineValue,
                   comparisonValue: metric.comparisonValue,
+                  aggregationMethod: metric.aggregationMethod,
                 }))}
                 metricName={formatMetricName(analyzingMetrics)}
+                aggregationMethod={analyzingMetrics.aggregationMethod}
                 targetDirection={targetDirection}
               />
               <Card className="col-span-4">
@@ -318,12 +325,14 @@ export default function MainDashboard() {
                       <TabPanel>
                         <LineChart
                           className="mt-6"
-                          data={data}
+                          data={data.data}
                           index="date"
                           categories={["Base", "Comparison"]}
                           colors={["orange", "sky"]}
                           yAxisWidth={100}
-                          valueFormatter={formatNumber}
+                          valueFormatter={(v) =>
+                            formatMetricValue(v, data.metric.aggregationMethod)
+                          }
                         />
                       </TabPanel>
                     ))}
@@ -345,7 +354,7 @@ export default function MainDashboard() {
                       <TabPanel>
                         <LineChart
                           className="mt-6"
-                          data={data}
+                          data={data.data}
                           index="date"
                           categories={["Difference"]}
                           colors={["green"]}
@@ -382,20 +391,24 @@ export default function MainDashboard() {
           /> */}
           {reportingType === ReportingType.SEGMENTS_BY_DIMENSIONS && (
             <Flex className="gap-y-4 pt-10" flexDirection="col">
-              <Title>Top Segments Driving the Overall Change</Title>
+              <Title>Top Segments by Dimension</Title>
               <Divider />
-              {selectedDimensions.map((dimension) => (
+              {Object.values(analyzingMetrics.dimensions).map((dimension) => (
                 <TopDimensionSlicesTable
                   metric={analyzingMetrics}
-                  rowStatusMap={tableRowStatusByDimension[dimension].rowStatus}
-                  rowCSV={tableRowStatusByDimension[dimension].rowCSV}
-                  dimension={dimension}
+                  rowStatusMap={
+                    tableRowStatusByDimension[dimension.name].rowStatus
+                  }
+                  rowCSV={tableRowStatusByDimension[dimension.name].rowCSV}
+                  dimension={dimension.name}
                   maxDefaultRows={5}
                   showDimensionSelector={false}
                   showCalculationMode={false}
                   title={
                     <>
-                      <Title>Dimension: {dimension}</Title>
+                      <Title>Dimension: {dimension.name}</Title>
+                      {getSettings().showDebugInfo &&
+                        renderDebugInfo("Score", dimension.score)}
                       <Divider />
                     </>
                   }

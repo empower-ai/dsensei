@@ -17,7 +17,9 @@ import { Md5 } from "ts-md5";
 import { DimensionSliceInfo, DimensionSliceKey } from "../../common/types";
 import {
   formatDimensionSliceKeyForRendering,
+  formatMetricValue,
   formatNumber,
+  renderDebugInfo,
   serializeDimensionSliceKey,
 } from "../../common/utils";
 import { RootState } from "../../store";
@@ -35,6 +37,7 @@ type Props = {
   dimension?: string;
   overallChange: number;
   targetDirection: TargetDirection;
+  aggregationMethod: string;
 };
 
 function getChangePercentage(num1: number, num2: number): ReactNode {
@@ -103,6 +106,7 @@ export default function TopDimensionSlicesTableRow({
   overallChange,
   dimension,
   targetDirection,
+  aggregationMethod,
 }: Props) {
   const allDimensionSliceInfo = useSelector(
     (state: RootState) =>
@@ -121,6 +125,7 @@ export default function TopDimensionSlicesTableRow({
           overallChange={overallChange}
           dimension={dimension}
           targetDirection={targetDirection}
+          aggregationMethod={aggregationMethod}
         />
       );
     });
@@ -180,6 +185,39 @@ export default function TopDimensionSlicesTableRow({
           </span>
         </TableCell>
         <TableCell>
+          <Flex className="justify-start">
+            <Text>
+              {formatMetricValue(
+                dimensionSlice?.baselineValue.sliceValue,
+                aggregationMethod
+              )}{" "}
+              vs{" "}
+              {formatMetricValue(
+                dimensionSlice?.comparisonValue.sliceValue,
+                aggregationMethod
+              )}
+            </Text>
+            {getChangePercentage(
+              dimensionSlice?.baselineValue.sliceValue ?? 0,
+              dimensionSlice?.comparisonValue.sliceValue ?? 0
+            )}
+          </Flex>
+        </TableCell>
+        <TableCell>
+          {aggregationMethod === "RATIO"
+            ? getImpact(
+                dimensionSlice.absoluteContribution * 100,
+                (n) => `${formatNumber(n)}%`,
+                targetDirection
+              )
+            : getPerformanceComparedWithAvg(
+                dimensionSlice?.baselineValue.sliceValue,
+                dimensionSlice?.comparisonValue.sliceValue,
+                overallChange,
+                targetDirection
+              )}
+        </TableCell>
+        <TableCell>
           <Text>
             {formatNumber(dimensionSlice?.baselineValue.sliceSize * 100)}% vs{" "}
             {formatNumber(dimensionSlice?.comparisonValue.sliceSize * 100)}%{" "}
@@ -190,33 +228,9 @@ export default function TopDimensionSlicesTableRow({
           </Text>
         </TableCell>
         <TableCell>
-          <Flex className="justify-start">
-            <Text>
-              {formatNumber(dimensionSlice?.baselineValue.sliceValue)} vs{" "}
-              {formatNumber(dimensionSlice?.comparisonValue.sliceValue)}
-            </Text>
-            {getChangePercentage(
-              dimensionSlice?.baselineValue.sliceValue ?? 0,
-              dimensionSlice?.comparisonValue.sliceValue ?? 0
-            )}
-          </Flex>
-        </TableCell>
-        <TableCell>
-          <Flex className="justify-start items-center">
-            {getImpact(
-              dimensionSlice?.impact ?? 0,
-              (n: number) => formatNumber(n),
-              targetDirection
-            )}
-          </Flex>
-        </TableCell>
-        <TableCell>
-          {getPerformanceComparedWithAvg(
-            dimensionSlice?.baselineValue.sliceValue,
-            dimensionSlice?.comparisonValue.sliceValue,
-            overallChange,
-            targetDirection
-          )}
+          {renderDebugInfo("P-Score", dimensionSlice.confidence)}
+          {renderDebugInfo("Z-Score", dimensionSlice.changeDev)}
+          {renderDebugInfo("Serialized Key", dimensionSlice.serializedKey)}
         </TableCell>
       </TableRow>
       {rowStatus.isExpanded && renderSubSlices()}

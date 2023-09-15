@@ -2,7 +2,7 @@ import { Bold, Button, Card, Flex, Text, TextInput } from "@tremor/react";
 import { ReactElement, useState } from "react";
 import { BigquerySchema } from "../../../types/data-source";
 
-const apiPath = "/api/data-source/bigquery/schema";
+const apiPath = "/api/v1/source/bigquery/schema";
 
 interface Props {
   onLoadingSchema: () => void;

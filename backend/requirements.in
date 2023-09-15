@@ -8,3 +8,5 @@ sentry-sdk==1.29.2
 blinker==1.6.2
 polars[all]==0.18.15
 orjson==3.9.5
+scipy==1.11.2
+Flask-AppBuilder==4.3.6

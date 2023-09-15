@@ -1,8 +1,7 @@
-import * as rd from "@duckdb/react-duckdb";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createNewDateWithBrowserTimeZone } from "../../../common/utils";
-import { CSVSchema } from "../../../types/data-source";
+import { CSVSchema, DateField } from "../../../types/data-source";
 import {
   ColumnConfig,
   DateRangeConfig,
@@ -20,14 +19,25 @@ const sampleDataPrefills: PrefillConfig = {
       aggregationOption: "nunique",
       expectedValue: 0.03,
       fieldType: "VARCHAR",
-    }
+    },
   },
   metricColumn: {
-    columnNames: ["userId"],
     aggregationOption: "nunique",
+    singularMetric: {
+      columnName: "userId",
+      aggregationMethod: "nunique",
+    },
   },
   dateColumn: "eventTime",
-  groupByColumns: ["country", "gender", "majorOsVersion", "phoneBrand", "age", "language", "platform"],
+  groupByColumns: [
+    "country",
+    "gender",
+    "majorOsVersion",
+    "phoneBrand",
+    "age",
+    "language",
+    "platform",
+  ],
   baseDateRange: {
     from: createNewDateWithBrowserTimeZone("2022-07-01"),
     to: createNewDateWithBrowserTimeZone("2022-07-31"),
@@ -47,75 +57,47 @@ export default function CSVBasedReportConfig({
   schema,
   prefillWithSampleData,
 }: Props) {
-  const db = rd.useDuckDB().value!;
   const navigate = useNavigate();
-  const { fields, file } = schema;
+  const { fields } = schema;
 
   const [rowCountByDateAndColumn, setRowCountByDateAndColumn] =
     useState<RowCountByDateAndColumn>({});
   const [rowCountByColumn, setRowCountByColumn] = useState<{
     [key: string]: number;
   }>({});
-  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   useEffect(() => {
     async function calculateCountByDateAndColumn() {
-      const conn = await db.connect();
-
-      const res = await Promise.all(
-        fields
-          .filter(
-            (field) => field.type === "TIMESTAMP" || field.type === "DATE"
-          )
-          .map(async (field) => {
-            const query = `SELECT COUNT(1) as count, strftime(${field.name}, '%Y-%m-%d') as date
-               from uploaded_content group by strftime(${field.name}, '%Y-%m-%d')`;
-            const res = await conn.query(query);
-
-            return [
-              field.name,
-              Object.fromEntries(
-                res.toArray().map((row) => {
-                  const rowInJson = row.toJSON();
-                  return [rowInJson.date, parseInt(rowInJson.count)];
-                })
-              ),
-            ];
-          })
+      setRowCountByDateAndColumn(
+        Object.fromEntries(
+          Object.values(fields)
+            .filter((field) => field.type === "DATE")
+            .map((field) => [field.name, (field as DateField).numRowsByDate])
+        )
       );
-      setRowCountByDateAndColumn(Object.fromEntries(res));
     }
 
     async function calculateDistinctCountByColumn() {
-      if (fields.length > 0) {
-        const conn = await db.connect();
-
-        const res = await conn.query(
-          `SELECT ${fields
-            .map((field) => `COUNT(DISTINCT ${field.name}) as ${field.name}`)
-            .join(",")}, COUNT(1) as totalRowsReserved from uploaded_content`
-        );
-
-        setRowCountByColumn(
-          Object.fromEntries(
-            Object.entries(res?.toArray()[0].toJSON()).map((entry) => {
-              const [column_name, count] = entry;
-              return [column_name, parseInt(count as string)];
-            })
-          )
-        );
-      }
+      setRowCountByColumn(
+        Object.fromEntries(
+          Object.values(fields).map((field) => [
+            field.name,
+            field.numDistinctValues,
+          ])
+        )
+      );
     }
 
     calculateDistinctCountByColumn();
     calculateCountByDateAndColumn();
-  }, [db, fields]);
+  }, [fields]);
 
   const onSubmit = async (
     selectedColumns: {
       [key: string]: ColumnConfig;
     },
     dateColumn: string,
+    dateColumnType: string,
     metricColumn: MetricColumn,
     supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
@@ -123,27 +105,12 @@ export default function CSVBasedReportConfig({
     comparisonDateRange: DateRangeConfig,
     targetDirection: TargetDirection
   ) => {
-    setIsUploading(true);
-
-    const formData = new FormData();
-    formData.append("file", file!);
-    const res = await fetch(
-      process.env.NODE_ENV === "development"
-        ? "http://127.0.0.1:5001/api/file_upload"
-        : "/api/file_upload",
-      {
-        mode: "cors",
-        method: "POST",
-        body: formData,
-      }
-    );
-
-    const { id } = await res.json();
     navigate("/dashboard", {
       state: {
-        fileId: id,
+        fileId: schema.name,
         dataSourceType: "csv",
         dateColumn,
+        dateColumnType,
         groupByColumns,
         selectedColumns,
         metricColumn,
@@ -163,7 +130,6 @@ export default function CSVBasedReportConfig({
       rowCountByDateColumn={rowCountByDateAndColumn}
       prefilledConfigs={prefillWithSampleData ? sampleDataPrefills : undefined}
       onSubmit={onSubmit}
-      isUploading={isUploading}
     />
   );
 }

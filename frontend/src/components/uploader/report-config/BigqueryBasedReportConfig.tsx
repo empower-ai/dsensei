@@ -24,6 +24,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
       [key: string]: ColumnConfig;
     },
     dateColumn: string,
+    dateColumnType: string,
     metricColumn: MetricColumn,
     supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
@@ -38,6 +39,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
         metricColumn,
         supportingMetricColumn,
         dateColumn,
+        dateColumnType,
         groupByColumns,
         selectedColumns,
         baseDateRange,
@@ -53,7 +55,6 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
       dataSourceType="bigquery"
       rowCountByColumn={rowCountByColumn}
       onSubmit={onSubmit}
-      isUploading={false}
     />
   );
 }

@@ -20,7 +20,7 @@ export interface InsightMetric {
   comparisonDateRange: [string, string];
   topDriverSliceKeys: string[];
   dimensions: {
-    [key: string]: { name: string; values: string[] };
+    [key: string]: Dimension;
   };
   dimensionSliceInfo: {
     [key: string]: DimensionSliceInfo;
@@ -29,22 +29,20 @@ export interface InsightMetric {
 
 export interface Dimension {
   name: string;
-  values: Array<string>;
+  score: number;
 }
 
-// export interface DimensionSlice {
-//   dimension: DimensionSliceKey;
-//   impactScore: number;
-// }
-
-export type DimensionSliceKey = {
+export type SegmentKeyComponent = {
   dimension: string;
   value: string;
-}[];
+};
+
+export type DimensionSliceKey = SegmentKeyComponent[];
 
 export interface DimensionSliceInfo {
   key: DimensionSliceKey;
   serializedKey: string;
+  absoluteContribution: number;
   // topDrivingDimensionSliceKeys: string[];
   baselineValue: {
     sliceSize: number;
@@ -59,4 +57,5 @@ export interface DimensionSliceInfo {
   impact: number;
   changePercentage: number;
   changeDev: number;
+  confidence: number;
 }

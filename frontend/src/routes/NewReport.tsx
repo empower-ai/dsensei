@@ -12,6 +12,7 @@ import {
 
 import { useState } from "react";
 import { NavBar } from "../common/navbar";
+import getSettings from "../common/server-data/settings";
 import DataPreviewer from "../components/uploader/DataPreviewer";
 import InformationCard from "../components/uploader/InformationCard";
 import BigqueryLoader from "../components/uploader/data-source-loader/BigqueryLoader";
@@ -54,21 +55,30 @@ function NewReport() {
     return (
       <>
         <Grid numItems={10}>
-          <Flex
-            justifyContent="center"
-            alignItems="center"
-            className="pb-4 col-span-6 col-start-3 gap-3"
-          >
-            <Text className="w-auto text-black">Select data source:</Text>
-            <Select
-              className="w-2 min-w-[150px]"
-              value={dataSource}
-              onValueChange={(value) => setDataSource(value as DataSourceType)}
+          {getSettings().enableBigqueryIntegration && (
+            <Flex
+              justifyContent="center"
+              alignItems="center"
+              className="pb-4 col-span-6 col-start-3 gap-3"
             >
-              <SelectItem value="csv">CSV</SelectItem>
-              <SelectItem value="bigquery">BigQuery</SelectItem>
-            </Select>
-          </Flex>
+              <Text className="w-auto text-black">Select data source:</Text>
+              <Select
+                className="w-2 min-w-[150px]"
+                value={dataSource}
+                onValueChange={(value) =>
+                  setDataSource(value as DataSourceType)
+                }
+              >
+                <SelectItem value="csv">CSV</SelectItem>
+                <SelectItem value="bigquery">BigQuery</SelectItem>
+              </Select>
+            </Flex>
+          )}
+          {!getSettings().enableBigqueryIntegration && (
+            <Flex justifyContent="center" className="pb-4 col-span-10">
+              <Text>Start a new report by uploading a CSV file</Text>
+            </Flex>
+          )}
         </Grid>
         {dataSource === "csv" && (
           <CSVLoader

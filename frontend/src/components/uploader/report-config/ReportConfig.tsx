@@ -37,12 +37,12 @@ type Props = {
   rowCountByColumn: RowCountByColumn;
   rowCountByDateColumn?: RowCountByDateAndColumn;
   prefilledConfigs?: PrefillConfig;
-  isUploading: boolean;
   onSubmit: (
     selectedColumns: {
       [key: string]: ColumnConfig;
     },
     dateColumn: string,
+    dateColumnType: string,
     metricColumn: MetricColumn,
     supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
@@ -58,16 +58,19 @@ function ReportConfig({
   rowCountByColumn,
   rowCountByDateColumn,
   prefilledConfigs,
-  isUploading,
   onSubmit,
 }: Props) {
   const { trackEvent } = useTracking();
 
   const [dateColumn, setDateColumn] = useState<string>("");
+  const [dateColumnType, setDateColumnType] = useState<string>("");
   const [groupByColumns, setGroupByColumns] = useState<string[]>([]);
-  const [metricColumn, setMetricColumn] = useState<MetricColumn | undefined>(undefined);
-  const [relevantMetricColumns, setRelevantMetricColumns] = useState<MetricColumn[]>([]);
-
+  const [metricColumn, setMetricColumn] = useState<MetricColumn | undefined>(
+    undefined
+  );
+  const [relevantMetricColumns, setRelevantMetricColumns] = useState<
+    MetricColumn[]
+  >([]);
 
   const [selectedColumns, setSelectedColumns] = useState<{
     [k: string]: ColumnConfig;
@@ -117,7 +120,10 @@ function ReportConfig({
     setSelectedColumns(selectedColumnsClone);
   };
 
-  const onSelectMetricAggregationOption = (metricColumn: MetricColumn, supportingMetric = false) => {
+  const onSelectMetricAggregationOption = (
+    metricColumn: MetricColumn,
+    supportingMetric = false
+  ) => {
     if (supportingMetric) {
       setRelevantMetricColumns([...relevantMetricColumns, metricColumn]);
     } else {
@@ -167,6 +173,10 @@ function ReportConfig({
 
   const onSelectDateColumn = (dateCol: string) => {
     setDateColumn(dateCol);
+    const dateColumnDetail = schema.fields.find(
+      (field) => field.name === dateCol
+    );
+    setDateColumnType(dateColumnDetail?.type ?? "date");
 
     setBaseDateRangeData({ range: {}, stats: {} });
     setComparisonDateRangeData({ range: {}, stats: {} });
@@ -226,7 +236,16 @@ function ReportConfig({
   }
 
   function canSubmit() {
-    const hasMetricColumn = metricColumn !== undefined && metricColumn.columnNames && metricColumn.columnNames.length > 0;
+    const isValidSingularMetric =
+      metricColumn?.singularMetric?.columnName !== undefined &&
+      metricColumn.aggregationOption !== undefined;
+    const isValidRatioMetric =
+      metricColumn?.ratioMetric?.numerator?.columnName !== undefined &&
+      metricColumn?.ratioMetric?.numerator.aggregationMethod !== undefined &&
+      metricColumn?.ratioMetric?.denominator?.columnName !== undefined &&
+      metricColumn?.ratioMetric?.denominator.aggregationMethod !== undefined;
+
+    const isValidMetric = isValidSingularMetric || isValidRatioMetric;
 
     const hasDimensionColumn = groupByColumns.length > 0;
 
@@ -240,7 +259,7 @@ function ReportConfig({
       comparisonDateRangeData.range.to &&
       baseDateRangeData.range.from &&
       baseDateRangeData.range.to &&
-      hasMetricColumn &&
+      isValidMetric &&
       hasDimensionColumn &&
       hasRows
     );
@@ -271,7 +290,12 @@ function ReportConfig({
               selectedColumns[h]["type"] === "date")
           )
       )
-      .filter((h) => !metricColumn || metricColumn.columnNames?.indexOf(h) === -1)
+      .filter(
+        (h) =>
+          metricColumn?.singularMetric?.columnName !== h &&
+          metricColumn?.ratioMetric?.numerator?.columnName !== h &&
+          metricColumn?.ratioMetric?.denominator?.columnName !== h
+      )
       .filter((h) => dateColumn !== h)
       .filter((h) => {
         if (Object.keys(rowCountByColumn).length === 0) {
@@ -280,8 +304,7 @@ function ReportConfig({
 
         return (
           (rowCountByColumn[h] < 100 ||
-            rowCountByColumn[h] / rowCountByColumn["totalRowsReserved"] <
-              0.01) &&
+            rowCountByColumn[h] / schema.countRows < 0.01) &&
           rowCountByColumn[h] > 0
         );
       });
@@ -455,10 +478,13 @@ function ReportConfig({
                   values={["sum", "count", "distinct"]}
                   selectedValue={selectedColumns[m]["aggregationOption"]!}
                   onValueChange={(v) =>
-                    onSelectMetricAggregationOption({
-                      columnNames: [m],
-                      aggregationOption: v as AggregationType,
-                    } as MetricColumn, true)
+                    onSelectMetricAggregationOption(
+                      {
+                        columnNames: [m],
+                        aggregationOption: v as AggregationType,
+                      } as MetricColumn,
+                      true
+                    )
                   }
                   key={m}
                   instruction={<Text>How to aggregation the metric.</Text>}
@@ -492,6 +518,7 @@ function ReportConfig({
             await onSubmit(
               selectedColumns,
               dateColumn,
+              dateColumnType,
               metricColumn,
               relevantMetricColumns,
               groupByColumns,
@@ -500,10 +527,9 @@ function ReportConfig({
               targetDirection
             );
           }}
-          loading={isUploading}
           disabled={!canSubmit()}
         >
-          {isUploading ? "Uploading" : "Submit"}
+          Submit
         </Button>
       </Flex>
     </Card>

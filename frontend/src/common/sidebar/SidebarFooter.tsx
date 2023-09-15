@@ -8,7 +8,7 @@ export default function SidebarFooter() {
     <div className="absolute inset-x-0 bottom-6">
       <Flex justifyContent="center" className="items-center gap-3">
         <Text>Contact Us:</Text>
-        <a href="https://discord.gg/n2aHQxeX" target="_blank" rel="noreferrer">
+        <a href="https://discord.gg/6h5cdNhK" target="_blank" rel="noreferrer">
           <img className="h-6 w-6" src={discord} alt="discord group" />{" "}
         </a>
         <a

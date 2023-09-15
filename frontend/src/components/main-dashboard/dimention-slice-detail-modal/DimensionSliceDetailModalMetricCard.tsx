@@ -1,5 +1,5 @@
 import {
-  Card,
+  Color,
   DeltaBar,
   Flex,
   Grid,
@@ -9,106 +9,170 @@ import {
   Text,
   Title,
 } from "@tremor/react";
-import { DimensionSliceKey, InsightMetric } from "../../../common/types";
+import { useEffect, useState } from "react";
+import {
+  DimensionSliceInfo,
+  DimensionSliceKey,
+  InsightMetric,
+  SegmentKeyComponent,
+} from "../../../common/types";
 import {
   formatDimensionSliceKeyForRendering,
   formatMetricName,
+  formatMetricValue,
   formatNumber,
-  getRegexMatchPatternForDimensionSliceKey,
   serializeDimensionSliceKey,
 } from "../../../common/utils";
 
 type Props = {
   selectedSliceKey: DimensionSliceKey;
   metric: InsightMetric;
+  relatedSegmentsByMetricName: {
+    [key: string]: DimensionSliceInfo[];
+  };
+  filteringSegmentKeyComponents: SegmentKeyComponent[];
 };
 export function DimensionSliceDetailModalMetricCard({
   selectedSliceKey,
   metric,
+  relatedSegmentsByMetricName,
+  filteringSegmentKeyComponents,
 }: Props) {
-  const matchingRegex =
-    getRegexMatchPatternForDimensionSliceKey(selectedSliceKey);
+  const [showAll, setShowAll] = useState<boolean>(false);
 
-  const relatedSliceInfo = Object.keys(metric.dimensionSliceInfo)
-    .filter((key) => key.match(matchingRegex))
-    .map((key) => metric.dimensionSliceInfo[key]!)
-    .sort((info1, info2) => {
-      return info2.impact - info1.impact;
-    });
+  useEffect(() => {
+    setShowAll(false);
+  }, [selectedSliceKey, filteringSegmentKeyComponents]);
+
+  if (Object.keys(relatedSegmentsByMetricName).length === 0) {
+    return null;
+  }
+
+  const relatedSegments = relatedSegmentsByMetricName[metric.name];
+
   const maxImpact = Math.max(
-    ...relatedSliceInfo.map((info) => Math.abs(info.impact))
+    ...relatedSegments.map((info) => Math.abs(info.impact))
   );
-  return (
-    <Flex className="justify-center mt-5">
-      <Card>
-        <Flex justifyContent="center">
-          <Title>Metrics: {formatMetricName(metric)}</Title>
-        </Flex>
-        {relatedSliceInfo.length === 0 ? (
-          <Flex justifyContent="center">
-            <Subtitle>No slice with significant impact</Subtitle>
+
+  const filteredRelatedSegments = relatedSegments
+    .filter((segment) =>
+      filteringSegmentKeyComponents.every((filteringKeyComponent) =>
+        segment.key.find(
+          (keyComponent) =>
+            keyComponent.dimension === filteringKeyComponent.dimension &&
+            keyComponent.value === filteringKeyComponent.value
+        )
+      )
+    )
+    .sort((segment1, segment2) => segment2.impact - segment1.impact);
+
+  function renderSegment(sliceInfo: DimensionSliceInfo) {
+    const isSelectedSegment =
+      serializeDimensionSliceKey(sliceInfo?.key) ===
+      serializeDimensionSliceKey(selectedSliceKey);
+
+    let fontColor: Color = "gray";
+    if (sliceInfo.impact > 0) {
+      fontColor = "emerald";
+    } else if (sliceInfo.impact < 0) {
+      fontColor = "rose";
+    }
+    return (
+      <ListItem className="justify-center">
+        <Grid numItems={3} className="w-[100%] min-w-[1000px]">
+          {formatDimensionSliceKeyForRendering(
+            sliceInfo?.key!,
+            undefined,
+            true,
+            "center",
+            `flex-wrap col-span-1 gap-y-1 ${isSelectedSegment && "font-bold"}`
+          )}
+          <Flex justifyContent="center" className="space-x-4 col-span-2">
+            <Grid numItems={3} className="w-[100%] gap-3">
+              <Flex className="col-span-1" justifyContent="end">
+                <Text color={fontColor} className="whitespace-normal">
+                  {sliceInfo.impact > 0 ? "+" : ""}
+                  {formatMetricValue(
+                    sliceInfo.impact,
+                    metric.aggregationMethod
+                  )}{" "}
+                  (
+                  {sliceInfo.baselineValue.sliceValue === 0
+                    ? "N/A"
+                    : `${sliceInfo.impact > 0 ? "+" : ""}${formatNumber(
+                        ((sliceInfo.comparisonValue.sliceValue -
+                          sliceInfo.baselineValue.sliceValue) /
+                          sliceInfo.baselineValue.sliceValue) *
+                          100
+                      )}%`}
+                  )
+                </Text>
+              </Flex>
+              <Flex className="col-span-2" justifyContent="start">
+                <DeltaBar
+                  value={(sliceInfo.impact / maxImpact) * 100}
+                  className="col-span-2"
+                />
+              </Flex>
+            </Grid>
           </Flex>
-        ) : (
-          <Grid numItems={2}>
-            <div>
-              <List>
-                <ListItem className="justify-center">
-                  <Subtitle>Slice</Subtitle>
-                </ListItem>
-                {relatedSliceInfo.map((sliceInfo) => (
-                  <ListItem className="h-[50px] justify-center">
-                    {formatDimensionSliceKeyForRendering(
-                      sliceInfo?.key!,
-                      undefined,
-                      serializeDimensionSliceKey(sliceInfo?.key) ===
-                        serializeDimensionSliceKey(selectedSliceKey)
-                    )}
-                  </ListItem>
-                ))}
-              </List>
-            </div>
-            <div>
-              <List>
-                <ListItem className="justify-center">
-                  <Subtitle>Impact</Subtitle>
-                </ListItem>
-                {relatedSliceInfo.map((sliceInfo) => {
-                  return (
-                    <ListItem className="h-[50px]">
-                      <Flex
-                        justifyContent="end"
-                        alignItems="center"
-                        className="space-x-4"
-                      >
-                        <Text
-                          color={sliceInfo.impact > 0 ? "emerald" : "rose"}
-                          className="truncate"
-                        >
-                          {sliceInfo.impact > 0 ? "+" : ""}
-                          {formatNumber(sliceInfo.impact)} (
-                          {sliceInfo.baselineValue.sliceValue === 0
-                            ? "N/A"
-                            : `${sliceInfo.impact > 0 ? "+" : ""}${formatNumber(
-                                ((sliceInfo.comparisonValue.sliceValue -
-                                  sliceInfo.baselineValue.sliceValue) /
-                                  sliceInfo.baselineValue.sliceValue) *
-                                  100
-                              )}%`}
-                          )
-                        </Text>
-                        <DeltaBar
-                          value={(sliceInfo.impact / maxImpact) * 100}
-                          className="w-[80%]"
-                        />
-                      </Flex>
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </div>
-          </Grid>
-        )}
-      </Card>
+        </Grid>
+      </ListItem>
+    );
+  }
+
+  function renderSegments() {
+    if (filteredRelatedSegments.length > 20 && !showAll) {
+      return (
+        <>
+          {filteredRelatedSegments
+            .slice(0, 5)
+            .map((sliceInfo) => renderSegment(sliceInfo))}
+          <Flex justifyContent="center" className="py-3">
+            {filteredRelatedSegments.length - 10} segments skipped,
+            <button
+              className="btn-link text-sky-800 pl-1"
+              onClick={() => setShowAll(true)}
+            >
+              show all
+            </button>
+          </Flex>
+          {filteredRelatedSegments
+            .slice(-5)
+            .map((sliceInfo) => renderSegment(sliceInfo))}
+        </>
+      );
+    }
+
+    return filteredRelatedSegments.map((sliceInfo) => renderSegment(sliceInfo));
+  }
+
+  return (
+    <Flex className="justify-center mt-5" flexDirection="col">
+      <Flex justifyContent="center">
+        <Title>Metrics: {formatMetricName(metric)}</Title>
+      </Flex>
+      <Grid numItems={3} className="w-[100%] min-w-[1000px]">
+        <List className="col-span-3">
+          <ListItem className="justify-center overflow-visible">
+            <Grid numItems={3} className="w-[100%] min-w-[1000px]">
+              <Flex justifyContent="center" className="col-span-1">
+                <Subtitle>Segment</Subtitle>
+              </Flex>
+              <Flex
+                justifyContent="center"
+                alignItems="center"
+                className="col-span-2 gap-2 overflow-visible"
+              >
+                <Subtitle className="col-span-2">
+                  Change: absolute change (relative change)
+                </Subtitle>
+              </Flex>
+            </Grid>
+          </ListItem>
+          {renderSegments()}
+        </List>
+      </Grid>
     </Flex>
   );
 }

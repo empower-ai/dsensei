@@ -4,12 +4,13 @@ from dataclasses import asdict
 from typing import Dict, List, Tuple
 
 import pandas as pd
-from app.data_source.datasource.bigquerySource import BigquerySource
-from app.insight.services.metrics import (Dimension, DimensionSliceInfo,
-                                          DimensionValuePair, Metric,
-                                          NpEncoder, PeriodValue, calculateTotalSegments, find_key_dimensions)
 from google.cloud import bigquery
 from loguru import logger
+
+from app.data_source.bigquery.bigquery_source import BigquerySource
+from app.insight.services.metrics import (Dimension, SegmentInfo,
+                                          DimensionValuePair, MetricInsight,
+                                          NpEncoder, PeriodValue, calculate_total_segments, find_key_dimensions, Metric, AggregateMethod)
 
 SUB_QUERY_TEMPLATE = """
 SELECT
@@ -72,18 +73,16 @@ class BqMetrics():
                  comparison_period: Tuple[datetime.date, datetime.date],
                  date_column,
                  date_column_type,
-                 agg_method: Dict[str, str],
-                 metrics_name: Dict[str, str],
+                 metrics: List[Metric],
                  columns: List[str],
-                 expected_value: List[float] = 0) -> None:
+                 expected_value: float = 0) -> None:
         self.table_name = table_name
         self.baseline_period = baseline_period
         self.comparison_period = comparison_period
         self.date_column = date_column
         self.date_column_converted = f"IF({date_column} > 1924991999999, TIMESTAMP_MICROS({date_column}), IF({date_column} > 1924991999, TIMESTAMP_MILLIS({date_column}), TIMESTAMP_SECONDS({date_column})))" \
             if date_column_type == "INTEGER" else f"TIMESTAMP({date_column})"
-        self.agg_method = agg_method
-        self.metrics_name = metrics_name
+        self.metrics = metrics
         self.columns = columns
         self.client = bigquery.Client()
         self.bq_source = BigquerySource()
@@ -101,15 +100,15 @@ class BqMetrics():
 
     def _get_agg(self) -> List[str]:
         agg = []
-        for k, v in self.agg_method.items():
-            if v == 'sum':
-                agg.append(f'SUM({k}) AS {k}')
-            elif v == 'nunique':
-                agg.append(f'COUNT(DISTINCT {k}) AS {k}')
-            elif v == 'count':
-                agg.append(f'COUNT({k}) AS {k}')
+        for metric in self.metrics:
+            if metric.get_metric_type() == AggregateMethod.SUM.name:
+                agg.append(f'SUM({metric.column}) AS {metric.get_id()}')
+            elif metric.get_metric_type() == AggregateMethod.DISTINCT.name:
+                agg.append(f'COUNT(DISTINCT {metric.column}) AS {metric.get_id()}')
+            elif metric.get_metric_type() == AggregateMethod.COUNT.name:
+                agg.append(f'COUNT({metric.column}) AS {metric.get_id()}')
             else:
-                raise Exception(f'Invalid aggregation method {v} for {k}')
+                raise Exception(f'Invalid aggregation method {metric.get_metric_type()} for {metric.column}')
         return agg
 
     def _prepare_value_by_date_query(self) -> str:
@@ -136,7 +135,7 @@ class BqMetrics():
         ))
         date_column = self.date_column
         agg = self._get_agg()
-        metric_column = [k for k, v in self.agg_method.items()]
+        metric_column = [metric.get_id() for metric in self.metrics]
 
         columns_to_select = [
             f"CAST({x} AS STRING) AS {x}" for x in groupby_columns
@@ -216,17 +215,18 @@ class BqMetrics():
             values = list(df[column].unique())
             if "ALL" in values:
                 values.remove('ALL')
-            dimensions[column] = Dimension(name=column, values=values)
+            # TODO
+            dimensions[column] = Dimension(name=column, score=0)
         return dimensions
 
-    def _get_dimension_slice_info(self, df: pd.DataFrame, metric_name: str, baseline_num_rows: int, comparison_num_rows: int) -> List[DimensionSliceInfo]:
+    def _get_dimension_slice_info(self, df: pd.DataFrame, metric_name: str, baseline_num_rows: int, comparison_num_rows: int) -> List[SegmentInfo]:
         def mapToObj(_, row):
             key = tuple(
                 [DimensionValuePair(self.columns[i], str(row[self.columns[i]]))
                  for i in range(len(self.columns))
                  if row[self.columns[i]] != 'ALL'])
             if len(key) == 0:
-                return DimensionSliceInfo()
+                return SegmentInfo()
             sorted_key = sorted(key, key=lambda x: x.dimension)
             serialized_key = '|'.join(
                 [f'{value_pair.dimension}:{value_pair.value}' for value_pair in sorted_key])
@@ -235,8 +235,10 @@ class BqMetrics():
                 row['_cnt_comparison'], row['_cnt_comparison'] / comparison_num_rows, row[metric_name + "_comparison"])
             last_period_value = PeriodValue(
                 row['_cnt_baseline'], row['_cnt_baseline'] / baseline_num_rows, row[metric_name + "_baseline"])
-            return DimensionSliceInfo(key, serialized_key, [], last_period_value, current_period_value,
-                                      current_period_value.sliceValue - last_period_value.sliceValue, row['change_percentage'], row['z_score'])
+            return SegmentInfo(
+                key,
+                serialized_key, last_period_value, current_period_value,
+                current_period_value.sliceValue - last_period_value.sliceValue, row['change_percentage'], row['z_score'])
 
         ret = df.apply(
             lambda row: mapToObj(row.name, row), axis=1).tolist()
@@ -245,36 +247,36 @@ class BqMetrics():
         return ret
 
     def build_metrics(self,
-                      metric_name: str,
+                      metric: Metric,
                       df: pd.DataFrame,
-                      value_by_date_df: pd.DataFrame) -> Metric:
-        metric = Metric()
-        metric.name = self.metrics_name[metric_name]
-        metric.keyDimensions = self.find_key_dimensions(df)
-        metric.dimensions = self._get_dimensions(df)
-        metric.totalSegments = calculateTotalSegments(metric.dimensions)
+                      value_by_date_df: pd.DataFrame) -> MetricInsight:
+        insight = MetricInsight()
+        insight.name = metric.get_id()
+        insight.keyDimensions = self.find_key_dimensions(df)
+        insight.dimensions = self._get_dimensions(df)
+        insight.totalSegments = calculate_total_segments(insight.dimensions)
 
-        metric.baselineNumRows = df['_cnt_baseline'].max()
-        metric.comparisonNumRows = df['_cnt_comparison'].max()
+        insight.baselineNumRows = df['_cnt_baseline'].max()
+        insight.comparisonNumRows = df['_cnt_comparison'].max()
 
-        metric.baselineValue = df[metric_name + '_baseline'].max()
-        metric.comparisonValue = df[metric_name + '_comparison'].max()
+        insight.baselineValue = df[metric.get_id() + '_baseline'].max()
+        insight.comparisonValue = df[metric.get_id() + '_comparison'].max()
 
         all_dimension_slices = self._get_dimension_slice_info(
-            df, metric_name, metric.baselineNumRows, metric.comparisonNumRows)
+            df, metric.get_id(), insight.baselineNumRows, insight.comparisonNumRows)
 
         logger.info('Building top driver slice keys')
 
         slices_suitable_for_top_slices = [
             dimension_slice for dimension_slice in all_dimension_slices
-            if set(map(lambda key: key.dimension, dimension_slice.key)).issubset(set(metric.keyDimensions))
+            if set(map(lambda key: key.dimension, dimension_slice.key)).issubset(set(insight.keyDimensions))
         ]
-        metric.topDriverSliceKeys = list(map(
+        insight.topDriverSliceKeys = list(map(
             lambda slice: slice.serializedKey,
             [dimension_slice for dimension_slice in slices_suitable_for_top_slices[:1000]]))
-        metric.dimensionSliceInfo = {dimension_slice.serializedKey: dimension_slice
-                                     for dimension_slice in all_dimension_slices
-                                     }
+        insight.dimensionSliceInfo = {dimension_slice.serializedKey: dimension_slice
+                                      for dimension_slice in all_dimension_slices
+                                      }
 
         baseline_by_day = value_by_date_df.loc[
             value_by_date_df['day'].between(
@@ -285,36 +287,36 @@ class BqMetrics():
                 self.comparison_period[0], self.comparison_period[1] + datetime.timedelta(days=1))
         ]
 
-        metric.baselineValueByDate = [
+        insight.baselineValueByDate = [
             {
                 "date": row['day'].strftime('%Y-%m-%d'),
-                "value": row[metric_name]
+                "value": row[metric.get_id()]
             }
             for _, row in baseline_by_day.iterrows()
         ]
-        metric.comparisonValueByDate = [
+        insight.comparisonValueByDate = [
             {
                 "date": row['day'].strftime('%Y-%m-%d'),
-                "value": row[metric_name]
+                "value": row[metric.get_id()]
             }
             for _, row in comparison_by_day.iterrows()
         ]
-        metric.baselineDateRange = [
+        insight.baselineDateRange = [
             self.baseline_period[0].strftime('%Y-%m-%d'),
             self.baseline_period[1].strftime('%Y-%m-%d')
         ]
-        metric.comparisonDateRange = [
+        insight.comparisonDateRange = [
             self.comparison_period[0].strftime('%Y-%m-%d'),
             self.comparison_period[1].strftime('%Y-%m-%d')
         ]
 
-        metric.expectedChangePercentage = 0
-        metric.aggregationMethod = self.agg_method[metric_name]
+        insight.expectedChangePercentage = 0
+        insight.aggregationMethod = metric.get_metric_type()
 
-        return metric
+        return insight
 
     def find_key_dimensions(self, df: pd.DataFrame) -> List[str]:
-        metric_name = next(iter(self.agg_method.keys()))
+        metric_name = self.metrics[0].get_id()
         single_dimension_df = df[df.apply(lambda row: (row == 'ALL').sum() == len(self.columns) - 1, axis=1)]
         single_dimension_df['dimension_value'] = single_dimension_df.apply(lambda row: row[row.index[0] in self.columns and row != 'ALL'][0], axis=1)
         single_dimension_df['dimension_name'] = single_dimension_df.apply(lambda row: row[row.index[0] in self.columns and row != 'ALL'].index[0], axis=1)
@@ -336,9 +338,8 @@ class BqMetrics():
             value_by_date_query).to_dataframe()
 
         ret = {
-            k: asdict(self.build_metrics(k, result, value_by_date_result))
-            for k in self.metrics_name.keys()
-            if k != self.date_column
+            metric.get_id(): asdict(self.build_metrics(metric, result, value_by_date_result))
+            for metric in self.metrics
         }
 
         return json.dumps(ret, cls=NpEncoder, allow_nan=False)

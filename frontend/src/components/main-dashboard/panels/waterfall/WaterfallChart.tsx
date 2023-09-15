@@ -111,7 +111,7 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
       />
       <YAxis label={{ value: "Impact", angle: -90, position: "insideLeft" }} />
       <Tooltip
-        formatter={formatNumber}
+        formatter={(n) => formatNumber(n as number)}
         labelFormatter={(label) => {
           if (label === "Total" || label === "All Others") {
             return <div>{label}</div>;

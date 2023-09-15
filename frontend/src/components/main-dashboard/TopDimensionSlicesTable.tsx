@@ -14,11 +14,13 @@ import { ReactNode, useState } from "react";
 import { CSVLink } from "react-csv";
 import { useDispatch, useSelector } from "react-redux";
 import { TooltipIcon } from "../../common/TooltipIcon";
+import getSettings from "../../common/server-data/settings";
 import { InsightMetric } from "../../common/types";
 import { RootState } from "../../store";
 import {
   RowStatus,
   setMode,
+  setSensitivity,
   toggleGroupRows,
 } from "../../store/comparisonInsight";
 import { TargetDirection } from "../../types/report-config";
@@ -54,8 +56,14 @@ export default function TopDimensionSlicesTable({
   const [isCollapsed, setIsCollapse] = useState(true);
 
   const mode = useSelector((state: RootState) => state.comparisonInsight.mode);
+  const sensitivity = useSelector(
+    (state: RootState) => state.comparisonInsight.sensitivity
+  );
   const setTopDriverMode = (mode: "impact" | "outlier") => {
     dispatch(setMode(mode));
+  };
+  const setSensitvity = (sensitivity: "low" | "medium" | "high") => {
+    dispatch(setSensitivity(sensitivity));
   };
 
   const overallChange =
@@ -124,6 +132,21 @@ export default function TopDimensionSlicesTable({
               />
             </>
           )}
+          {mode === "outlier" && (
+            <>
+              <Text>Sensitivity:</Text>
+              <Select
+                value={sensitivity}
+                onValueChange={(e) => {
+                  setSensitvity(e as any);
+                }}
+              >
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </Select>
+            </>
+          )}
           {enableGroupToggle && (
             <>
               <Text>|</Text>
@@ -170,28 +193,35 @@ export default function TopDimensionSlicesTable({
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Segment Size
-                <TooltipIcon text="Size of the segment, calculated by: total_rows_in_segment / total_rows" />
-              </Flex>
-            </TableHeaderCell>
-            <TableHeaderCell>
-              <Flex justifyContent="start" className="gap-2">
-                Metrics Value
+                {metric.name}
                 <TooltipIcon text="Metric value aggregated to the segment." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Metrics Change
-                <TooltipIcon text="Impact of the segment to the overall metric movement, calculated by: segment_value_of_comparison_period - segment_value_of_base_period." />
+                {metric["aggregationMethod"] === "RATIO"
+                  ? `Absolute Contribution`
+                  : "Relative Performance"}
+                {metric["aggregationMethod"] === "RATIO" ? (
+                  <TooltipIcon text="Absolute contribution of the segment to the overall metric movement." />
+                ) : (
+                  <TooltipIcon text="Performance of the segment compared with average performance, calculated by: change_pct_of_segment - avg_change_pct" />
+                )}
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                Relative Performance
-                <TooltipIcon text="Performance of the segment compared with average performance, calculated by: change_pct_of_segment - avg_change_pct" />
+                Segment Size
+                <TooltipIcon text="Size of the segment, calculated by: total_rows_in_segment / total_rows" />
               </Flex>
             </TableHeaderCell>
+            {getSettings().showDebugInfo && (
+              <TableHeaderCell>
+                <Flex justifyContent="start" className="gap-2">
+                  Debug Info
+                </Flex>
+              </TableHeaderCell>
+            )}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -205,6 +235,7 @@ export default function TopDimensionSlicesTable({
                 overallChange={overallChange}
                 dimension={dimension}
                 targetDirection={targetDirection}
+                aggregationMethod={metric.aggregationMethod}
               />
             );
           })}

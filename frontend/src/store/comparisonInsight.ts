@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DimensionSliceKey, InsightMetric } from "../common/types";
+import { Graph } from "../common/utils";
 
 export const csvHeader = [
   "columns",
@@ -43,20 +44,40 @@ export interface ComparisonInsightState {
   }[];
   isLoading: boolean;
   groupRows: boolean;
-  selectedDimensions: string[];
   mode: "impact" | "outlier";
+  sensitivity: "low" | "medium" | "high";
 }
+
+const THRESHOLD = {
+  low: 0.075,
+  medium: 0.15,
+  high: 0.25,
+};
 
 function helper(
   row: RowStatus,
   checkingKey: string,
   checkingKeyComponents: string[],
+  connectedSegments: string[][],
+  segmentToConnectedSegmentsIndex: {
+    [key: string]: number;
+  },
   maxNumChildren?: number
 ) {
+  const rowKey = row.keyComponents.join("|");
+  let rowKeys = [rowKey];
+  const connectedSegmentsIndex = segmentToConnectedSegmentsIndex[rowKey];
+  if (segmentToConnectedSegmentsIndex[rowKey]) {
+    rowKeys = connectedSegments[connectedSegmentsIndex];
+  }
+
   if (
-    !row.keyComponents.every((component) =>
-      checkingKeyComponents.includes(component)
-    )
+    !rowKeys.find((rowKey) => {
+      const rowKeyComponents = rowKey.split("|");
+      return rowKeyComponents.every((component) =>
+        checkingKeyComponents.includes(component)
+      );
+    })
   ) {
     return false;
   }
@@ -71,7 +92,16 @@ function helper(
 
   let hasMatching = false;
   Object.values(row.children).forEach((child) => {
-    if (helper(child, checkingKey, checkingKeyComponents, maxNumChildren)) {
+    if (
+      helper(
+        child,
+        checkingKey,
+        checkingKeyComponents,
+        connectedSegments,
+        segmentToConnectedSegmentsIndex,
+        maxNumChildren
+      )
+    ) {
       hasMatching = true;
     }
   });
@@ -85,79 +115,13 @@ function helper(
   return true;
 }
 
-function buildRowStatusTree(
-  topDriverSliceKeys: string[],
-  keysToFilter: string[],
-  appendOnce?: boolean
-) {
-  const result: {
-    [key: string]: RowStatus;
-  } = {};
-  topDriverSliceKeys
-    .filter((key) => !keysToFilter.includes(key))
-    .forEach((key) => {
-      const keyComponents = key.split("|");
-      let hasMatching = false;
-
-      for (const child of Object.values(result)) {
-        if (helper(child, key, keyComponents)) {
-          hasMatching = true;
-        }
-
-        if (hasMatching && appendOnce) {
-          break;
-        }
-      }
-
-      if (!hasMatching) {
-        result[key] = {
-          key: [key],
-          keyComponents: keyComponents,
-          isExpanded: false,
-          children: {},
-          hasCalculatedChildren: true,
-        };
-      }
-    });
-
-  return result;
-}
-
-function trimBranchHelper(row: RowStatus, rowKey: string): string[] {
-  const numChildren = Object.keys(row.children).length;
-  if (numChildren === 0) {
-    return [];
-  } else {
-    const result = [];
-    if (numChildren === 1) {
-      result.push(rowKey);
-    }
-
-    return [
-      ...result,
-      ...Object.entries(row.children).flatMap((child) => {
-        const [childKey, childValue] = child;
-        return trimBranchHelper(childValue, childKey);
-      }),
-    ];
-  }
-}
-
-function buildWaterfall(
-  metric: InsightMetric,
-  selectedDimensions: string[]
-): {
+function buildWaterfall(metric: InsightMetric): {
   key: DimensionSliceKey;
   impact: number;
 }[] {
-  const topDriverSliceKeys = getFilteredTopDriverSliceKeys(
-    metric,
-    selectedDimensions
-  );
-  const dimensionSliceInfo = getFilteredDimensionSliceInfo(
-    metric,
-    selectedDimensions
-  );
+  return [];
+  const topDriverSliceKeys = metric.topDriverSliceKeys;
+  const dimensionSliceInfo = metric.dimensionSliceInfo;
 
   const initialKey = topDriverSliceKeys[0];
   const initialSlice = dimensionSliceInfo[initialKey];
@@ -221,7 +185,7 @@ function buildRowStatusMap(
   metric: InsightMetric,
   groupRows: boolean,
   mode: "impact" | "outlier" = "impact",
-  selectedDimensions: string[]
+  sensitivity: "low" | "medium" | "high" = "medium"
 ): [
   {
     [key: string]: RowStatus;
@@ -230,19 +194,22 @@ function buildRowStatusMap(
 ] {
   let result: { [key: string]: RowStatus } = {};
   const resultInCSV: (number | string)[][] = [csvHeader];
-  const filteredTopDriverSliceKeys = getFilteredTopDriverSliceKeys(
-    metric,
-    selectedDimensions
-  );
-  const topDriverSliceKeys = filteredTopDriverSliceKeys.filter((key) => {
+  const filteredTopDriverSliceKeys = metric.topDriverSliceKeys;
+  let topDriverSliceKeys = filteredTopDriverSliceKeys.filter((key) => {
     const sliceInfo = metric.dimensionSliceInfo[key];
 
     // Only show the slice if it has a significant impact or is an outlier
     const changeDev = sliceInfo.changeDev;
-    return mode === "impact" || changeDev > 0.2;
+    return (
+      mode === "impact" ||
+      (changeDev > THRESHOLD[sensitivity] && sliceInfo.confidence < 0.05)
+    );
   });
 
-  const keysToFilter: string[] = [];
+  const segmentToConnectedSegmentsIndex: {
+    [key: string]: number;
+  } = {};
+  let connectedSegments: string[][] = [];
   if (mode === "outlier") {
     const sortedTopDriverKeys = topDriverSliceKeys.sort((key1, key2) => {
       const keyComponents1 = key1.split("|");
@@ -251,9 +218,14 @@ function buildRowStatusMap(
       return keyComponents1.length - keyComponents2.length;
     });
 
+    const connectedSegmentGraph = new Graph();
+    sortedTopDriverKeys.forEach((key) => {
+      connectedSegmentGraph.addVertex(key);
+    });
     sortedTopDriverKeys.forEach((key, idx) => {
       const keyComponents = key.split("|");
       const sliceInfo = metric.dimensionSliceInfo[key];
+
       for (let i = 0; i < idx; ++i) {
         const checkingKey = sortedTopDriverKeys[i];
         const checkingKeyComponents = checkingKey.split("|");
@@ -265,52 +237,100 @@ function buildRowStatusMap(
         ) {
           const checkingSliceInfo = metric.dimensionSliceInfo[checkingKey];
           const sliceValue =
-            sliceInfo.comparisonValue.sliceValue +
-            sliceInfo.baselineValue.sliceValue;
+            sliceInfo.comparisonValue.sliceCount +
+            sliceInfo.baselineValue.sliceCount;
           const checkingSliceValue =
-            checkingSliceInfo.comparisonValue.sliceValue +
-            checkingSliceInfo.baselineValue.sliceValue;
+            checkingSliceInfo.comparisonValue.sliceCount +
+            checkingSliceInfo.baselineValue.sliceCount;
 
           if (
             Math.abs((sliceValue - checkingSliceValue) / checkingSliceValue) <
             0.05
           ) {
-            keysToFilter.push(checkingKey);
+            connectedSegmentGraph.addEdge(key, checkingKey);
           }
         }
       }
     });
 
-    let additionalKeysToFilter: string[] = [];
-    let tempRowStatusTree: {
-      [key: string]: RowStatus;
+    connectedSegments = connectedSegmentGraph.connectedComponents();
+
+    const segmentToRepresentingSegment: {
+      [key: string]: string;
     } = {};
-    do {
-      tempRowStatusTree = buildRowStatusTree(topDriverSliceKeys, keysToFilter);
-      additionalKeysToFilter = Object.entries(tempRowStatusTree).flatMap(
-        (resultEntry) => {
-          const [key, value] = resultEntry;
-          return trimBranchHelper(value, key);
-        }
-      );
-      keysToFilter.push(...additionalKeysToFilter);
-    } while (additionalKeysToFilter.length > 0);
+
+    connectedSegments.forEach((cluster, clusterIdx) => {
+      if (cluster.length === 1) {
+        return;
+      }
+
+      const key = cluster.sort((key1, key2) => {
+        const keyComponents1 = key1.split("|");
+        const keyComponents2 = key2.split("|");
+
+        return keyComponents2.length - keyComponents1.length;
+      })[0];
+      cluster.forEach((element) => {
+        segmentToRepresentingSegment[element] = key;
+        segmentToConnectedSegmentsIndex[key] = clusterIdx;
+      });
+    });
+
+    [...topDriverSliceKeys].forEach((key, idx) => {
+      if (
+        segmentToRepresentingSegment[key] &&
+        segmentToRepresentingSegment[key] !== key
+      ) {
+        delete topDriverSliceKeys[idx];
+      }
+    });
+
+    topDriverSliceKeys = topDriverSliceKeys.filter((key) => key);
   }
 
   if (!groupRows) {
-    topDriverSliceKeys
-      .filter((key) => !keysToFilter.includes(key))
-      .forEach((key) => {
+    topDriverSliceKeys.forEach((key) => {
+      result[key] = {
+        key: [key],
+        keyComponents: key.split("|"),
+        isExpanded: false,
+        children: {},
+        hasCalculatedChildren: true,
+      };
+    });
+  } else {
+    topDriverSliceKeys.forEach((key) => {
+      const keyComponents = key.split("|");
+      let hasMatching = false;
+
+      for (const child of Object.values(result)) {
+        if (
+          helper(
+            child,
+            key,
+            keyComponents,
+            connectedSegments,
+            segmentToConnectedSegmentsIndex
+          )
+        ) {
+          hasMatching = true;
+        }
+
+        if (hasMatching) {
+          break;
+        }
+      }
+
+      if (!hasMatching) {
         result[key] = {
           key: [key],
-          keyComponents: key.split("|"),
+          keyComponents: keyComponents,
           isExpanded: false,
           children: {},
           hasCalculatedChildren: true,
         };
-      });
-  } else {
-    result = buildRowStatusTree(topDriverSliceKeys, keysToFilter, true);
+      }
+    });
   }
 
   Object.keys(result).forEach((sliceKey) => {
@@ -328,10 +348,7 @@ function buildRowStatusMap(
   return [result, resultInCSV];
 }
 
-function buildRowStatusByDimensionMap(
-  metric: InsightMetric,
-  selectedDimensions: string[]
-): {
+function buildRowStatusByDimensionMap(metric: InsightMetric): {
   [key: string]: {
     rowStatus: {
       [key: string]: RowStatus;
@@ -349,7 +366,7 @@ function buildRowStatusByDimensionMap(
   } = {};
 
   const dimensionSliceInfoSorted = Object.values(
-    getFilteredDimensionSliceInfo(metric, selectedDimensions)
+    metric.dimensionSliceInfo
   ).sort((i1, i2) => Math.abs(i2.impact) - Math.abs(i1.impact));
 
   dimensionSliceInfoSorted.forEach((sliceInfo) => {
@@ -389,34 +406,6 @@ function buildRowStatusByDimensionMap(
   return result;
 }
 
-function getFilteredTopDriverSliceKeys(
-  metric: InsightMetric,
-  selectedDimensions: string[]
-) {
-  return metric.topDriverSliceKeys.filter((key) => {
-    const sliceInfo = metric.dimensionSliceInfo[key];
-
-    return sliceInfo.key.every((k) => selectedDimensions.includes(k.dimension));
-  });
-}
-
-function getFilteredDimensionSliceInfo(
-  metric: InsightMetric,
-  selectedDimensions: string[]
-) {
-  const filteredEntries = Object.entries(metric.dimensionSliceInfo).filter(
-    (entry) => {
-      const sliceInfo = entry[1];
-
-      return sliceInfo.key.every((k) =>
-        selectedDimensions.includes(k.dimension)
-      );
-    }
-  );
-
-  return Object.fromEntries(filteredEntries);
-}
-
 const initialState: ComparisonInsightState = {
   analyzingMetrics: {} as InsightMetric,
   relatedMetrics: [],
@@ -426,8 +415,8 @@ const initialState: ComparisonInsightState = {
   waterfallRows: [],
   isLoading: true,
   groupRows: true,
-  selectedDimensions: [],
   mode: "outlier",
+  sensitivity: "medium",
 };
 
 export const comparisonMetricsSlice = createSlice({
@@ -443,9 +432,6 @@ export const comparisonMetricsSlice = createSlice({
     ) => {
       const keys = Object.keys(action.payload);
       state.analyzingMetrics = action.payload[keys[0]] as InsightMetric;
-      state.selectedDimensions = Object.values(
-        state.analyzingMetrics.dimensions
-      ).map((d) => d.name);
       state.relatedMetrics = keys
         .map((key, index) => {
           if (index === 0) {
@@ -459,16 +445,12 @@ export const comparisonMetricsSlice = createSlice({
         state.analyzingMetrics,
         true,
         state.mode,
-        state.selectedDimensions
+        state.sensitivity
       );
       state.tableRowStatusByDimension = buildRowStatusByDimensionMap(
-        state.analyzingMetrics,
-        state.selectedDimensions
+        state.analyzingMetrics
       );
-      state.waterfallRows = buildWaterfall(
-        state.analyzingMetrics,
-        state.selectedDimensions
-      );
+      state.waterfallRows = buildWaterfall(state.analyzingMetrics);
       state.isLoading = false;
     },
 
@@ -478,7 +460,19 @@ export const comparisonMetricsSlice = createSlice({
         state.analyzingMetrics,
         true,
         state.mode,
-        state.selectedDimensions
+        state.sensitivity
+      );
+    },
+    setSensitivity: (
+      state,
+      action: PayloadAction<"low" | "medium" | "high">
+    ) => {
+      state.sensitivity = action.payload;
+      [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
+        state.analyzingMetrics,
+        true,
+        state.mode,
+        state.sensitivity
       );
     },
     toggleRow: (
@@ -498,10 +492,7 @@ export const comparisonMetricsSlice = createSlice({
 
             if (!rowStatus.hasCalculatedChildren) {
               const dimensionSliceInfoSorted = Object.values(
-                getFilteredDimensionSliceInfo(
-                  state.analyzingMetrics,
-                  state.selectedDimensions
-                )
+                state.analyzingMetrics.dimensionSliceInfo
               )
                 .filter((sliceInfo) =>
                   sliceInfo.key.find((k) => k.dimension === dimension)
@@ -516,7 +507,14 @@ export const comparisonMetricsSlice = createSlice({
                 const keyComponents = sliceInfo.key.map(
                   (keyPart) => `${keyPart.dimension}:${keyPart.value}`
                 );
-                helper(rowStatus!, sliceInfo.serializedKey, keyComponents, 10);
+                helper(
+                  rowStatus!,
+                  sliceInfo.serializedKey,
+                  keyComponents,
+                  [],
+                  {},
+                  10
+                );
               });
             }
           } else {
@@ -534,37 +532,13 @@ export const comparisonMetricsSlice = createSlice({
     selectSliceForDetail: (state, action: PayloadAction<DimensionSliceKey>) => {
       state.selectedSliceKey = action.payload;
     },
-    updateSelectedDimensions: (state, action: PayloadAction<string[]>) => {
-      if (action.payload.length === 0) {
-        state.selectedDimensions = Object.values(
-          state.analyzingMetrics.dimensions
-        ).map((d) => d.name);
-      } else {
-        state.selectedDimensions = action.payload;
-      }
-
-      [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
-        state.analyzingMetrics,
-        true,
-        state.mode,
-        state.selectedDimensions
-      );
-      state.tableRowStatusByDimension = buildRowStatusByDimensionMap(
-        state.analyzingMetrics,
-        state.selectedDimensions
-      );
-      state.waterfallRows = buildWaterfall(
-        state.analyzingMetrics,
-        state.selectedDimensions
-      );
-    },
     toggleGroupRows: (state, action: PayloadAction<void>) => {
       state.groupRows = !state.groupRows;
       [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
         state.analyzingMetrics,
         state.groupRows,
         state.mode,
-        state.selectedDimensions
+        state.sensitivity
       );
     },
   },
@@ -577,7 +551,7 @@ export const {
   setLoadingStatus,
   toggleGroupRows,
   setMode,
-  updateSelectedDimensions,
+  setSensitivity,
 } = comparisonMetricsSlice.actions;
 
 export default comparisonMetricsSlice.reducer;
