@@ -59,12 +59,6 @@ export default function TopDimensionSlicesTable({
   const sensitivity = useSelector(
     (state: RootState) => state.comparisonInsight.sensitivity
   );
-  const setTopDriverMode = (mode: "impact" | "outlier") => {
-    dispatch(setMode(mode));
-  };
-  const setSensitvity = (sensitivity: "low" | "medium" | "high") => {
-    dispatch(setSensitivity(sensitivity));
-  };
 
   const overallChange =
     metric.baselineValue === 0
@@ -120,7 +114,7 @@ export default function TopDimensionSlicesTable({
               <Select
                 value={mode}
                 onValueChange={(e) => {
-                  setTopDriverMode(e as any);
+                  dispatch(setMode(e as "impact" | "outlier"));
                 }}
               >
                 <SelectItem value="impact">All Top Segments</SelectItem>
@@ -138,7 +132,7 @@ export default function TopDimensionSlicesTable({
               <Select
                 value={sensitivity}
                 onValueChange={(e) => {
-                  setSensitvity(e as any);
+                  dispatch(setSensitivity(e as "low" | "medium" | "high"));
                 }}
               >
                 <SelectItem value="low">Low</SelectItem>

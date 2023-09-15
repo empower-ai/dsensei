@@ -456,6 +456,7 @@ export const comparisonMetricsSlice = createSlice({
 
     setMode: (state, action: PayloadAction<"impact" | "outlier">) => {
       state.mode = action.payload;
+      state.groupRows = true;
       [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
         state.analyzingMetrics,
         true,
@@ -491,15 +492,14 @@ export const comparisonMetricsSlice = createSlice({
               state.tableRowStatusByDimension[dimension].rowStatus[key];
 
             if (!rowStatus.hasCalculatedChildren) {
-              const dimensionSliceInfoSorted = Object.values(
+              const dimensionSliceInfo = Object.values(
                 state.analyzingMetrics.dimensionSliceInfo
-              )
-                .filter((sliceInfo) =>
-                  sliceInfo.key.find((k) => k.dimension === dimension)
-                )
-                .sort((i1, i2) => Math.abs(i2.impact) - Math.abs(i1.impact));
+              ).filter((sliceInfo) =>
+                sliceInfo.key.find((k) => k.dimension === dimension)
+              );
+              // .sort((i1, i2) => Math.abs(i2.impact) - Math.abs(i1.impact));
 
-              dimensionSliceInfoSorted.forEach((sliceInfo) => {
+              dimensionSliceInfo.forEach((sliceInfo) => {
                 if (sliceInfo.key.length === 1) {
                   return;
                 }
@@ -515,6 +515,8 @@ export const comparisonMetricsSlice = createSlice({
                   {},
                   10
                 );
+
+                rowStatus!.hasCalculatedChildren = true;
               });
             }
           } else {

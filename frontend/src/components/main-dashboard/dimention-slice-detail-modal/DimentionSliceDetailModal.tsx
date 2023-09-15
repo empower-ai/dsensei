@@ -165,6 +165,8 @@ export function DimensionSliceDetailModal({
       setSegmentInsightLoading(false);
     }
 
+    setFilteringSegmentKeyComponents([]);
+
     if (selectedSliceKey && supportTImeSeries) {
       loadInsight();
       loadRelatedSegments();

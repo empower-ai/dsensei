@@ -122,7 +122,7 @@ export function DimensionSliceDetailModalMetricCard({
   }
 
   function renderSegments() {
-    if (filteredRelatedSegments.length > 20 && !showAll) {
+    if (filteredRelatedSegments.length > 10 && !showAll) {
       return (
         <>
           {filteredRelatedSegments

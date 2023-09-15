@@ -14,6 +14,7 @@ import {
 import { ReactNode } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Md5 } from "ts-md5";
+import getSettings from "../../common/server-data/settings";
 import { DimensionSliceInfo, DimensionSliceKey } from "../../common/types";
 import {
   formatDimensionSliceKeyForRendering,
@@ -227,11 +228,13 @@ export default function TopDimensionSlicesTableRow({
             )}
           </Text>
         </TableCell>
-        <TableCell>
-          {renderDebugInfo("P-Score", dimensionSlice.confidence)}
-          {renderDebugInfo("Z-Score", dimensionSlice.changeDev)}
-          {renderDebugInfo("Serialized Key", dimensionSlice.serializedKey)}
-        </TableCell>
+        {getSettings().showDebugInfo && (
+          <TableCell>
+            {renderDebugInfo("P-Score", dimensionSlice.confidence)}
+            {renderDebugInfo("Z-Score", dimensionSlice.changeDev)}
+            {renderDebugInfo("Serialized Key", dimensionSlice.serializedKey)}
+          </TableCell>
+        )}
       </TableRow>
       {rowStatus.isExpanded && renderSubSlices()}
     </>
