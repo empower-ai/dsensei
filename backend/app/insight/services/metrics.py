@@ -83,6 +83,10 @@ class Metric(ABC):
         pass
 
     @abstractmethod
+    def get_display_name(self):
+        pass
+
+    @abstractmethod
     def get_metric_type(self):
         pass
 
@@ -106,15 +110,21 @@ class SingleColumnMetric(Metric):
         if self.name is not None:
             return self.name
 
-        filters_hash = ""
+        filters_hash_suffix = ""
         if len(self.filters) > 0:
             filters_in_json = orjson.dumps(
                 self.filters, option=orjson.OPT_SORT_KEYS)
             hasher = hashlib.sha1()
             hasher.update(filters_in_json)
-            filters_hash = f"_{hasher.hexdigest()[:6]}"
+            filters_hash_suffix = f"_{hasher.hexdigest()[:6]}"
 
-        return f"{self.column}_{self.aggregate_method.name}{filters_hash}"
+        return f"{self.column}_{self.aggregate_method.name}{filters_hash_suffix}"
+
+    def get_display_name(self):
+        if self.name is not None:
+            return self.name
+
+        return f"{self.aggregate_method.name} {self.column}"
 
     def get_aggregation_exprs(self, agg_override: Optional[AggregateMethod] = None) -> Iterable[Expr]:
         col = pl.col(self.column)
@@ -146,6 +156,9 @@ class DualColumnMetric(Metric):
     def __post_init__(self):
         self.numerator_metric.name = f"{self.name} numerator"
         self.denominator_metric.name = f"{self.name} denominator"
+
+    def get_display_name(self):
+        return self.name
 
     def get_id(self):
         return self.name

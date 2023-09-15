@@ -48,7 +48,7 @@ export function DimensionSliceDetailModalMetricCard({
     return null;
   }
 
-  const relatedSegments = relatedSegmentsByMetricName[metric.name];
+  const relatedSegments = relatedSegmentsByMetricName[metric.id];
 
   const maxImpact = Math.max(
     ...relatedSegments.map((info) => Math.abs(info.impact))

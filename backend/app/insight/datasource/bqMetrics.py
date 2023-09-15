@@ -251,7 +251,7 @@ class BqMetrics():
                       df: pd.DataFrame,
                       value_by_date_df: pd.DataFrame) -> MetricInsight:
         insight = MetricInsight()
-        insight.name = metric.get_id()
+        insight.name = metric.get_display_name()
         insight.keyDimensions = self.find_key_dimensions(df)
         insight.dimensions = self._get_dimensions(df)
         insight.totalSegments = calculate_total_segments(insight.dimensions)

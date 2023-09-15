@@ -84,7 +84,8 @@ class DFBasedInsightBuilder(object):
 
     def build_metric_insight(self, metric: Metric, parent_metric: Optional[Metric] = None) -> MetricInsight:
         insight = MetricInsight()
-        insight.name = metric.get_id()
+        insight.id = metric.get_id()
+        insight.name = metric.get_display_name()
         insight.filters = metric.filters if isinstance(
             metric, SingleColumnMetric) else None
         insight.baselineNumRows = self.overall_aggregated_df['count_baseline'].sum()

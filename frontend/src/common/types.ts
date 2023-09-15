@@ -1,4 +1,5 @@
 export interface InsightMetric {
+  id: string;
   name: string;
   keyDimensions: string[];
   totalSegments: number;
