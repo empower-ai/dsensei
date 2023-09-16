@@ -3,11 +3,13 @@ from concurrent.futures import wait
 from itertools import combinations
 from typing import List, Optional, Tuple
 
+import numpy
+import numpy as np
 import orjson
 import polars as polars
 from loguru import logger
 from polars import Expr
-from scipy.stats import mannwhitneyu
+from scipy import stats
 
 from app.insight.services.metrics import (Dimension, DimensionValuePair,
                                           DualColumnMetric, Metric,
@@ -147,28 +149,34 @@ class DFBasedInsightBuilder(object):
         comparison_df = self.comparison_df.groupby(
             self.group_by_columns).agg(self.aggregation_expressions)
 
-        sub_df_agg_methods = flatten([
-            ([polars.sum(metric.get_id())] if isinstance(metric, SingleColumnMetric) else [
-                (polars.sum(metric.numerator_metric.get_id()) /
-                 polars.sum(metric.denominator_metric.get_id())).alias(metric.get_id()),
-                polars.sum(metric.numerator_metric.get_id()).alias(
-                    metric.numerator_metric.get_id()),
-                polars.sum(metric.denominator_metric.get_id()).alias(
-                    metric.denominator_metric.get_id())
-            ]) + [polars.col(metric.get_id()).explode().alias(f"{metric.get_id()}-LIST")]
+        base_joined = comparison_df.join(
+            baseline_df,
+            on=self.group_by_columns,
+            suffix="_baseline",
+            how='outer'
+        ).fill_null(0)
+
+        sub_df_agg_methods_alt = flatten([
+            ([polars.sum(metric.get_id()), polars.sum(f"{metric.get_id()}_baseline")] if isinstance(metric, SingleColumnMetric) else [
+                _safe_divide(polars.sum(metric.numerator_metric.get_id()), polars.sum(metric.denominator_metric.get_id())).alias(metric.get_id()),
+                polars.sum(metric.numerator_metric.get_id()).alias(metric.numerator_metric.get_id()),
+                polars.sum(metric.denominator_metric.get_id()).alias(metric.denominator_metric.get_id()),
+
+                _safe_divide(polars.sum(f"{metric.numerator_metric.get_id()}_baseline"), polars.sum(f"{metric.denominator_metric.get_id()}_baseline")).alias(
+                    f"{metric.get_id()}_baseline"),
+                polars.sum(f"{metric.numerator_metric.get_id()}_baseline").alias(f"{metric.numerator_metric.get_id()}_baseline"),
+                polars.sum(f"{metric.denominator_metric.get_id()}_baseline").alias(f"{metric.denominator_metric.get_id()}_baseline")
+            ]) + [
+                polars.col(metric.get_id()).explode().alias(f"{metric.get_id()}-LIST"),
+                polars.col(f"{metric.get_id()}_baseline").explode().alias(f"{metric.get_id()}-LIST_baseline")
+            ]
             for metric in self.metrics
-        ]) + [polars.sum("count").alias("count")]
+        ]) + [polars.sum("count").alias("count"), polars.sum("count_baseline").alias("count_baseline")]
 
         def gen_sub_df_for_columns(columns: List[str]):
-            baseline = baseline_df.groupby(columns).agg(sub_df_agg_methods)
-            comparison = comparison_df.groupby(columns).agg(sub_df_agg_methods)
-
-            joined: polars.DataFrame = comparison.join(
-                baseline,
-                on=columns,
-                suffix='_baseline',
-                how='outer'
-            ).fill_nan(0).fill_null(0) \
+            joined = base_joined \
+                .groupby(columns) \
+                .agg(sub_df_agg_methods_alt) \
                 .with_columns(polars.lit([columns], dtype=polars.List).alias("dimension_name")) \
                 .with_columns(polars.concat_list([polars.col(column).cast(str) for column in columns]).alias("dimension_value")) \
                 .with_columns(
@@ -341,7 +349,21 @@ class DFBasedInsightBuilder(object):
                 value_list_baseline = serialized_key_to_value_list[serialized_key]['list_baseline']
 
                 if value_list is not None and value_list_baseline is not None:
-                    _, p_value = mannwhitneyu(value_list, value_list_baseline)
+                    value_list = numpy.array(value_list)
+                    value_list_baseline = numpy.array(value_list_baseline)
+
+                    relative_diff = ((value_list - value_list_baseline) / value_list_baseline) * 100
+                    relative_diff[np.isinf(relative_diff)] = 1
+
+                    mean_relative_diff = np.mean(relative_diff)
+                    std_relative_diff = np.std(relative_diff, ddof=1)
+
+                    n = len(value_list)
+                    standard_error = std_relative_diff / np.sqrt(n)
+
+                    t_statistic = mean_relative_diff / standard_error
+                    degrees_of_freedom = n - 1
+                    p_value = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom))
 
             slice_info = SegmentInfo(
                 key,
