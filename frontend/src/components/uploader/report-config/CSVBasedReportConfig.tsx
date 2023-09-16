@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { createNewDateWithBrowserTimeZone } from "../../../common/utils";
 import { CSVSchema, DateField } from "../../../types/data-source";
 import {
-  ColumnConfig,
   DateRangeConfig,
   MetricColumn,
   PrefillConfig,
@@ -13,14 +12,6 @@ import {
 import ReportConfig from "./ReportConfig";
 
 const sampleDataPrefills: PrefillConfig = {
-  selectedColumns: {
-    userId: {
-      type: "metric",
-      aggregationOption: "nunique",
-      expectedValue: 0.03,
-      fieldType: "VARCHAR",
-    },
-  },
   metricColumn: {
     aggregationOption: "nunique",
     singularMetric: {
@@ -93,31 +84,30 @@ export default function CSVBasedReportConfig({
   }, [fields]);
 
   const onSubmit = async (
-    selectedColumns: {
-      [key: string]: ColumnConfig;
-    },
     dateColumn: string,
     dateColumnType: string,
     metricColumn: MetricColumn,
-    supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
-    targetDirection: TargetDirection
+    targetDirection: TargetDirection,
+    expectedValue: number
   ) => {
     navigate("/dashboard", {
       state: {
         fileId: schema.name,
+        schema,
+        rowCountByColumn,
         dataSourceType: "csv",
         dateColumn,
         dateColumnType,
         groupByColumns,
-        selectedColumns,
         metricColumn,
-        supportingMetricColumn,
         baseDateRange,
         comparisonDateRange,
         targetDirection,
+        expectedValue,
+        filters: [],
       },
     });
   };

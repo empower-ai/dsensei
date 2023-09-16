@@ -39,6 +39,9 @@ export class APIManager {
     } else {
       throw {
         statusCode: response.status,
+        error:
+          // @ts-ignore
+          responseData.error ?? "UNKNOWN_ERROR",
         message:
           // @ts-ignore
           responseData.error ??

@@ -13,9 +13,10 @@ import {
 import { ReactNode, useState } from "react";
 import { CSVLink } from "react-csv";
 import { useDispatch, useSelector } from "react-redux";
+import { Md5 } from "ts-md5";
 import { TooltipIcon } from "../../common/TooltipIcon";
 import getSettings from "../../common/server-data/settings";
-import { InsightMetric } from "../../common/types";
+import { DimensionSliceKey, InsightMetric } from "../../common/types";
 import { RootState } from "../../store";
 import {
   RowStatus,
@@ -38,6 +39,7 @@ type Props = {
   showDimensionSelector: boolean;
   showCalculationMode: boolean;
   targetDirection: TargetDirection;
+  onReRunOnSegment: (key: DimensionSliceKey) => void;
 };
 
 export default function TopDimensionSlicesTable({
@@ -51,6 +53,7 @@ export default function TopDimensionSlicesTable({
   enableGroupToggle,
   showCalculationMode,
   targetDirection,
+  onReRunOnSegment,
 }: Props) {
   const dispatch = useDispatch();
   const [isCollapsed, setIsCollapse] = useState(true);
@@ -59,11 +62,6 @@ export default function TopDimensionSlicesTable({
   const sensitivity = useSelector(
     (state: RootState) => state.comparisonInsight.sensitivity
   );
-
-  const overallChange =
-    metric.baselineValue === 0
-      ? 0
-      : (metric.comparisonValue - metric.baselineValue) / metric.baselineValue;
 
   const rowStatusKeys = Object.keys(rowStatusMap);
 
@@ -193,14 +191,8 @@ export default function TopDimensionSlicesTable({
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
-                {metric["aggregationMethod"] === "RATIO"
-                  ? `Absolute Contribution`
-                  : "Relative Performance"}
-                {metric["aggregationMethod"] === "RATIO" ? (
-                  <TooltipIcon text="Absolute contribution of the segment to the overall metric movement." />
-                ) : (
-                  <TooltipIcon text="Performance of the segment compared with average performance, calculated by: change_pct_of_segment - avg_change_pct" />
-                )}
+                Absolute Contribution
+                <TooltipIcon text="Absolute contribution of the segment to the overall metric movement." />
               </Flex>
             </TableHeaderCell>
             <TableHeaderCell>
@@ -226,10 +218,11 @@ export default function TopDimensionSlicesTable({
               <TopDimensionSlicesTableRow
                 rowStatus={rowStatusMap[key]!}
                 dimensionSlice={dimensionSlice}
-                overallChange={overallChange}
                 dimension={dimension}
                 targetDirection={targetDirection}
                 aggregationMethod={metric.aggregationMethod}
+                onReRunOnSegment={onReRunOnSegment}
+                key={Md5.hashStr(dimensionSlice.serializedKey)}
               />
             );
           })}

@@ -32,7 +32,12 @@ class DSenseiIndexView(IndexView):
             "settings": SettingsService(current_app.config).build_settings()
         }
 
-        return render_template("index.html", bundle_imports=bundle_imports, server_data=orjson.dumps(server_data).decode("utf-8"))
+        return render_template(
+            "index.html",
+            enable_telemtry=server_data['settings'].enableTelemetry,
+            bundle_imports=bundle_imports,
+            server_data=orjson.dumps(server_data).decode("utf-8")
+        )
 
     @expose('/')
     @expose('/dashboard')

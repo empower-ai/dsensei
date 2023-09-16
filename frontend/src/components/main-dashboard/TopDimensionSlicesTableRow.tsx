@@ -2,6 +2,7 @@ import {
   ChevronDoubleDownIcon,
   ChevronDoubleRightIcon,
   DocumentMagnifyingGlassIcon,
+  FunnelIcon,
 } from "@heroicons/react/24/outline";
 import {
   Badge,
@@ -14,6 +15,7 @@ import {
 import { ReactNode } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Md5 } from "ts-md5";
+import { Tooltip } from "../../common/Tooltip";
 import getSettings from "../../common/server-data/settings";
 import { DimensionSliceInfo, DimensionSliceKey } from "../../common/types";
 import {
@@ -36,9 +38,9 @@ type Props = {
   rowStatus: RowStatus;
   parentDimensionSliceKey?: DimensionSliceKey;
   dimension?: string;
-  overallChange: number;
   targetDirection: TargetDirection;
   aggregationMethod: string;
+  onReRunOnSegment: (key: DimensionSliceKey) => void;
 };
 
 function getChangePercentage(num1: number, num2: number): ReactNode {
@@ -51,50 +53,36 @@ function getChangePercentage(num1: number, num2: number): ReactNode {
   );
 }
 
-function getPerformanceComparedWithAvg(
-  num1: number,
-  num2: number,
-  avgPerf: number,
-  targetDirection: TargetDirection
-): ReactNode {
-  if (num1 === 0) {
-    return "N/A";
-  }
-
-  const changePct = (num2 - num1) / num1;
-
-  return getImpact(
-    (changePct - avgPerf) * 100,
-    (n) => `${formatNumber(n)}%`,
-    targetDirection
-  );
-}
-
-function getImpact(
-  impact: number,
-  formatter: (n: number) => string = function (n: number) {
+function absoluteContribution(
+  change: number,
+  targetDirection: TargetDirection,
+  changeFormatter: (n: number) => string = function (n: number) {
     return formatNumber(n);
   },
-  targetDirection: TargetDirection
+  relativeChange?: number
 ): ReactNode {
-  if (impact > 0) {
+  let text = changeFormatter(change);
+  if (relativeChange) {
+    text = `${text}(${formatNumber(relativeChange * 100)}%)`;
+  }
+  if (change > 0) {
     return (
       <BadgeDelta
         deltaType="increase"
         isIncreasePositive={targetDirection === "increasing"}
       >
-        +{formatter(impact)}
+        +{text}
       </BadgeDelta>
     );
-  } else if (impact === 0) {
-    return <BadgeDelta deltaType="unchanged">{formatter(impact)}</BadgeDelta>;
+  } else if (change === 0) {
+    return <BadgeDelta deltaType="unchanged">{text}</BadgeDelta>;
   } else {
     return (
       <BadgeDelta
         deltaType="decrease"
         isIncreasePositive={targetDirection === "increasing"}
       >
-        {formatter(impact)}
+        {text}
       </BadgeDelta>
     );
   }
@@ -104,10 +92,10 @@ export default function TopDimensionSlicesTableRow({
   rowStatus,
   dimensionSlice,
   parentDimensionSliceKey,
-  overallChange,
   dimension,
   targetDirection,
   aggregationMethod,
+  onReRunOnSegment,
 }: Props) {
   const allDimensionSliceInfo = useSelector(
     (state: RootState) =>
@@ -118,15 +106,19 @@ export default function TopDimensionSlicesTableRow({
 
   function renderSubSlices() {
     return Object.keys(rowStatus.children).map((subKey) => {
+      const dimensionSliceInfo = allDimensionSliceInfo[subKey]!;
       return (
         <TopDimensionSlicesTableRow
           rowStatus={rowStatus.children[subKey]!}
-          dimensionSlice={allDimensionSliceInfo[subKey]!}
+          dimensionSlice={dimensionSliceInfo}
           parentDimensionSliceKey={dimensionSlice.key}
-          overallChange={overallChange}
           dimension={dimension}
           targetDirection={targetDirection}
           aggregationMethod={aggregationMethod}
+          onReRunOnSegment={onReRunOnSegment}
+          key={`${Md5.hashStr(serializedKey)}-${Md5.hashStr(
+            dimensionSliceInfo.serializedKey
+          )}`}
         />
       );
     });
@@ -141,7 +133,7 @@ export default function TopDimensionSlicesTableRow({
     <>
       <TableRow key={Md5.hashStr(serializedKey)}>
         <TableCell className="flex items-center">
-          <p
+          <div
             style={{
               width: `${
                 (rowStatus.key.length - 1) * 25 +
@@ -151,7 +143,7 @@ export default function TopDimensionSlicesTableRow({
                   : 15)
               }px`,
             }}
-          ></p>
+          ></div>
           {(Object.keys(rowStatus.children).length > 0 ||
             !rowStatus.hasCalculatedChildren) && (
             <span
@@ -172,18 +164,29 @@ export default function TopDimensionSlicesTableRow({
               )}
             </span>
           )}
-          <p className="px-2 cursor flex items-center">
+          <div className="px-2 cursor flex items-center">
             {formatDimensionSliceKeyForRendering(
               dimensionSlice.key,
               parentDimensionSliceKey
             )}
-          </p>
-          <span
-            onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
-            className="w-6 cursor-pointer"
-          >
-            <DocumentMagnifyingGlassIcon />
-          </span>
+          </div>
+          <Tooltip text="Show segment detail">
+            <button
+              onClick={() => toggleSliceDetailModal(dimensionSlice.key)}
+              className="w-6"
+            >
+              <DocumentMagnifyingGlassIcon />
+            </button>
+          </Tooltip>
+          <Tooltip text="Re-run report within the segment">
+            <button
+              title="run report within the segment"
+              onClick={() => onReRunOnSegment(dimensionSlice.key)}
+              className="w-6 ml-1"
+            >
+              <FunnelIcon />
+            </button>
+          </Tooltip>
         </TableCell>
         <TableCell>
           <Flex className="justify-start">
@@ -206,27 +209,28 @@ export default function TopDimensionSlicesTableRow({
         </TableCell>
         <TableCell>
           {aggregationMethod === "RATIO"
-            ? getImpact(
+            ? absoluteContribution(
                 dimensionSlice.absoluteContribution * 100,
-                (n) => `${formatNumber(n)}%`,
-                targetDirection
+                targetDirection,
+                (n) => `${formatNumber(n)}%`
               )
-            : getPerformanceComparedWithAvg(
-                dimensionSlice?.baselineValue.sliceValue,
-                dimensionSlice?.comparisonValue.sliceValue,
-                overallChange,
-                targetDirection
+            : absoluteContribution(
+                dimensionSlice.impact,
+                targetDirection,
+                (n) => formatNumber(n)
               )}
         </TableCell>
         <TableCell>
-          <Text>
-            {formatNumber(dimensionSlice?.baselineValue.sliceSize * 100)}% vs{" "}
-            {formatNumber(dimensionSlice?.comparisonValue.sliceSize * 100)}%{" "}
+          <Flex>
+            <Text>
+              {formatNumber(dimensionSlice?.baselineValue.sliceSize * 100)}% vs{" "}
+              {formatNumber(dimensionSlice?.comparisonValue.sliceSize * 100)}%{" "}
+            </Text>
             {getChangePercentage(
               dimensionSlice?.baselineValue.sliceSize ?? 0,
               dimensionSlice?.comparisonValue.sliceSize ?? 0
             )}
-          </Text>
+          </Flex>
         </TableCell>
         {getSettings().showDebugInfo && (
           <TableCell>

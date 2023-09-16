@@ -1,4 +1,5 @@
 import {
+  Bold,
   Color,
   DeltaBar,
   Flex,
@@ -10,6 +11,7 @@ import {
   Title,
 } from "@tremor/react";
 import { useEffect, useState } from "react";
+import { Md5 } from "ts-md5";
 import {
   DimensionSliceInfo,
   DimensionSliceKey,
@@ -78,15 +80,25 @@ export function DimensionSliceDetailModalMetricCard({
       fontColor = "rose";
     }
     return (
-      <ListItem className="justify-center">
+      <ListItem
+        className="justify-center"
+        key={Md5.hashStr(sliceInfo.serializedKey)}
+      >
         <Grid numItems={3} className="w-[100%] min-w-[1000px]">
-          {formatDimensionSliceKeyForRendering(
-            sliceInfo?.key!,
-            undefined,
-            true,
-            "center",
-            `flex-wrap col-span-1 gap-y-1 ${isSelectedSegment && "font-bold"}`
-          )}
+          <Flex justifyContent="center">
+            {formatDimensionSliceKeyForRendering(
+              sliceInfo?.key!,
+              undefined,
+              true,
+              "center",
+              "flex-wrap col-span-1 gap-y-1"
+            )}
+            {isSelectedSegment && (
+              <Text className="text-black">
+                <Bold>(current segment)</Bold>
+              </Text>
+            )}
+          </Flex>
           <Flex justifyContent="center" className="space-x-4 col-span-2">
             <Grid numItems={3} className="w-[100%] gap-3">
               <Flex className="col-span-1" justifyContent="end">

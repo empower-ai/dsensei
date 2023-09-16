@@ -2,8 +2,9 @@ import datetime
 from typing import Tuple
 
 import polars as pl
+from polars import Expr
 
-from app.insight.services.metrics import Metric, flatten
+from app.insight.services.metrics import Metric, flatten, Filter, FilterOperator
 
 
 def build_aggregation_expressions(
@@ -58,3 +59,22 @@ def prepare_joined_df(
         ).alias("change")) \
         .drop(group_by_columns) \
         .sort(analyzing_metric.get_sorting_expr(), descending=True)
+
+
+def get_num_rows(df: pl.DataFrame) -> int:
+    return df.select(pl.count()).item(0, 0)
+
+
+def get_filter_expression(filters: list[Filter]) -> Expr:
+    filter_expr = pl.lit(True)
+
+    for filter in filters:
+        expr = pl.col(filter.column).cast(pl.Utf8)
+        if filter.operator == FilterOperator.EQ:
+            expr = expr.is_in(filter.values)
+        else:
+            expr = expr.is_in(filter.values).is_not()
+
+        filter_expr = filter_expr & expr
+
+    return filter_expr

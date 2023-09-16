@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass
+from datetime import date
 from typing import Union, Optional
 
 FieldType = Union['DATE', 'TIMESTAMP', 'VARCHAR', 'FLOAT', 'INTEGER', 'BOOLEAN']
@@ -13,6 +14,7 @@ class Field:
     type: FieldType
     mode: FieldMode
     numDistinctValues: int
+    values: list[int, float, str, date]
 
 
 @dataclass(frozen=True)

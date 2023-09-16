@@ -4,7 +4,8 @@ import json
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from enum import Enum
+from datetime import date
+from enum import Enum, StrEnum
 from typing import Dict, Iterable, List, Optional
 
 import numpy as np
@@ -22,8 +23,9 @@ pl.Config.set_tbl_cols(30)
 
 @dataclass
 class Dimension:
-    name: str = None
-    score: float = None
+    name: str
+    score: float
+    is_key_dimension: bool
 
 
 @dataclass(frozen=True)
@@ -210,6 +212,18 @@ class MetricInsight:
 
 
 parallel_analysis_executor = ThreadPoolExecutor()
+
+
+class FilterOperator(StrEnum):
+    EQ = "eq"
+    NEQ = "neq"
+
+
+@dataclass
+class Filter:
+    column: str
+    operator: FilterOperator
+    values: list[str | float | bool | date]
 
 
 def build_polars_agg(name: str | Expr, method: AggregateMethod):

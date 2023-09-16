@@ -37,6 +37,12 @@ class FileSource:
             [pl.col(column).n_unique() for column in df.columns]
         ).row(0, named=True)
 
+        column_values_df = pl.concat(
+            [df.lazy().select(pl.col(column).unique().limit(500).cast(pl.Utf8).alias("values")).with_columns(pl.lit(column).alias("column"))
+             for column, num_distinct_values in column_to_num_distinct_values.items()]) \
+            .groupby("column").agg(pl.col("values").explode()).collect()
+        column_to_values = {row['column']: row['values'] for row in column_values_df.rows(named=True)}
+
         logger.info("Calculating total rows")
         count = df.select(pl.col(df.columns[0]).count()).row(0)[0]
 
@@ -52,7 +58,8 @@ class FileSource:
                     description="",
                     type=data_type,
                     mode="NULLABLE",
-                    numDistinctValues=num_distinct_values
+                    numDistinctValues=num_distinct_values,
+                    values=column_to_values[column]
                 ))
             else:
                 df = df.with_columns(pl.col(column).cast(pl.Date))
@@ -70,7 +77,8 @@ class FileSource:
                     numDistinctValues=num_distinct_values,
                     minDate=min_date,
                     maxDate=max_date,
-                    numRowsByDate={row[column]: row["count"] for row in num_rows_by_date_df.rows(named=True)}
+                    numRowsByDate={row[column]: row["count"] for row in num_rows_by_date_df.rows(named=True)},
+                    values=column_to_values[column]
                 ))
         return FileSchema(
             name=self.file_name,

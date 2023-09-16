@@ -42,6 +42,7 @@ class BigquerySource:
                 description=field.description,
                 type=field.field_type,
                 mode=field.mode,
+                values=[],
                 numDistinctValues=num_distinct_value_by_field[field.name]
                 if (field.mode != "REPEATED" and field.field_type != "RECORD")
                 else 0

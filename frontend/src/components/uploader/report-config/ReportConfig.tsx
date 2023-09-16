@@ -7,7 +7,6 @@ import {
   Card,
   Divider,
   Flex,
-  Subtitle,
   Text,
   Title,
 } from "@tremor/react";
@@ -15,9 +14,6 @@ import { useEffect, useState } from "react";
 import { useTracking } from "../../../common/tracking";
 import { DataSourceType, Schema } from "../../../types/data-source";
 import {
-  AggregationType,
-  ColumnConfig,
-  ColumnType,
   DateRangeConfig,
   MetricColumn,
   PrefillConfig,
@@ -38,17 +34,14 @@ type Props = {
   rowCountByDateColumn?: RowCountByDateAndColumn;
   prefilledConfigs?: PrefillConfig;
   onSubmit: (
-    selectedColumns: {
-      [key: string]: ColumnConfig;
-    },
     dateColumn: string,
     dateColumnType: string,
     metricColumn: MetricColumn,
-    supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
-    targetDirection: TargetDirection
+    targetDirection: TargetDirection,
+    expectedValue: number
   ) => Promise<void>;
 };
 
@@ -65,16 +58,9 @@ function ReportConfig({
   const [dateColumn, setDateColumn] = useState<string>("");
   const [dateColumnType, setDateColumnType] = useState<string>("");
   const [groupByColumns, setGroupByColumns] = useState<string[]>([]);
-  const [metricColumn, setMetricColumn] = useState<MetricColumn | undefined>(
-    undefined
-  );
-  const [relevantMetricColumns, setRelevantMetricColumns] = useState<
-    MetricColumn[]
-  >([]);
+  const [metricColumn, setMetricColumn] = useState<MetricColumn>();
+  const [expectedValue, setExpectedValue] = useState<number>();
 
-  const [selectedColumns, setSelectedColumns] = useState<{
-    [k: string]: ColumnConfig;
-  }>({});
   const [comparisonDateRangeData, setComparisonDateRangeData] =
     useState<DateRangeData>({
       range: {},
@@ -89,87 +75,11 @@ function ReportConfig({
 
   useEffect(() => {
     if (prefilledConfigs) {
-      setSelectedColumns(prefilledConfigs.selectedColumns);
       setMetricColumn(prefilledConfigs.metricColumn);
       setDateColumn(prefilledConfigs.dateColumn);
       setGroupByColumns(prefilledConfigs.groupByColumns);
     }
   }, [prefilledConfigs]);
-
-  const onSelectMetrics = (metrics: string[], type: ColumnType) => {
-    const selectedColumnsClone = Object.assign({}, selectedColumns);
-    const addedMetrics = metrics.filter(
-      (m) =>
-        !Object.keys(selectedColumnsClone).includes(m) ||
-        (Object.keys(selectedColumnsClone).includes(m) &&
-          selectedColumnsClone[m]["type"] !== type)
-    );
-    addedMetrics.map(
-      (m) =>
-        (selectedColumnsClone[m] = {
-          type,
-          aggregationOption: "sum",
-          expectedValue: 0.0,
-          fieldType: schema.fields.find((f) => f.name === m)!.type,
-        })
-    );
-    const removedMetrics = Object.keys(selectedColumnsClone).filter(
-      (m) => selectedColumnsClone[m]["type"] === type && !metrics.includes(m)
-    );
-    removedMetrics.map((m) => delete selectedColumnsClone[m]);
-    setSelectedColumns(selectedColumnsClone);
-  };
-
-  const onSelectMetricAggregationOption = (
-    metricColumn: MetricColumn,
-    supportingMetric = false
-  ) => {
-    if (supportingMetric) {
-      setRelevantMetricColumns([...relevantMetricColumns, metricColumn]);
-    } else {
-      setMetricColumn(metricColumn);
-    }
-  };
-
-  const onSelectMetricExpectedChange = (
-    metric: string,
-    expectedValue: number
-  ) => {
-    const selectedColumnsClone = Object.assign({}, selectedColumns);
-    if (
-      selectedColumnsClone[metric]["type"] !== "metric" &&
-      selectedColumnsClone[metric]["type"] !== "supporting_metric"
-    ) {
-      throw new Error("Invalid default value update on non-metric columns.");
-    }
-    selectedColumnsClone[metric]["expectedValue"] = expectedValue;
-    setSelectedColumns(selectedColumnsClone);
-  };
-
-  const onSelectDimension = (dimensions: string[]) => {
-    const selectedColumnsClone = Object.assign({}, selectedColumns);
-    const addedDimensions = dimensions.filter(
-      (d) =>
-        !Object.keys(selectedColumnsClone).includes(d) ||
-        (Object.keys(selectedColumnsClone).includes(d) &&
-          selectedColumnsClone[d]["type"] !== "dimension")
-    );
-    addedDimensions.map(
-      (d) =>
-        (selectedColumnsClone[d] = {
-          type: "dimension",
-          fieldType: schema.fields.find((f) => f.name === d)!.type,
-        })
-    );
-    const removedDimension = Object.keys(selectedColumnsClone).filter(
-      (d) =>
-        selectedColumnsClone[d]["type"] === "dimension" &&
-        !dimensions.includes(d)
-    );
-    removedDimension.map((m) => delete selectedColumnsClone[m]);
-    setSelectedColumns(selectedColumnsClone);
-    setGroupByColumns(dimensions);
-  };
 
   const onSelectDateColumn = (dateCol: string) => {
     setDateColumn(dateCol);
@@ -214,21 +124,9 @@ function ReportConfig({
   }
 
   function trackSubmit() {
-    const dimensionColumns = Object.entries(selectedColumns).filter(
-      (entry) => entry[1].type === "dimension"
-    );
-
-    const numDimensions = dimensionColumns.length;
-    const cardinalityProduct = dimensionColumns.reduce((acc, column) => {
-      const [fieldName] = column;
-      const numDistinctValues =
-        schema.fields.find((field) => field.name === fieldName)
-          ?.numDistinctValues ?? 1;
-      return acc * numDistinctValues;
-    }, 1);
+    const numDimensions = groupByColumns.length;
     const data = {
       numDimensions,
-      cardinalityProduct,
       dataSourceType,
       countRows: schema.countRows,
     };
@@ -268,28 +166,12 @@ function ReportConfig({
   function getValidMetricColumns() {
     return schema.fields
       .map((h) => h.name)
-      .filter((h) => rowCountByColumn[h] > 0)
-      .filter(
-        (h) =>
-          !(
-            selectedColumns.hasOwnProperty(h) &&
-            selectedColumns[h]["type"] === "date"
-          )
-      );
+      .filter((h) => rowCountByColumn[h] > 0);
   }
 
   function getValidDimensionColumns() {
     return schema.fields
       .map((h) => h.name)
-      .filter(
-        (h) =>
-          !(
-            selectedColumns.hasOwnProperty(h) &&
-            (selectedColumns[h]["type"] === "metric" ||
-              selectedColumns[h]["type"] === "supporting_metric" ||
-              selectedColumns[h]["type"] === "date")
-          )
-      )
       .filter(
         (h) =>
           metricColumn?.singularMetric?.columnName !== h &&
@@ -394,7 +276,7 @@ function ReportConfig({
         />
         {/* Date pickers */}
         {renderDatePicker()}
-        {/* Analysing metric single selector */}
+        {/* Analyzing metric single selector */}
         <MetricConfig
           getValidMetricColumns={getValidMetricColumns}
           metricColumn={metricColumn}
@@ -403,25 +285,23 @@ function ReportConfig({
           setTargetDirection={setTargetDirection}
         />
         {/* Dimension columns multi selector */}
-        {(!prefilledConfigs || Object.keys(selectedColumns).length > 0) && (
-          <MultiSelector
-            title={"Select group by columns"}
-            includeSelectAll={true}
-            labels={getValidDimensionColumns().map(
-              (h) => `${h} - ${rowCountByColumn[h]} distinct values`
-            )}
-            values={getValidDimensionColumns()}
-            selectedValues={groupByColumns}
-            onValueChange={onSelectDimension}
-            instruction={
-              <Text>
-                A list of column to aggregate the metrics based on. For instance
-                user demographics (gender, age group, ...), product attributes
-                (brand, category, ...).
-              </Text>
-            }
-          />
-        )}
+        <MultiSelector
+          title={"Select group by columns"}
+          includeSelectAll={true}
+          labels={getValidDimensionColumns().map(
+            (h) => `${h} - ${rowCountByColumn[h]} distinct values`
+          )}
+          values={getValidDimensionColumns()}
+          selectedValues={groupByColumns}
+          onValueChange={(dimensions) => setGroupByColumns(dimensions)}
+          instruction={
+            <Text>
+              A list of column to aggregate the metrics based on. For instance
+              user demographics (gender, age group, ...), product attributes
+              (brand, category, ...).
+            </Text>
+          }
+        />
         <Divider className="my-2" />
         <Accordion className="border-0">
           <AccordionHeader>
@@ -430,79 +310,10 @@ function ReportConfig({
             </Title>
           </AccordionHeader>
           <AccordionBody className="overflow-auto">
-            {/* Supporting metrics multi selector */}
-            <MultiSelector
-              title={
-                <Text className="pr-4 text-black">
-                  Select related metric columns <Bold>[optional]</Bold>
-                </Text>
-              }
-              labels={schema.fields
-                .map((h) => h.name)
-                .filter(
-                  (h) =>
-                    !(
-                      selectedColumns.hasOwnProperty(h) &&
-                      selectedColumns[h]["type"] === "metric"
-                    )
-                )}
-              values={schema.fields
-                .map((h) => h.name)
-                .filter(
-                  (h) =>
-                    !(
-                      selectedColumns.hasOwnProperty(h) &&
-                      selectedColumns[h]["type"] === "metric"
-                    )
-                )}
-              selectedValues={Object.keys(selectedColumns).filter(
-                (c) => selectedColumns[c]["type"] === "supporting_metric"
-              )}
-              onValueChange={(metrics) =>
-                onSelectMetrics(metrics, "supporting_metric")
-              }
-              instruction={
-                <Text>
-                  Optional list of additional metrics to analyze together. For
-                  instance you may want to analyze the number of buyers and
-                  orders when analyzing the total sales revenue.
-                </Text>
-              }
+            <ExpectedChangeInput
+              defaultValue={expectedValue}
+              onValueChange={(v) => setExpectedValue(parseFloat(v) / 100)}
             />
-            {Object.keys(selectedColumns)
-              .filter((c) => selectedColumns[c]["type"] === "supporting_metric")
-              .map((m) => (
-                <SingleSelector
-                  title={<Subtitle className="pr-4">{m}</Subtitle>}
-                  labels={["Sum", "Count", "Distinct Count"]}
-                  values={["sum", "count", "distinct"]}
-                  selectedValue={selectedColumns[m]["aggregationOption"]!}
-                  onValueChange={(v) =>
-                    onSelectMetricAggregationOption(
-                      {
-                        columnNames: [m],
-                        aggregationOption: v as AggregationType,
-                      } as MetricColumn,
-                      true
-                    )
-                  }
-                  key={m}
-                  instruction={<Text>How to aggregation the metric.</Text>}
-                />
-              ))}
-            {Object.keys(selectedColumns)
-              .filter((c) => selectedColumns[c]["type"] === "metric")
-              .map((m) => (
-                <div key={m}>
-                  <ExpectedChangeInput
-                    key={`${m}-change-input`}
-                    defaultValue={selectedColumns[m].expectedValue}
-                    onValueChange={(v) =>
-                      onSelectMetricExpectedChange(m, parseFloat(v) / 100)
-                    }
-                  />
-                </div>
-              ))}
           </AccordionBody>
         </Accordion>
       </div>
@@ -516,15 +327,14 @@ function ReportConfig({
 
             trackSubmit();
             await onSubmit(
-              selectedColumns,
               dateColumn,
               dateColumnType,
               metricColumn,
-              relevantMetricColumns,
               groupByColumns,
               baseDateRangeData.range,
               comparisonDateRangeData.range,
-              targetDirection
+              targetDirection,
+              expectedValue ?? 0
             );
           }}
           disabled={!canSubmit()}

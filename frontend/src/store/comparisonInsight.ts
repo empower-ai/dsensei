@@ -43,6 +43,7 @@ export interface ComparisonInsightState {
     impact: number;
   }[];
   isLoading: boolean;
+  error?: string;
   groupRows: boolean;
   mode: "impact" | "outlier";
   sensitivity: "low" | "medium" | "high";
@@ -426,9 +427,12 @@ export const comparisonMetricsSlice = createSlice({
     setLoadingStatus: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
+    setError: (state, action: PayloadAction<string>) => {
+      state.error = action.payload;
+    },
     updateMetrics: (
       state,
-      action: PayloadAction<{ [key: string]: object }>
+      action: PayloadAction<{ [key: string]: InsightMetric }>
     ) => {
       const keys = Object.keys(action.payload);
       state.analyzingMetrics = action.payload[keys[0]] as InsightMetric;
@@ -551,6 +555,7 @@ export const {
   selectSliceForDetail,
   updateMetrics,
   setLoadingStatus,
+  setError,
   toggleGroupRows,
   setMode,
   setSensitivity,

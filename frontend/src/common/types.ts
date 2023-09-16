@@ -60,3 +60,10 @@ export interface DimensionSliceInfo {
   changeDev: number;
   confidence: number;
 }
+
+export type FilterOperator = "eq" | "neq";
+export interface Filter {
+  values?: string[];
+  operator?: FilterOperator;
+  column?: string;
+}

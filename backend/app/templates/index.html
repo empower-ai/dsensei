@@ -11,6 +11,7 @@
     />
     <link rel="apple-touch-icon" href="/favicon.ico"/>
     <link rel="manifest" href="/manifest.json"/>
+    {%if enable_telemtry %}
     <script
             async
             src="https://www.googletagmanager.com/gtag/js?id=G-62MJ7PYXWX"
@@ -24,6 +25,7 @@
         gtag("config", "G-62MJ7PYXWX");
 
     </script>
+    {% endif %}
     <title>DSensei</title>
     <!-- Bundle Import START -->
     {%for bundle_import in bundle_imports%} {{ bundle_import|safe }} {%endfor%}

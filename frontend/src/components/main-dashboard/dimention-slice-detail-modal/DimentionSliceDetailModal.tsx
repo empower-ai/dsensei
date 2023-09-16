@@ -16,9 +16,11 @@ import {
 import { Range } from "immutable";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { Md5 } from "ts-md5";
 import apiManager from "../../../common/apiManager";
 import {
   DimensionSliceInfo,
+  Filter,
   InsightMetric,
   SegmentKeyComponent,
 } from "../../../common/types";
@@ -32,7 +34,6 @@ import {
 import { RootState } from "../../../store";
 import { DataSourceType } from "../../../types/data-source";
 import {
-  ColumnConfig,
   DateRangeConfig,
   MetricColumn,
   TargetDirection,
@@ -43,30 +44,29 @@ import { DimensionSliceDetailModalMetricCard } from "./DimensionSliceDetailModal
 interface Props {
   targetDirection: TargetDirection;
   fileId: string;
-  selectedColumns: {
-    [key: string]: ColumnConfig;
-  };
   dateColumn: string;
   metricColumn: MetricColumn;
   groupByColumns: string[];
   baseDateRange: DateRangeConfig;
   comparisonDateRange: DateRangeConfig;
   dataSourceType: DataSourceType;
+  filters: Filter[];
 }
 
 export function DimensionSliceDetailModal({
   targetDirection,
   fileId,
-  selectedColumns,
   dateColumn,
   groupByColumns,
   metricColumn,
   baseDateRange,
   comparisonDateRange,
   dataSourceType,
+  filters,
 }: Props) {
-  const { analyzingMetrics, relatedMetrics, selectedSliceKey, isLoading } =
-    useSelector((state: RootState) => state.comparisonInsight);
+  const { analyzingMetrics, relatedMetrics, selectedSliceKey } = useSelector(
+    (state: RootState) => state.comparisonInsight
+  );
   const [chartData, setChartData] = useState<
     {
       metric: InsightMetric;
@@ -96,10 +96,10 @@ export function DimensionSliceDetailModal({
         fileId,
         baseDateRange,
         comparisonDateRange,
-        selectedColumns,
         dateColumn,
         metricColumn,
         segmentKey: selectedSliceKey,
+        filters,
       });
 
       setRelatedSegmentsByMetricName(segments);
@@ -113,11 +113,11 @@ export function DimensionSliceDetailModal({
           fileId,
           baseDateRange,
           comparisonDateRange,
-          selectedColumns,
           dateColumn,
           groupByColumns,
           metricColumn,
           segmentKey: selectedSliceKey,
+          filters,
         }
       );
 
@@ -173,16 +173,11 @@ export function DimensionSliceDetailModal({
     }
   }, [selectedSliceKey]);
 
-  if (!selectedSliceKey && isLoading) {
-    return null;
-  }
-
-  const allMetrics = [analyzingMetrics, ...relatedMetrics];
-
   if (!selectedSliceKey) {
     return <dialog id="slice_detail" className="modal"></dialog>;
   }
 
+  const allMetrics = [analyzingMetrics, ...relatedMetrics];
   const serializedKey = serializeDimensionSliceKey(selectedSliceKey);
   const sliceInfo = analyzingMetrics.dimensionSliceInfo[serializedKey];
 
@@ -195,13 +190,11 @@ export function DimensionSliceDetailModal({
             ✕
           </button>
         </Flex>
-        <Flex>
-          <p className="flex items-center gap-2">
-            <Text>
-              <Bold>Segment:</Bold>
-            </Text>{" "}
-            {formatDimensionSliceKeyForRendering(sliceInfo.key)}
-          </p>
+        <Flex justifyContent="center" className="gap-2">
+          <Text>
+            <Bold>Segment:</Bold>
+          </Text>{" "}
+          {formatDimensionSliceKeyForRendering(sliceInfo.key)}
         </Flex>
         <Divider />
         <Title>Metric Value</Title>
@@ -247,7 +240,7 @@ export function DimensionSliceDetailModal({
                     </TabList>
                     <TabPanels>
                       {chartData.map((data) => (
-                        <TabPanel>
+                        <TabPanel key={data.metric.name}>
                           <LineChart
                             className="mt-6"
                             data={data.data}
@@ -297,6 +290,9 @@ export function DimensionSliceDetailModal({
                 <Flex
                   justifyContent="start"
                   className="gap-2 cursor-pointer"
+                  key={Md5.hashStr(
+                    `${keyComponent.dimension}-${keyComponent.value}`
+                  )}
                   onClick={() => {
                     if (
                       filteringSegmentKeyComponents.find(
@@ -323,7 +319,7 @@ export function DimensionSliceDetailModal({
                 >
                   <input
                     type="checkbox"
-                    checked={
+                    defaultChecked={
                       filteringSegmentKeyComponents.find(
                         (filteringComponent) =>
                           filteringComponent.dimension ===
@@ -355,7 +351,7 @@ export function DimensionSliceDetailModal({
               </TabList>
               <TabPanels>
                 {allMetrics.map((metric) => (
-                  <TabPanel>
+                  <TabPanel key={metric.name}>
                     <DimensionSliceDetailModalMetricCard
                       selectedSliceKey={sliceInfo.key}
                       metric={metric}
@@ -363,6 +359,7 @@ export function DimensionSliceDetailModal({
                       filteringSegmentKeyComponents={
                         filteringSegmentKeyComponents
                       }
+                      key={metric.name}
                     />
                   </TabPanel>
                 ))}

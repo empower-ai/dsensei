@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { BigquerySchema } from "../../../types/data-source";
 import {
-  ColumnConfig,
   DateRangeConfig,
   MetricColumn,
   TargetDirection,
@@ -20,31 +19,30 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
   );
 
   const onSubmit = async (
-    selectedColumns: {
-      [key: string]: ColumnConfig;
-    },
     dateColumn: string,
     dateColumnType: string,
     metricColumn: MetricColumn,
-    supportingMetricColumn: MetricColumn[],
     groupByColumns: string[],
     baseDateRange: DateRangeConfig,
     comparisonDateRange: DateRangeConfig,
-    targetDirection: TargetDirection
+    targetDirection: TargetDirection,
+    expectedValue: number
   ) => {
     navigate("/dashboard", {
       state: {
+        schema,
+        rowCountByColumn,
         tableName: name,
         dataSourceType: "bigquery",
         metricColumn,
-        supportingMetricColumn,
         dateColumn,
         dateColumnType,
         groupByColumns,
-        selectedColumns,
         baseDateRange,
         comparisonDateRange,
         targetDirection,
+        expectedValue,
+        filters: [],
       },
     });
   };

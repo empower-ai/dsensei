@@ -27,7 +27,6 @@ export interface MetricColumn {
   aggregationOption?: AggregationType;
   singularMetric?: SingularMetric;
   ratioMetric?: RatioMetric;
-  expectedValue?: number;
 }
 
 export interface ColumnConfig {
@@ -50,9 +49,6 @@ export type RowCountByColumn = {
 };
 
 export interface PrefillConfig {
-  selectedColumns: {
-    [key: string]: ColumnConfig;
-  };
   metricColumn: MetricColumn;
   dateColumn: string;
   groupByColumns: string[];

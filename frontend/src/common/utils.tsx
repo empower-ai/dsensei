@@ -68,13 +68,19 @@ export function formatDimensionSliceKeyForRendering(
             className={`text-black ${
               addBorder ? `border-2 bg-gray-100 p-1` : ""
             }`}
+            key={k.dimension}
           >
             {k.dimension} = {k.value}
           </span>
         ))
         .flatMap((element, index, array) =>
           array.length - 1 !== index
-            ? [element, <Text className="px-1">AND</Text>]
+            ? [
+                element,
+                <Text key={index} className="px-1">
+                  AND
+                </Text>,
+              ]
             : [element]
         )}
     </Flex>

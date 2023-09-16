@@ -24,6 +24,7 @@ export interface Field {
   type: FieldType;
   mode: FieldMode;
   numDistinctValues: number;
+  values: string[];
 }
 
 export interface DateField extends Field {

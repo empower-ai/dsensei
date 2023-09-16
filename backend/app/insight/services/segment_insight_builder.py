@@ -4,8 +4,8 @@ from typing import List, Tuple
 
 import polars as pl
 
-from app.insight.services.metrics import Metric, ValueByDate, flatten, DualColumnMetric, DimensionValuePair, PeriodValue, SegmentInfo
-from app.insight.services.utils import build_base_df, prepare_joined_df
+from app.insight.services.metrics import Metric, ValueByDate, flatten, DualColumnMetric, DimensionValuePair, PeriodValue, SegmentInfo, Filter
+from app.insight.services.utils import build_base_df, prepare_joined_df, get_filter_expression
 
 
 @dataclass
@@ -20,7 +20,9 @@ def get_segment_insight(
         date_column: str,
         baseline_date_range: Tuple[datetime.date, datetime.date],
         comparison_date_range: Tuple[datetime.date, datetime.date],
-        metrics: List[Metric]):
+        metrics: List[Metric],
+        filters: list[Filter]):
+    df = df.filter(get_filter_expression(filters))
     aggs = flatten([metric.get_aggregation_exprs() for metric in metrics])
     baseline = df.filter(pl.col('date').is_between(
         pl.lit(baseline_date_range[0]),
@@ -58,9 +60,10 @@ def get_related_segments(
         baseline_date_range: Tuple[datetime.date, datetime.date],
         comparison_date_range: Tuple[datetime.date, datetime.date],
         segment_key: list[DimensionValuePair],
-
-        metric: Metric
+        metric: Metric,
+        filters: list[Filter]
 ):
+    df = df.filter(get_filter_expression(filters))
     dimensions = [segment_key_part.dimension for segment_key_part in segment_key]
 
     baseline = build_base_df(df, baseline_date_range, dimensions, [metric])

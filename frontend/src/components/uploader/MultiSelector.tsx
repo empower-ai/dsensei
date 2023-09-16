@@ -1,29 +1,58 @@
 import { Col, Grid, MultiSelect, MultiSelectItem, Text } from "@tremor/react";
-import { ReactElement, useState } from "react";
+import {
+  ForwardedRef,
+  ReactElement,
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useState,
+} from "react";
 
 type MultiSelectorProps = {
-  title: string | ReactElement;
+  title?: string | ReactElement;
   labels: string[];
   values: string[];
   selectedValues: string[];
   onValueChange: (value: string[]) => void;
   instruction?: ReactElement;
   includeSelectAll?: boolean;
+  className?: string;
+  disabled?: boolean;
 };
+
+export interface MultiSelectorHandles {
+  reset: (values?: string[]) => void;
+}
 
 const keySelectAll = "_select_all";
 
-function MultiSelector({
-  title,
-  labels,
-  values,
-  selectedValues,
-  onValueChange,
-  instruction,
-  includeSelectAll,
-}: MultiSelectorProps) {
+const MultiSelector = forwardRef(function MultiSelector(
+  {
+    title,
+    labels,
+    values,
+    selectedValues,
+    onValueChange,
+    instruction,
+    includeSelectAll,
+    className,
+    disabled,
+  }: MultiSelectorProps,
+  ref: ForwardedRef<MultiSelectorHandles>
+) {
   const [wrappedSelectedValues, setWrappedSelectedValues] =
     useState<string[]>(selectedValues);
+
+  useEffect(() => {
+    setWrappedSelectedValues(selectedValues);
+  }, [selectedValues]);
+
+  useImperativeHandle(ref, () => ({
+    reset(values?: string[]) {
+      setWrappedSelectedValues(values ?? []);
+    },
+  }));
+
   let options: ReactElement[] = [];
   if (includeSelectAll) {
     options = [
@@ -62,6 +91,25 @@ function MultiSelector({
     }
   }
 
+  const selectMenu = (
+    <MultiSelect
+      value={wrappedSelectedValues}
+      onValueChange={onValueChangeWrapper}
+      className={className}
+      disabled={disabled}
+    >
+      {options}
+    </MultiSelect>
+  );
+
+  if (!title) {
+    return (
+      <>
+        {selectMenu}
+        {instruction}
+      </>
+    );
+  }
   return (
     <Grid numItems={5}>
       <Col className="flex items-center justify-end" numColSpan={2}>
@@ -72,18 +120,13 @@ function MultiSelector({
         )}
       </Col>
       <Col className="flex items-center" numColSpan={3}>
-        <MultiSelect
-          value={wrappedSelectedValues}
-          onValueChange={onValueChangeWrapper}
-        >
-          {options}
-        </MultiSelect>
+        {selectMenu}
       </Col>
       <Col className="items-center col-start-3 pt-2 pl-2" numColSpan={3}>
         {instruction}
       </Col>
     </Grid>
   );
-}
+});
 
 export default MultiSelector;

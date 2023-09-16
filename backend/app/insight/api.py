@@ -7,9 +7,11 @@ from flask_appbuilder.api import BaseApi
 from loguru import logger
 from orjson import orjson
 
+from app.common.errors import EmptyDataFrameError
+from app.common.request_utils import build_error_response
 from app.insight.datasource.bqMetrics import BqMetrics
 from app.insight.services.insight_builders import DFBasedInsightBuilder
-from app.insight.services.metrics import AggregateMethod, SingleColumnMetric, DualColumnMetric, CombineMethod, DimensionValuePair
+from app.insight.services.metrics import AggregateMethod, SingleColumnMetric, DualColumnMetric, CombineMethod, DimensionValuePair, Filter
 from app.insight.services.segment_insight_builder import get_related_segments, get_segment_insight
 
 
@@ -35,13 +37,17 @@ class InsightApi(BaseApi):
         return baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type
 
     @staticmethod
+    def parse_filters(data):
+        return [Filter(**filter) for filter in data['filters']]
+
+    @staticmethod
     def parse_data(data):
         baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type = InsightApi.parse_date_info(data)
-        expected_value = 0
         group_by_columns = data['groupByColumns']
+        filters = InsightApi.parse_filters(data)
 
         return (
-            baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type, group_by_columns, expected_value
+            baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type, group_by_columns, filters
         )
 
     @staticmethod
@@ -103,8 +109,11 @@ class InsightApi(BaseApi):
     def get_bq_insight(self):
         data = request.get_json()
         table_name = data['tableName']
+        expected_value = data['expectedValue']
 
-        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, expected_value) = self.parse_data(data)
+        (
+            baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, filters
+        ) = self.parse_data(data)
 
         metric = self.parse_metrics(data['metricColumn'])
 
@@ -122,10 +131,8 @@ class InsightApi(BaseApi):
     @expose('file/segment', methods=['POST'])
     def get_segment_insight(self):
         data = request.get_json()
-
         file_id = data['fileId']
-
-        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, expected_value) = self.parse_data(data)
+        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, filters) = self.parse_data(data)
 
         metric = self.parse_metrics(data['metricColumn'])
         segment_key = data['segmentKey']
@@ -144,7 +151,8 @@ class InsightApi(BaseApi):
                 date_column,
                 (baselineStart, baselineEnd),
                 (comparisonStart, comparisonEnd),
-                [metric]
+                [metric],
+                filters
             )
         )
 
@@ -155,6 +163,7 @@ class InsightApi(BaseApi):
         (baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type) = self.parse_date_info(data)
         metric_column = data['metricColumn']
         metric = self.parse_metrics(metric_column)
+        filters = self.parse_filters(data)
 
         file_id = data['fileId']
         logger.info('Reading file')
@@ -167,7 +176,8 @@ class InsightApi(BaseApi):
                 (baseline_start, baseline_end),
                 (comparison_start, comparison_end),
                 [DimensionValuePair(key_component['dimension'], key_component['value']) for key_component in data['segmentKey']],
-                metric
+                metric,
+                filters
             )
         )
 
@@ -175,25 +185,30 @@ class InsightApi(BaseApi):
     def get_insight(self):
         data = request.get_json()
         file_id = data['fileId']
-
-        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, expected_value) = self.parse_data(data)
+        expected_value = data['expectedValue']
+        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, filters) = self.parse_data(data)
 
         metric_column = data['metricColumn']
         metric = self.parse_metrics(metric_column)
 
-        logger.info('Reading file')
-        df = pl.read_csv(f'/tmp/dsensei/{file_id}') \
-            .with_columns(pl.col(date_column).str.slice(0, 10).str.to_date().alias("date"))
+        try:
+            logger.info('Reading file')
+            df = pl.read_csv(f'/tmp/dsensei/{file_id}') \
+                .with_columns(pl.col(date_column).str.slice(0, 10).str.to_date().alias("date"))
 
-        logger.info('File loaded')
-
-        insight_builder = DFBasedInsightBuilder(
-            df,
-            (baselineStart, baselineEnd),
-            (comparisonStart, comparisonEnd),
-            group_by_columns,
-            [metric],
-            expected_value
-        )
-
-        return insight_builder.build()
+            logger.info('File loaded')
+            insight_builder = DFBasedInsightBuilder(
+                df,
+                (baselineStart, baselineEnd),
+                (comparisonStart, comparisonEnd),
+                group_by_columns,
+                [metric],
+                expected_value,
+                filters
+            )
+            return insight_builder.build()
+        except EmptyDataFrameError:
+            return build_error_response("EMPTY_DATASET"), 400
+        except Exception as e:
+            logger.exception(e)
+            return build_error_response(str(e)), 500
