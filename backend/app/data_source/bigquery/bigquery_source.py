@@ -10,15 +10,20 @@ query_executor = ThreadPoolExecutor(max_workers=10)
 
 class BigquerySource:
 
-    def __init__(self) -> None:
-        self.client = bigquery.Client()
+    client: bigquery.Client = None
+
+    def get_client(self) -> bigquery.Client:
+        if self.client is None:
+            self.client = bigquery.Client()
+
+        return self.client
 
     @staticmethod
     def convert_field_type(bq_type: str) -> str:
         pass
 
     def get_schema(self, full_name: str) -> BigquerySchema:
-        table = self.client.get_table(full_name)
+        table = self.get_client().get_table(full_name)
 
         selections = ','.join(
             [f'APPROX_COUNT_DISTINCT({field.name}) as {field.name}' for field in table.schema if field.field_type != 'RECORD'])
@@ -59,7 +64,7 @@ class BigquerySource:
         return schema
 
     def list_dataset(self) -> list[Dataset]:
-        dataset_list_res = self.client.list_datasets()
+        dataset_list_res = self.get_client().list_datasets()
 
         return [Dataset(
             name=dataset.dataset_id,
@@ -68,7 +73,7 @@ class BigquerySource:
             for dataset in dataset_list_res]
 
     def list_tables(self, dataset: Dataset = None) -> list[BigquerySchema]:
-        tables = self.client.list_tables(dataset)
+        tables = self.get_client().list_tables(dataset)
         schemas = []
         for row in tables:
             schema = self.get_schema(row.full_table_id)
@@ -85,5 +90,5 @@ class BigquerySource:
 
     def run_query(self, query) -> RowIterator:
         # Run the query and return the results
-        query_job = self.client.query(query)
+        query_job = self.get_client().query(query)
         return query_job.result()

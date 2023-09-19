@@ -26,4 +26,4 @@ WORKDIR /app/backend
 EXPOSE 5001
 
 # Run Flask application
-CMD . /opt/venv/bin/activate && exec flask run -h 0.0.0.0 -p 5001
+CMD . /opt/venv/bin/activate && exec python run.py
