@@ -11,6 +11,7 @@ import {
   Title,
 } from "@tremor/react";
 import { useEffect, useState } from "react";
+import { getServerData } from "../../../common/server-data/server-data-loader";
 import { useTracking } from "../../../common/tracking";
 import { DataSourceType, Schema } from "../../../types/data-source";
 import {
@@ -33,6 +34,7 @@ type Props = {
   rowCountByColumn: RowCountByColumn;
   rowCountByDateColumn?: RowCountByDateAndColumn;
   prefilledConfigs?: PrefillConfig;
+  prefill: (sample: "doordash" | "insurance") => void;
   onSubmit: (
     dateColumn: string,
     dateColumnType: string,
@@ -51,6 +53,7 @@ function ReportConfig({
   rowCountByColumn,
   rowCountByDateColumn,
   prefilledConfigs,
+  prefill,
   onSubmit,
 }: Props) {
   const { trackEvent } = useTracking();
@@ -60,6 +63,7 @@ function ReportConfig({
   const [groupByColumns, setGroupByColumns] = useState<string[]>([]);
   const [metricColumn, setMetricColumn] = useState<MetricColumn>();
   const [expectedValue, setExpectedValue] = useState<number>();
+  const debugMode = getServerData().settings.showDebugInfo;
 
   const [comparisonDateRangeData, setComparisonDateRangeData] =
     useState<DateRangeData>({
@@ -222,6 +226,24 @@ function ReportConfig({
   return (
     <Card className="max-w-6xl mx-auto">
       <Title>Report Config</Title>
+      {
+        debugMode && (
+          <Flex
+            flexDirection="row"
+            justifyContent="center"
+            alignItems="start"
+            className="gap-y-2 p-2 gap-4"
+          >
+            <Button className="mb-4" onClick={() => { prefill("doordash") }} >
+              Doordash
+            </Button>
+
+            <Button className="mb-4" onClick={() => { prefill("insurance") }} >
+              Insurance
+            </Button>
+          </Flex>
+      )}
+
       <Divider />
       <div className="flex flex-col gap-4">
         <SingleSelector

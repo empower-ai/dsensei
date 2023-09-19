@@ -52,6 +52,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
       schema={schema}
       dataSourceType="bigquery"
       rowCountByColumn={rowCountByColumn}
+      prefill={() => {}}
       onSubmit={onSubmit}
     />
   );
