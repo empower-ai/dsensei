@@ -1,3 +1,4 @@
+import axios, { AxiosError, AxiosProgressEvent, AxiosResponse } from "axios";
 import url from "url";
 
 export interface T {
@@ -31,81 +32,82 @@ export class APIManager {
     );
   }
 
-  private async handleResponse<T>(response: Response): Promise<T> {
-    const responseData: T = await response.json();
-
-    if (response.ok) {
-      return responseData;
-    } else {
-      throw {
-        statusCode: response.status,
-        error:
-          // @ts-ignore
-          responseData.error ?? "UNKNOWN_ERROR",
-        message:
-          // @ts-ignore
-          responseData.error ??
-          "Something wrong happened, please try again or contact founders@dsensei.app.",
-      };
+  private async handleRequest<T>(
+    request: () => Promise<AxiosResponse<T, any>>
+  ): Promise<T> {
+    try {
+      return (await request()).data;
+    } catch (e) {
+      if (e instanceof AxiosError) {
+        // eslint-disable-next-line no-throw-literal
+        throw {
+          statusCode: e.response?.status,
+          error: e.response?.data.error,
+          message:
+            e.response?.data.error ??
+            "Something wrong happened, please try again or contact founders@dsensei.app.",
+        };
+      } else {
+        throw e;
+      }
     }
   }
 
-  public async get<T>(endpoint: string): Promise<T> {
-    const requestUrl = (this.baseUrl + endpoint).replace(/([^:]\/)\/+/g, "$1");
-    const response = await fetch(requestUrl, {
-      cache: "no-cache",
-      headers: jsonRequestHeaders,
-    });
-
-    return this.handleResponse<T>(response);
+  private getRequestUrl(endpoint: string): string {
+    return (this.baseUrl + endpoint).replace(/([^:]\/)\/+/g, "$1");
   }
 
-  public async postForm<T>(endpoint: string, formData: FormData): Promise<T> {
-    const requestUrl = (this.baseUrl + endpoint).replace(/([^:]\/)\/+/g, "$1");
-    const response = await fetch(requestUrl, {
-      cache: "no-cache",
-      method: "POST",
-      body: formData,
-    });
+  public async get<T>(endpoint: string): Promise<T> {
+    return await this.handleRequest<T>(
+      async () =>
+        await axios.get<T>(this.getRequestUrl(endpoint), {
+          headers: jsonRequestHeaders,
+        })
+    );
+  }
 
-    return this.handleResponse<T>(response);
+  public async postForm<T>(
+    endpoint: string,
+    formData: FormData,
+    onUploadProgress: (progressEvent: AxiosProgressEvent) => void = (
+      event
+    ) => {}
+  ): Promise<T> {
+    const requestUrl = (this.baseUrl + endpoint).replace(/([^:]\/)\/+/g, "$1");
+
+    return await this.handleRequest<T>(
+      async () =>
+        await axios.post<T>(requestUrl, formData, {
+          onUploadProgress,
+        })
+    );
   }
 
   public async post<T>(endpoint: string, body: object): Promise<T> {
-    const requestUrl = (this.baseUrl + endpoint).replace(/([^:]\/)\/+/g, "$1");
-    const response = await fetch(requestUrl, {
-      cache: "no-cache",
-      method: "POST",
-      headers: jsonRequestHeaders,
-      body: JSON.stringify(body),
-    });
-
-    return this.handleResponse<T>(response);
+    return await this.handleRequest<T>(
+      async () =>
+        await axios.post<T>(this.getRequestUrl(endpoint), body, {
+          headers: jsonRequestHeaders,
+        })
+    );
   }
 
   public async put<T>(endpoint: string, body: object): Promise<T> {
-    const requestUrl = (this.baseUrl + endpoint).replace(/([^:]\/)\/+/g, "$1");
-    const response = await fetch(requestUrl, {
-      cache: "no-cache",
-      method: "PUT",
-      headers: jsonRequestHeaders,
-      body: JSON.stringify(body),
-    });
-
-    return this.handleResponse<T>(response);
+    return await this.handleRequest<T>(
+      async () =>
+        await axios.put<T>(this.getRequestUrl(endpoint), body, {
+          headers: jsonRequestHeaders,
+        })
+    );
   }
 
-  // Add methods for other HTTP methods like PUT, DELETE, etc. as needed
-  // Delete
   public async delete<T>(endpoint: string): Promise<T> {
-    const requestUrl = (this.baseUrl + endpoint).replace(/([^:]\/)\/+/g, "$1");
-    const response = await fetch(requestUrl, {
-      cache: "no-cache",
-      method: "DELETE",
-      headers: jsonRequestHeaders,
-    });
-
-    return this.handleResponse<T>(response);
+    return await this.handleRequest<T>(
+      async () =>
+        await axios.delete<T>(this.getRequestUrl(endpoint), {
+          headers: jsonRequestHeaders,
+        })
+    );
   }
 }
 

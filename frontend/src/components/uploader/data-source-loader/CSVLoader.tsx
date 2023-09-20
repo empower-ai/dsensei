@@ -8,11 +8,17 @@ import { CSVSchema } from "../../../types/data-source";
 
 interface Props {
   useSampleFile?: boolean;
+  onUploadingFile: (progress: number) => void;
   onLoadingSchema: () => void;
   onSchemaLoaded: (schema: CSVSchema) => void;
 }
 
-function CSVLoader({ useSampleFile, onLoadingSchema, onSchemaLoaded }: Props) {
+function CSVLoader({
+  useSampleFile,
+  onLoadingSchema,
+  onSchemaLoaded,
+  onUploadingFile,
+}: Props) {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
@@ -39,7 +45,10 @@ function CSVLoader({ useSampleFile, onLoadingSchema, onSchemaLoaded }: Props) {
     try {
       const schema = await apiManager.postForm<CSVSchema>(
         "/api/v1/source/file/schema",
-        formData
+        formData,
+        (progressEvent) => {
+          onUploadingFile((progressEvent.progress ?? 0) * 100);
+        }
       );
       onSchemaLoaded(schema);
     } catch (e) {

@@ -4,6 +4,7 @@ import {
   Divider,
   Flex,
   Grid,
+  ProgressBar,
   Select,
   SelectItem,
   Text,
@@ -13,6 +14,7 @@ import {
 import { useState } from "react";
 import { NavBar } from "../common/navbar";
 import getSettings from "../common/server-data/settings";
+import { formatNumber } from "../common/utils";
 import DataPreviewer from "../components/uploader/DataPreviewer";
 import InformationCard from "../components/uploader/InformationCard";
 import BigqueryLoader from "../components/uploader/data-source-loader/BigqueryLoader";
@@ -28,9 +30,26 @@ import {
 
 function NewReport() {
   const [isLoadingSchema, setIsLoadingSchema] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [schema, setSchema] = useState<Schema>();
   const [useSampleFile, setUseSampleFile] = useState<boolean>(false);
   const [dataSource, setDataSource] = useState<DataSourceType>("csv");
+
+  function renderCSVLoader() {
+    return (
+      <CSVLoader
+        useSampleFile={useSampleFile}
+        onLoadingSchema={() => {
+          setIsLoadingSchema(true);
+        }}
+        onSchemaLoaded={(schema: CSVSchema) => {
+          setSchema(schema);
+          setIsLoadingSchema(false);
+        }}
+        onUploadingFile={(progress) => setUploadProgress(progress)}
+      />
+    );
+  }
 
   function renderDataSourceLoader() {
     if (window.location.hostname === "app.dsensei.app") {
@@ -39,16 +58,7 @@ function NewReport() {
           <Flex justifyContent="center" className="pb-4">
             <Text>Start a new report by uploading a CSV file</Text>
           </Flex>
-          <CSVLoader
-            useSampleFile={useSampleFile}
-            onLoadingSchema={() => {
-              setIsLoadingSchema(true);
-            }}
-            onSchemaLoaded={(schema: CSVSchema) => {
-              setSchema(schema);
-              setIsLoadingSchema(false);
-            }}
-          />
+          {renderCSVLoader()}
         </>
       );
     }
@@ -80,18 +90,7 @@ function NewReport() {
             </Flex>
           )}
         </Grid>
-        {dataSource === "csv" && (
-          <CSVLoader
-            useSampleFile={useSampleFile}
-            onLoadingSchema={() => {
-              setIsLoadingSchema(true);
-            }}
-            onSchemaLoaded={(schema: CSVSchema) => {
-              setSchema(schema);
-              setIsLoadingSchema(false);
-            }}
-          />
-        )}
+        {dataSource === "csv" && renderCSVLoader()}
         {dataSource === "bigquery" && (
           <BigqueryLoader
             onLoadingSchema={() => {
@@ -109,16 +108,39 @@ function NewReport() {
     );
   }
 
+  function renderProgress() {
+    if (dataSource !== "csv" || uploadProgress === 100.0) {
+      return (
+        <Flex className="h-64	gap-3" justifyContent="center">
+          <p>Processing...</p>
+          <span className="loading loading-bars loading-lg"></span>
+        </Flex>
+      );
+    }
+
+    if (uploadProgress < 100) {
+      return (
+        <Flex
+          className="h-64	gap-3 w-[60%]"
+          flexDirection="col"
+          justifyContent="center"
+        >
+          <ProgressBar value={uploadProgress} />
+          Uploading file &bull; {formatNumber(uploadProgress)}%
+        </Flex>
+      );
+    }
+  }
+
   return (
     <>
       <NavBar />
       <div className="flex flex-col gap-2 justify-center items-center pt-20">
         <Title>New Report</Title>
         {isLoadingSchema && !schema && (
-          <Card className="max-w-6xl">
-            <Flex className="h-64	gap-3" justifyContent="center">
-              <p>Processing</p>
-              <span className="loading loading-bars loading-lg"></span>
+          <Card className="max-w-6xl justify-center flex">
+            <Flex className="h-64	gap-3 w-[60%]" justifyContent="center">
+              {renderProgress()}
             </Flex>
           </Card>
         )}
