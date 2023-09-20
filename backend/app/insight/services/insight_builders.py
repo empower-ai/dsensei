@@ -262,7 +262,7 @@ class DFBasedInsightBuilder(object):
             .select('dimension_name', "score") \
             .with_columns([polars.col("score").mean().alias("score_mean"),
                            polars.col("score").std().alias("score_std")])
-        dimensions = [Dimension(row['dimension_name'], row['score'], row['score'] > row['score_mean']) for row in
+        dimensions = [Dimension(row['dimension_name'], row['score'], row['score'] > row['score_mean'] and row['score'] > 0.02) for row in
                       dimension_info_df.rows(named=True)]
 
         weighted_change_mean = multi_dimension_grouping_result.select(
