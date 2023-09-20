@@ -13,9 +13,10 @@ RUN . /opt/venv/bin/activate && pip install -r requirements.txt
 # Install frontend dependencies, copy frontend files and build frontend
 WORKDIR /app/frontend
 COPY /frontend/package.json /app/frontend/package.json
-RUN npm install -g pnpm && \
-    pnpm install
-COPY ./frontend /app/frontend
+COPY /frontend/pnpm-lock.yaml /app/frontend/pnpm-lock.yaml
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+COPY /frontend /app/frontend
 RUN npm run build
 
 # Copy backend files
