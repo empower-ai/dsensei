@@ -69,6 +69,16 @@ class DFBasedInsightBuilder(object):
         for i in range(1, min(4, len(self.group_by_columns))):
             column_combinations_list.extend(
                 combinations(self.group_by_columns, i))
+
+        baseline_df = self.baseline_df.groupby(self.group_by_columns).agg(self.aggregation_expressions)
+        comparison_df = self.comparison_df.groupby(self.group_by_columns).agg(self.aggregation_expressions)
+
+        self.joined_df = comparison_df.join(
+            baseline_df,
+            on=self.group_by_columns,
+            suffix="_baseline",
+            how='outer'
+        ).fill_null(0).fill_nan(0)
         self.segments_df, self.dimensions, self.total_segments = self.analyze_segments(column_combinations_list)
         self.key_dimensions = [dimension.name for dimension in self.dimensions if dimension.is_key_dimension]
         logger.info('init done')
@@ -152,16 +162,6 @@ class DFBasedInsightBuilder(object):
         def _safe_divide(n: Expr, m: Expr):
             return polars.when(m == 0).then(0).otherwise(n / m)
 
-        baseline_df = self.baseline_df.groupby(self.group_by_columns).agg(self.aggregation_expressions)
-        comparison_df = self.comparison_df.groupby(self.group_by_columns).agg(self.aggregation_expressions)
-
-        base_joined = comparison_df.join(
-            baseline_df,
-            on=self.group_by_columns,
-            suffix="_baseline",
-            how='outer'
-        ).fill_null(0).fill_nan(0)
-
         sub_df_agg_methods_alt = flatten([
             ([polars.sum(metric.get_id()), polars.sum(f"{metric.get_id()}_baseline")] if isinstance(metric, SingleColumnMetric) else [
                 _safe_divide(polars.sum(metric.numerator_metric.get_id()), polars.sum(metric.denominator_metric.get_id())).alias(metric.get_id()),
@@ -172,22 +172,16 @@ class DFBasedInsightBuilder(object):
                     f"{metric.get_id()}_baseline"),
                 polars.sum(f"{metric.numerator_metric.get_id()}_baseline").alias(f"{metric.numerator_metric.get_id()}_baseline"),
                 polars.sum(f"{metric.denominator_metric.get_id()}_baseline").alias(f"{metric.denominator_metric.get_id()}_baseline")
-            ]) + [
-                polars.col(metric.get_id()).explode().alias(f"{metric.get_id()}-LIST"),
-                polars.col(f"{metric.get_id()}_baseline").explode().alias(f"{metric.get_id()}-LIST_baseline")
-            ]
+            ])
             for metric in self.metrics
         ]) + [polars.sum("count").alias("count"), polars.sum("count_baseline").alias("count_baseline")]
 
         def gen_sub_df_for_columns(columns: List[str]):
-            joined = base_joined \
+            joined = self.joined_df \
                 .groupby(columns) \
                 .agg(sub_df_agg_methods_alt) \
                 .with_columns(polars.lit([columns], dtype=polars.List).alias("dimension_name")) \
                 .with_columns(polars.concat_list([polars.col(column).cast(str) for column in columns]).alias("dimension_value")) \
-                .with_columns(
-                polars.concat_list([polars.concat_str(polars.lit(f"{column}:"), polars.col(column).cast(str)) for column in columns]).list.join('|').alias(
-                    "serialized_key")) \
                 .drop(columns)
 
             analyzing_metric = next(iter(self.metrics))
@@ -277,45 +271,28 @@ class DFBasedInsightBuilder(object):
             ((polars.col("weight") * (polars.col("change") - polars.lit(weighted_change_mean)
                                       ).pow(2)).sum() / polars.col("weight").sum()).sqrt()
         )).row(0)
-        multi_dimension_grouping_result = multi_dimension_grouping_result.with_columns(polars.lit(weighted_std).alias("weighted_std")) \
-            .with_columns(polars.lit(weighted_change_mean).alias('weighted_change_mean')) \
-            .with_columns(
-            polars.when(polars.col('weighted_std') != 0)
-            .then((polars.col('change') - polars.lit(self.expected_value)).abs() / polars.col('weighted_std') * (
-                    polars.col('weight') / polars.col('sum')).sqrt())
-            .otherwise(0)
-            .alias('change_variance')
-        )
-
-        if isinstance(self.analyzing_metric, DualColumnMetric):
-            multi_dimension_grouping_result = multi_dimension_grouping_result.with_columns(
-                (polars.col(self.analyzing_metric.numerator_metric.get_id()) -
-                 polars.col(
-                     f"{self.analyzing_metric.numerator_metric.get_id()}_baseline")).abs().alias(
-                    "sort"))
-        else:
-            multi_dimension_grouping_result = multi_dimension_grouping_result.with_columns(
-                (polars.col(self.analyzing_metric.get_id()) - polars.col(f"{self.analyzing_metric.get_id()}_baseline")).abs().alias("sort")
-            )
 
         total_segments = multi_dimension_grouping_result.select(polars.col("dimension_name").count().alias("total_segments")).row(0)[0]
 
-        sorted_serialized_key_df = multi_dimension_grouping_result \
-            .select(["sort", "dimension_name", "serialized_key"]) \
-            .with_columns(
-            polars.when(
-                polars.col("dimension_name").list.lengths() == 1
-            ).then(polars.lit(1)).otherwise(polars.lit(0)).alias("dimension_weight")
-        ).sort([polars.col("dimension_weight"), polars.col("sort").abs()], descending=True) \
-            .limit(20000) \
-            .sort([polars.col("sort").abs()], descending=True) \
-            .select("serialized_key")
+        if isinstance(self.analyzing_metric, DualColumnMetric):
+            sort_column = (polars.col(self.analyzing_metric.numerator_metric.get_id()) - polars.col(
+                f"{self.analyzing_metric.numerator_metric.get_id()}_baseline")).abs().alias("sort")
+        else:
+            sort_column = (polars.col(self.analyzing_metric.get_id()) - polars.col(f"{self.analyzing_metric.get_id()}_baseline")).abs().alias("sort")
+        change_variance_column = polars.when(polars.col('weighted_std') != 0).then(
+            (polars.col('change') - polars.lit(self.expected_value)).abs() / polars.col('weighted_std') * (polars.col('weight') / polars.col('sum')).sqrt()) \
+            .otherwise(0) \
+            .alias('change_variance')
+        dimension_weight_column = polars.when(
+            polars.col("dimension_name").list.lengths() == 1
+        ).then(polars.lit(1)).otherwise(polars.lit(0)).alias("dimension_weight")
 
-        multi_dimension_grouping_result = sorted_serialized_key_df.join(
-            multi_dimension_grouping_result,
-            on="serialized_key",
-            how="inner",
-        ).sort(polars.col("sort").abs(), descending=True)
+        multi_dimension_grouping_result = multi_dimension_grouping_result.with_columns(polars.lit(weighted_std).alias("weighted_std")) \
+            .with_columns([polars.lit(weighted_change_mean).alias('weighted_change_mean'),
+                           sort_column, change_variance_column, dimension_weight_column]) \
+            .sort([polars.col("dimension_weight"), polars.col("sort").abs()], descending=True) \
+            .limit(20000) \
+            .sort([polars.col("sort").abs()], descending=True)
 
         return multi_dimension_grouping_result, dimensions, total_segments
 
@@ -327,38 +304,23 @@ class DFBasedInsightBuilder(object):
             comparison_count: int,
             parent_metric: Optional[Metric] = None
     ):
+        def _build_serialized_key(row):
+            return "|".join([f"{column}:{value}" for column, value in zip(row['dimension_name'], row['dimension_value'])])
+
         if len(self.key_dimensions) > 0:
             top_segments_df = df.with_columns(polars.concat_list([polars.lit(dimension) for dimension in self.key_dimensions]).alias("key_dimensions")) \
                 .filter(polars.col("dimension_name").list.set_intersection("key_dimensions").list.lengths() == polars.col("dimension_name").list.lengths()) \
                 .limit(1000)
-            top_segment_keys = [row['serialized_key'] for row in top_segments_df.select("serialized_key").rows(named=True)]
+            top_segment_keys = [_build_serialized_key(row) for row in top_segments_df.rows(named=True)]
         else:
             top_segment_keys = []
-
-        if parent_metric is None:
-            if len(self.key_dimensions) > 0:
-                top_segments_df = df.with_columns(polars.concat_list([polars.lit(dimension) for dimension in self.key_dimensions]).alias("key_dimensions")) \
-                    .filter(polars.col("dimension_name").list.set_intersection("key_dimensions").list.lengths() == polars.col("dimension_name").list.lengths()) \
-                    .select(["serialized_key", f"{metric.get_id()}-LIST_baseline", f"{metric.get_id()}-LIST"]) \
-                    .limit(1000)
-
-                top_segment_rows = top_segments_df.rows(named=True)
-                serialized_key_to_value_list = {
-                    row['serialized_key']: {
-                        'list': row[f"{metric.get_id()}-LIST"],
-                        'list_baseline': row[f"{metric.get_id()}-LIST_baseline"]
-                    }
-                    for row in top_segment_rows
-                }
-            else:
-                serialized_key_to_value_list = {}
 
         def map_to_segment_info(row):
             values = row["dimension_value"]
             dimensions = row['dimension_name']
             key = tuple([DimensionValuePair(dimensions[i], str(values[i]))
                          for i in range(len(dimensions))])
-            serialized_key = row['serialized_key']
+            serialized_key = _build_serialized_key(row)
 
             current_period_value = PeriodValue(
                 row['count'], 0 if comparison_count == 0 else row['count'] / comparison_count, row[metric.get_id()])
@@ -367,28 +329,36 @@ class DFBasedInsightBuilder(object):
                 row[f'{metric.get_id()}_baseline'])
 
             p_value = -1
-            if parent_metric is None and serialized_key in serialized_key_to_value_list:
-                value_list = serialized_key_to_value_list[serialized_key]['list']
-                value_list_baseline = serialized_key_to_value_list[serialized_key]['list_baseline']
+            if parent_metric is None and serialized_key in top_segment_keys:
+                filters = polars.lit(True)
+                for column, value in zip(row['dimension_name'], row['dimension_value']):
+                    filters = filters & polars.col(column).cast(polars.Utf8).eq(value)
+                filtered_joined_df = self.joined_df.filter(filters)
+
+                value_list = filtered_joined_df[f"{metric.get_id()}"]
+                value_list_baseline = filtered_joined_df[f"{metric.get_id()}_baseline"]
 
                 if value_list is not None and value_list_baseline is not None:
                     value_list = numpy.array(value_list)
                     value_list_baseline = numpy.array(value_list_baseline)
 
-                    relative_diff = ((value_list - value_list_baseline) / value_list_baseline) * 100
-                    relative_diff = relative_diff[~np.isinf(relative_diff)]
-                    relative_diff = relative_diff[~np.isnan(relative_diff)]
+                    if isinstance(metric, DualColumnMetric):
+                        diff = value_list - value_list_baseline
+                    else:
+                        relative_diff = ((value_list - value_list_baseline) / value_list_baseline) * 100
+                        relative_diff = relative_diff[~np.isinf(relative_diff)]
+                        relative_diff = relative_diff[~np.isnan(relative_diff)]
+                        diff = relative_diff
 
-                    if len(relative_diff) > len(value_list) / 2:
-                        mean_relative_diff = np.mean(relative_diff)
-                        std_relative_diff = np.std(relative_diff, ddof=1)
+                    if len(diff) > len(value_list) / 2:
+                        mean_diff = np.mean(diff)
+                        std_diff = np.std(diff, ddof=1)
 
-                        n = len(relative_diff)
-                        standard_error = std_relative_diff / np.sqrt(n)
+                        n = len(diff)
 
-                        t_statistic = mean_relative_diff / standard_error
-                        degrees_of_freedom = n - 1
-                        p_value = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom))
+                        standard_error = std_diff / np.sqrt(n)
+                        t_statistic = mean_diff / standard_error
+                        p_value = 2 * (1 - stats.t.cdf(abs(t_statistic), df=n - 1))
 
             slice_info = SegmentInfo(
                 key,
@@ -404,7 +374,6 @@ class DFBasedInsightBuilder(object):
 
             return slice_info.serializedKey, slice_info
 
-        rows = df.drop(f"{self.analyzing_metric.get_id()}-LIST_baseline", f"{self.analyzing_metric.get_id()}-LIST").rows(named=True)
-        segments = [map_to_segment_info(row) for row in rows]
+        segments = [map_to_segment_info(row) for row in df.rows(named=True)]
         segments_dict = {serialized_key: segment for serialized_key, segment in segments}
         return segments_dict, list(top_segment_keys)
