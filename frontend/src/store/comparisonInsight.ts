@@ -211,83 +211,88 @@ function buildRowStatusMap(
     [key: string]: number;
   } = {};
   let connectedSegments: string[][] = [];
-  if (mode === "outlier") {
-    const sortedTopDriverKeys = topDriverSliceKeys.sort((key1, key2) => {
+  const sortedTopDriverKeys = topDriverSliceKeys.sort((key1, key2) => {
+    const keyComponents1 = key1.split("|");
+    const keyComponents2 = key2.split("|");
+
+    return keyComponents1.length - keyComponents2.length;
+  });
+
+  const connectedSegmentGraph = new Graph();
+  sortedTopDriverKeys.forEach((key) => {
+    connectedSegmentGraph.addVertex(key);
+  });
+  sortedTopDriverKeys.forEach((key, idx) => {
+    const keyComponents = key.split("|");
+    const sliceInfo = metric.dimensionSliceInfo[key];
+
+    for (let i = 0; i < idx; ++i) {
+      const checkingKey = sortedTopDriverKeys[i];
+      const checkingKeyComponents = checkingKey.split("|");
+
+      if (
+        checkingKeyComponents.every((component) =>
+          keyComponents.includes(component)
+        )
+      ) {
+        const checkingSliceInfo = metric.dimensionSliceInfo[checkingKey];
+        const sliceValue =
+          sliceInfo.comparisonValue.sliceCount +
+          sliceInfo.baselineValue.sliceCount;
+        const checkingSliceValue =
+          checkingSliceInfo.comparisonValue.sliceCount +
+          checkingSliceInfo.baselineValue.sliceCount;
+
+        if (
+          Math.abs((sliceValue - checkingSliceValue) / checkingSliceValue) <
+          0.05
+        ) {
+          connectedSegmentGraph.addEdge(key, checkingKey);
+        }
+      }
+    }
+  });
+
+  connectedSegments = connectedSegmentGraph.connectedComponents();
+
+  const segmentToRepresentingSegment: {
+    [key: string]: string;
+  } = {};
+
+  connectedSegments.forEach((cluster, clusterIdx) => {
+    if (cluster.length === 1) {
+      return;
+    }
+
+    const key = cluster.sort((key1, key2) => {
       const keyComponents1 = key1.split("|");
       const keyComponents2 = key2.split("|");
 
-      return keyComponents1.length - keyComponents2.length;
+      return keyComponents2.length - keyComponents1.length;
+    })[0];
+    cluster.forEach((element) => {
+      segmentToRepresentingSegment[element] = key;
+      segmentToConnectedSegmentsIndex[key] = clusterIdx;
     });
+  });
 
-    const connectedSegmentGraph = new Graph();
-    sortedTopDriverKeys.forEach((key) => {
-      connectedSegmentGraph.addVertex(key);
+  [...topDriverSliceKeys].forEach((key, idx) => {
+    if (
+      segmentToRepresentingSegment[key] &&
+      segmentToRepresentingSegment[key] !== key
+    ) {
+      delete topDriverSliceKeys[idx];
+    }
+  });
+
+  topDriverSliceKeys = topDriverSliceKeys
+    .filter((key) => key)
+    .sort((key1, key2) => {
+      const segment1 = metric.dimensionSliceInfo[key1];
+      const segment2 = metric.dimensionSliceInfo[key2];
+
+      return Math.abs(segment2.impact) - Math.abs(segment1.impact);
     });
-    sortedTopDriverKeys.forEach((key, idx) => {
-      const keyComponents = key.split("|");
-      const sliceInfo = metric.dimensionSliceInfo[key];
-
-      for (let i = 0; i < idx; ++i) {
-        const checkingKey = sortedTopDriverKeys[i];
-        const checkingKeyComponents = checkingKey.split("|");
-
-        if (
-          checkingKeyComponents.every((component) =>
-            keyComponents.includes(component)
-          )
-        ) {
-          const checkingSliceInfo = metric.dimensionSliceInfo[checkingKey];
-          const sliceValue =
-            sliceInfo.comparisonValue.sliceCount +
-            sliceInfo.baselineValue.sliceCount;
-          const checkingSliceValue =
-            checkingSliceInfo.comparisonValue.sliceCount +
-            checkingSliceInfo.baselineValue.sliceCount;
-
-          if (
-            Math.abs((sliceValue - checkingSliceValue) / checkingSliceValue) <
-            0.05
-          ) {
-            connectedSegmentGraph.addEdge(key, checkingKey);
-          }
-        }
-      }
-    });
-
-    connectedSegments = connectedSegmentGraph.connectedComponents();
-
-    const segmentToRepresentingSegment: {
-      [key: string]: string;
-    } = {};
-
-    connectedSegments.forEach((cluster, clusterIdx) => {
-      if (cluster.length === 1) {
-        return;
-      }
-
-      const key = cluster.sort((key1, key2) => {
-        const keyComponents1 = key1.split("|");
-        const keyComponents2 = key2.split("|");
-
-        return keyComponents2.length - keyComponents1.length;
-      })[0];
-      cluster.forEach((element) => {
-        segmentToRepresentingSegment[element] = key;
-        segmentToConnectedSegmentsIndex[key] = clusterIdx;
-      });
-    });
-
-    [...topDriverSliceKeys].forEach((key, idx) => {
-      if (
-        segmentToRepresentingSegment[key] &&
-        segmentToRepresentingSegment[key] !== key
-      ) {
-        delete topDriverSliceKeys[idx];
-      }
-    });
-
-    topDriverSliceKeys = topDriverSliceKeys.filter((key) => key);
-  }
 
   if (!groupRows) {
     topDriverSliceKeys.forEach((key) => {
