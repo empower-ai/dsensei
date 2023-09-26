@@ -17,7 +17,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { Md5 } from "ts-md5";
 import { Tooltip } from "../../common/Tooltip";
 import getSettings from "../../common/server-data/settings";
-import { DimensionSliceInfo, DimensionSliceKey } from "../../common/types";
+import {
+  DimensionSliceInfo,
+  DimensionSliceKey,
+  InsightMetric,
+} from "../../common/types";
 import {
   formatDimensionSliceKeyForRendering,
   formatMetricValue,
@@ -41,6 +45,7 @@ type Props = {
   targetDirection: TargetDirection;
   aggregationMethod: string;
   onReRunOnSegment: (key: DimensionSliceKey) => void;
+  metric: InsightMetric;
 };
 
 function getChangePercentage(num1: number, num2: number): ReactNode {
@@ -50,6 +55,49 @@ function getChangePercentage(num1: number, num2: number): ReactNode {
     <Badge size="xs" color="gray" className="ml-1">
       {content}
     </Badge>
+  );
+}
+
+function getRelativePerformance(
+  num1: number,
+  num2: number,
+  overallChange: number,
+  targetDirection: TargetDirection
+): ReactNode {
+  if (num1 === 0) {
+    return (
+      <Badge size="xs" color="gray" className="ml-1">
+        N/A
+      </Badge>
+    );
+  }
+
+  const change = (num2 - num1) / num1;
+  const relativeChange = (change - overallChange) * 100.0;
+
+  if (relativeChange > 0) {
+    return (
+      <BadgeDelta
+        deltaType="increase"
+        isIncreasePositive={targetDirection === "increasing"}
+      >
+        +{formatNumber(relativeChange)}%
+      </BadgeDelta>
+    );
+  } else if (relativeChange === 0) {
+    return (
+      <BadgeDelta deltaType="unchanged">
+        {formatNumber(relativeChange)}%
+      </BadgeDelta>
+    );
+  }
+  return (
+    <BadgeDelta
+      deltaType="decrease"
+      isIncreasePositive={targetDirection === "increasing"}
+    >
+      {formatNumber(relativeChange)}%
+    </BadgeDelta>
   );
 }
 
@@ -96,6 +144,7 @@ export default function TopDimensionSlicesTableRow({
   targetDirection,
   aggregationMethod,
   onReRunOnSegment,
+  metric,
 }: Props) {
   const allDimensionSliceInfo = useSelector(
     (state: RootState) =>
@@ -116,6 +165,7 @@ export default function TopDimensionSlicesTableRow({
           targetDirection={targetDirection}
           aggregationMethod={aggregationMethod}
           onReRunOnSegment={onReRunOnSegment}
+          metric={metric}
           key={`${Md5.hashStr(serializedKey)}-${Md5.hashStr(
             dimensionSliceInfo.serializedKey
           )}`}
@@ -219,6 +269,15 @@ export default function TopDimensionSlicesTableRow({
                 targetDirection,
                 (n) => formatNumber(n)
               )}
+        </TableCell>
+        <TableCell>
+          {getRelativePerformance(
+            dimensionSlice?.baselineValue.sliceValue ?? 0,
+            dimensionSlice?.comparisonValue.sliceValue ?? 0,
+            (metric.comparisonValue - metric.baselineValue) /
+              metric.baselineValue,
+            targetDirection
+          )}
         </TableCell>
         <TableCell>
           <Flex>

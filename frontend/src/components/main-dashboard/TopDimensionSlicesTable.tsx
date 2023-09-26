@@ -197,6 +197,12 @@ export default function TopDimensionSlicesTable({
             </TableHeaderCell>
             <TableHeaderCell>
               <Flex justifyContent="start" className="gap-2">
+                Relative Performance
+                <TooltipIcon text="Performance of the segment compared with overall change: change_of_segment - overall_change" />
+              </Flex>
+            </TableHeaderCell>
+            <TableHeaderCell>
+              <Flex justifyContent="start" className="gap-2">
                 Segment Size
                 <TooltipIcon text="Size of the segment, calculated by: total_rows_in_segment / total_rows" />
               </Flex>
@@ -223,6 +229,7 @@ export default function TopDimensionSlicesTable({
                 aggregationMethod={metric.aggregationMethod}
                 onReRunOnSegment={onReRunOnSegment}
                 key={Md5.hashStr(dimensionSlice.serializedKey)}
+                metric={metric}
               />
             );
           })}
