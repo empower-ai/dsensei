@@ -66,7 +66,7 @@ class DFBasedInsightBuilder(object):
         self.overall_aggregated_df = self.gen_agg_df()
 
         column_combinations_list = []
-        for i in range(1, min(4, len(self.group_by_columns))):
+        for i in range(1, min(3, len(self.group_by_columns)) + 1):
             column_combinations_list.extend(
                 combinations(self.group_by_columns, i))
 
