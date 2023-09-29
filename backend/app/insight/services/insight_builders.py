@@ -252,8 +252,9 @@ class DFBasedInsightBuilder(object):
         ) for columns in column_combinations_list]
         wait(futures)
 
-        multi_dimension_grouping_result = polars.concat(
-            [future.result() for future in futures])
+        total_rows = self.overall_aggregated_df['count_baseline'].sum() + self.overall_aggregated_df['count'].sum()
+        multi_dimension_grouping_result = polars.concat([future.result() for future in futures]) \
+            .filter((polars.col("count") + polars.col("count_baseline")) / polars.lit(total_rows) > 0.01)
 
         dimension_info_df = multi_dimension_grouping_result.filter(polars.col("dimension_name").list.lengths() == 1) \
             .with_columns(polars.col("dimension_name").list.first()) \
@@ -262,7 +263,7 @@ class DFBasedInsightBuilder(object):
             .select('dimension_name', "score") \
             .with_columns([polars.col("score").mean().alias("score_mean"),
                            polars.col("score").std().alias("score_std")])
-        dimensions = [Dimension(row['dimension_name'], row['score'], row['score'] > row['score_mean'] and row['score'] > 0.02) for row in
+        dimensions = [Dimension(row['dimension_name'], row['score'], row['score'] > row['score_mean'] or row['score'] > 0.02) for row in
                       dimension_info_df.rows(named=True)]
 
         weighted_change_mean = multi_dimension_grouping_result.select(
