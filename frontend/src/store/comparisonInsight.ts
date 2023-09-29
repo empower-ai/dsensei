@@ -47,6 +47,7 @@ export interface ComparisonInsightState {
   groupRows: boolean;
   mode: "impact" | "outlier";
   sensitivity: "low" | "medium" | "high";
+  shouldUsePScore: boolean;
 }
 
 const THRESHOLD = {
@@ -186,7 +187,8 @@ function buildRowStatusMap(
   metric: InsightMetric,
   groupRows: boolean,
   mode: "impact" | "outlier" = "impact",
-  sensitivity: "low" | "medium" | "high" = "medium"
+  sensitivity: "low" | "medium" | "high" = "medium",
+  shouldUsePScore: boolean
 ): [
   {
     [key: string]: RowStatus;
@@ -203,7 +205,8 @@ function buildRowStatusMap(
     const changeDev = sliceInfo.changeDev;
     return (
       mode === "impact" ||
-      (changeDev > THRESHOLD[sensitivity] && sliceInfo.confidence < 0.05)
+      (changeDev > THRESHOLD[sensitivity] &&
+        (!shouldUsePScore || sliceInfo.confidence < 0.05))
     );
   });
 
@@ -423,6 +426,7 @@ const initialState: ComparisonInsightState = {
   groupRows: true,
   mode: "outlier",
   sensitivity: "medium",
+  shouldUsePScore: true,
 };
 
 export const comparisonMetricsSlice = createSlice({
@@ -454,7 +458,8 @@ export const comparisonMetricsSlice = createSlice({
         state.analyzingMetrics,
         true,
         state.mode,
-        state.sensitivity
+        state.sensitivity,
+        state.shouldUsePScore
       );
       state.tableRowStatusByDimension = buildRowStatusByDimensionMap(
         state.analyzingMetrics
@@ -470,7 +475,8 @@ export const comparisonMetricsSlice = createSlice({
         state.analyzingMetrics,
         true,
         state.mode,
-        state.sensitivity
+        state.sensitivity,
+        state.shouldUsePScore
       );
     },
     setSensitivity: (
@@ -482,7 +488,8 @@ export const comparisonMetricsSlice = createSlice({
         state.analyzingMetrics,
         true,
         state.mode,
-        state.sensitivity
+        state.sensitivity,
+        state.shouldUsePScore
       );
     },
     toggleRow: (
@@ -549,7 +556,18 @@ export const comparisonMetricsSlice = createSlice({
         state.analyzingMetrics,
         state.groupRows,
         state.mode,
-        state.sensitivity
+        state.sensitivity,
+        state.shouldUsePScore
+      );
+    },
+    setShouldUsePScore: (state, action: PayloadAction<boolean>) => {
+      state.shouldUsePScore = action.payload;
+      [state.tableRowStatus, state.tableRowCSV] = buildRowStatusMap(
+        state.analyzingMetrics,
+        state.groupRows,
+        state.mode,
+        state.sensitivity,
+        state.shouldUsePScore
       );
     },
   },
@@ -564,6 +582,7 @@ export const {
   toggleGroupRows,
   setMode,
   setSensitivity,
+  setShouldUsePScore,
 } = comparisonMetricsSlice.actions;
 
 export default comparisonMetricsSlice.reducer;

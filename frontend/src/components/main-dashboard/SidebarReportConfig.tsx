@@ -1,6 +1,10 @@
-import { Button, Flex, Text } from "@tremor/react";
+import { Button, Divider, Flex, Text } from "@tremor/react";
 import { useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import getSettings from "../../common/server-data/settings";
 import { Filter } from "../../common/types";
+import { RootState } from "../../store";
+import { setShouldUsePScore } from "../../store/comparisonInsight";
 import { Schema } from "../../types/data-source";
 import { DateRangeRelatedData } from "../../types/report-config";
 import {
@@ -34,6 +38,11 @@ export function SidebarReportConfig({
   dateRangeData,
   onSubmit,
 }: Props) {
+  const dispatch = useDispatch();
+  const shouldUsePScore = useSelector(
+    (state: RootState) => state.comparisonInsight.shouldUsePScore
+  );
+
   const [localFilters, setLocalFilters] = useState<Filter[]>(filters);
   const [localDimensions, setLocalDimensions] = useState<string[]>(dimensions);
   const [localBaseDateRangeData, setLocalBaseDateRangeData] =
@@ -82,6 +91,34 @@ export function SidebarReportConfig({
       hasChangeInComparisonDateRange
     );
   }
+
+  function renderDebugControl() {
+    if (!getSettings().showDebugInfo) {
+      return null;
+    }
+
+    return (
+      <>
+        <Divider className="py-0 my-0" />
+        <Text color="red">DEBUG CONTROL</Text>
+        <Flex>
+          <Text>Use PScore</Text>
+          <label className="label cursor-pointer content-center">
+            <input
+              type="checkbox"
+              className="toggle"
+              onChange={() => {
+                dispatch(setShouldUsePScore(!shouldUsePScore));
+              }}
+              checked={shouldUsePScore}
+            />
+          </label>
+        </Flex>
+        <Divider className="py-0 my-0" />
+      </>
+    );
+  }
+
   return (
     <>
       <Flex
@@ -129,6 +166,7 @@ export function SidebarReportConfig({
           }
           ref={filtersDropDownRef}
         />
+        {renderDebugControl()}
         <Flex justifyContent="end" className="gap-1">
           <Button
             disabled={!hasLocalChange() || localDimensions.length === 0}

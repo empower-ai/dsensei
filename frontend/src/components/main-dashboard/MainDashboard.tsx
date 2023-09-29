@@ -203,6 +203,7 @@ export default function MainDashboard() {
         ];
       }
     }
+
     return (
       <Sidebar
         elements={[
