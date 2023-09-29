@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createNewDateWithBrowserTimeZone } from "../../../common/utils";
 import { CSVSchema, DateField } from "../../../types/data-source";
 import {
-  DateRangeConfig,
+  DateRangeRelatedData,
   MetricColumn,
   PrefillConfig,
   RowCountByDateAndColumn,
@@ -50,7 +50,7 @@ const doorDashPrefills: PrefillConfig = {
         filter: {
           column: "order_status",
           value: "canceled",
-        }
+        },
       },
       denominator: {
         aggregationMethod: "nunique",
@@ -58,7 +58,7 @@ const doorDashPrefills: PrefillConfig = {
       },
     },
   },
-  dateColumn: 'order_date',
+  dateColumn: "order_date",
   groupByColumns: [
     "order_canceled_by",
     "age_group",
@@ -73,7 +73,7 @@ const doorDashPrefills: PrefillConfig = {
     "channel",
     "hour_of_the_day",
     "promo_code",
-    "payment_method"
+    "payment_method",
   ],
   baseDateRange: {
     from: createNewDateWithBrowserTimeZone("2023-08-14"),
@@ -83,14 +83,14 @@ const doorDashPrefills: PrefillConfig = {
     from: createNewDateWithBrowserTimeZone("2023-08-21"),
     to: createNewDateWithBrowserTimeZone("2023-08-27"),
   },
-}
+};
 
 const insurancePrefills: PrefillConfig = {
   metricColumn: {
     aggregationOption: "sum",
     singularMetric: {
       columnName: "total_claim_amount",
-    }
+    },
   },
   groupByColumns: [
     "age_group",
@@ -107,9 +107,9 @@ const insurancePrefills: PrefillConfig = {
     "incident_city",
     "property_damage",
     "police_report_available",
-    "authorities_contacted"
+    "authorities_contacted",
   ],
-  dateColumn: 'incident_date',
+  dateColumn: "incident_date",
   baseDateRange: {
     from: createNewDateWithBrowserTimeZone("2023-07-04"),
     to: createNewDateWithBrowserTimeZone("2023-07-31"),
@@ -118,7 +118,7 @@ const insurancePrefills: PrefillConfig = {
     from: createNewDateWithBrowserTimeZone("2023-08-01"),
     to: createNewDateWithBrowserTimeZone("2023-08-28"),
   },
-}
+};
 
 interface Props {
   schema: CSVSchema;
@@ -137,7 +137,9 @@ export default function CSVBasedReportConfig({
   const [rowCountByColumn, setRowCountByColumn] = useState<{
     [key: string]: number;
   }>({});
-  const [prefillConfig, setPrefillConfig] = useState<PrefillConfig | undefined>(undefined);
+  const [prefillConfig, setPrefillConfig] = useState<PrefillConfig | undefined>(
+    undefined
+  );
 
   const prefill = (sample: "doordash" | "insurance") => {
     if (sample === "doordash") {
@@ -145,7 +147,7 @@ export default function CSVBasedReportConfig({
     } else if (sample === "insurance") {
       setPrefillConfig(insurancePrefills);
     }
-  }
+  };
 
   useEffect(() => {
     if (prefillWithSampleData) {
@@ -184,8 +186,7 @@ export default function CSVBasedReportConfig({
     dateColumnType: string,
     metricColumn: MetricColumn,
     groupByColumns: string[],
-    baseDateRange: DateRangeConfig,
-    comparisonDateRange: DateRangeConfig,
+    dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
     expectedValue: number
   ) => {
@@ -199,8 +200,7 @@ export default function CSVBasedReportConfig({
         dateColumnType,
         groupByColumns,
         metricColumn,
-        baseDateRange,
-        comparisonDateRange,
+        dateRangeData,
         targetDirection,
         expectedValue,
         filters: [],

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { BigquerySchema } from "../../../types/data-source";
 import {
-  DateRangeConfig,
+  DateRangeRelatedData,
   MetricColumn,
   TargetDirection,
 } from "../../../types/report-config";
@@ -23,8 +23,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
     dateColumnType: string,
     metricColumn: MetricColumn,
     groupByColumns: string[],
-    baseDateRange: DateRangeConfig,
-    comparisonDateRange: DateRangeConfig,
+    dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
     expectedValue: number
   ) => {
@@ -38,8 +37,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
         dateColumn,
         dateColumnType,
         groupByColumns,
-        baseDateRange,
-        comparisonDateRange,
+        dateRangeData,
         targetDirection,
         expectedValue,
         filters: [],

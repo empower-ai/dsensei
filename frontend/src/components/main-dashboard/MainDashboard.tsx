@@ -7,7 +7,6 @@ import {
 import {
   Bold,
   Card,
-  DateRangePickerValue,
   Divider,
   Flex,
   Grid,
@@ -43,7 +42,12 @@ import {
   updateMetrics,
 } from "../../store/comparisonInsight";
 import { DataSourceType, Schema } from "../../types/data-source";
-import { MetricColumn, TargetDirection } from "../../types/report-config";
+import {
+  DateRangeRelatedData,
+  MetricColumn,
+  TargetDirection,
+} from "../../types/report-config";
+import { DateRangeData } from "../uploader/DatePicker";
 import { MetricOverviewTable } from "./MetricOverviewTable";
 import { SidebarReportConfig } from "./SidebarReportConfig";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
@@ -58,8 +62,7 @@ enum ReportingType {
 interface RouterState {
   tableName?: string;
   fileId?: string;
-  baseDateRange: DateRangePickerValue;
-  comparisonDateRange: DateRangePickerValue;
+  dateRangeData: DateRangeRelatedData;
   metricColumn: MetricColumn;
   dateColumn: string;
   dateColumnType: string;
@@ -85,8 +88,7 @@ export default function MainDashboard() {
   const {
     tableName,
     fileId,
-    baseDateRange,
-    comparisonDateRange,
+    dateRangeData,
     metricColumn,
     dateColumn,
     dateColumnType,
@@ -131,8 +133,8 @@ export default function MainDashboard() {
       }>(apiPath, {
         tableName,
         fileId,
-        baseDateRange,
-        comparisonDateRange,
+        baseDateRange: dateRangeData.baseDateRangeData.range,
+        comparisonDateRange: dateRangeData.comparisonDateRangeData.range,
         dateColumn,
         dateColumnType,
         metricColumn,
@@ -154,7 +156,7 @@ export default function MainDashboard() {
       dispatch(setError(e.error));
       dispatch(setLoadingStatus(false));
     });
-  }, [baseDateRange, comparisonDateRange, fileId, dispatch]);
+  }, [dateRangeData, fileId, dispatch]);
 
   function renderSidebar() {
     let reportMenuElements: ReactElement[] = [];
@@ -215,6 +217,8 @@ export default function MainDashboard() {
             schema={schema}
             filters={filters}
             key="report-config"
+            dateColumn={dateColumn}
+            dateRangeData={dateRangeData}
             allDimensions={schema.fields
               .map((h) => h.name)
               .filter(
@@ -236,7 +240,12 @@ export default function MainDashboard() {
                 );
               })}
             dimensions={groupByColumns}
-            onSubmit={(newFilters: Filter[], newDimensions: string[]) => {
+            onSubmit={(
+              newFilters: Filter[],
+              newDimensions: string[],
+              newBaseDateRangeData: DateRangeData,
+              newComparisonDateRangeData: DateRangeData
+            ) => {
               navigate("/dashboard", {
                 state: {
                   schema,
@@ -248,8 +257,11 @@ export default function MainDashboard() {
                   dateColumn,
                   dateColumnType,
                   groupByColumns: newDimensions,
-                  baseDateRange,
-                  comparisonDateRange,
+                  dateRangeData: {
+                    baseDateRangeData: newBaseDateRangeData,
+                    comparisonDateRangeData: newComparisonDateRangeData,
+                    rowCountByDateColumn: dateRangeData.rowCountByDateColumn,
+                  },
                   targetDirection,
                   expectedValue,
                   filters: newFilters,
@@ -364,8 +376,7 @@ export default function MainDashboard() {
           dateColumn,
           dateColumnType,
           groupByColumns,
-          baseDateRange,
-          comparisonDateRange,
+          dateRangeData,
           targetDirection,
           expectedValue,
           filters: newFilters,
@@ -562,26 +573,18 @@ export default function MainDashboard() {
           <Flex className="gap-y-4 pt-10" flexDirection="col">
             <Title>Top Segments Driving the Overall Change</Title>
             <Divider />
-            {Object.keys(tableRowStatus).length > 0 ? (
-              <TopDimensionSlicesTable
-                rowStatusMap={tableRowStatus}
-                rowCSV={tableRowCSV}
-                metric={analyzingMetrics}
-                maxDefaultRows={100}
-                groupRows={groupRows}
-                enableGroupToggle={true}
-                showDimensionSelector={true}
-                showCalculationMode={true}
-                targetDirection={targetDirection}
-                onReRunOnSegment={onReRunOnSegment}
-              />
-            ) : (
-              <Flex>
-                Unable to identify any significant driving segments. Either the
-                size of the data set is too small or the variations across all
-                segments are highly consistent.
-              </Flex>
-            )}
+            <TopDimensionSlicesTable
+              rowStatusMap={tableRowStatus}
+              rowCSV={tableRowCSV}
+              metric={analyzingMetrics}
+              maxDefaultRows={100}
+              groupRows={groupRows}
+              enableGroupToggle={true}
+              showDimensionSelector={true}
+              showCalculationMode={true}
+              targetDirection={targetDirection}
+              onReRunOnSegment={onReRunOnSegment}
+            />
           </Flex>
         )}
         {/* <WaterfallPanel
@@ -625,8 +628,8 @@ export default function MainDashboard() {
           dateColumn={dateColumn}
           groupByColumns={groupByColumns}
           metricColumn={metricColumn}
-          baseDateRange={baseDateRange}
-          comparisonDateRange={comparisonDateRange}
+          baseDateRange={dateRangeData.baseDateRangeData.range}
+          comparisonDateRange={dateRangeData.comparisonDateRangeData.range}
           dataSourceType={dataSourceType}
         />
       </>

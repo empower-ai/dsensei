@@ -15,7 +15,7 @@ import { getServerData } from "../../../common/server-data/server-data-loader";
 import { useTracking } from "../../../common/tracking";
 import { DataSourceType, Schema } from "../../../types/data-source";
 import {
-  DateRangeConfig,
+  DateRangeRelatedData,
   MetricColumn,
   PrefillConfig,
   RowCountByColumn,
@@ -40,8 +40,7 @@ type Props = {
     dateColumnType: string,
     metricColumn: MetricColumn,
     groupByColumns: string[],
-    baseDateRange: DateRangeConfig,
-    comparisonDateRange: DateRangeConfig,
+    dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
     expectedValue: number
   ) => Promise<void>;
@@ -226,22 +225,31 @@ function ReportConfig({
   return (
     <Card className="max-w-6xl mx-auto">
       <Title>Report Config</Title>
-      {
-        debugMode && (
-          <Flex
-            flexDirection="row"
-            justifyContent="center"
-            alignItems="start"
-            className="gap-y-2 p-2 gap-4"
+      {debugMode && (
+        <Flex
+          flexDirection="row"
+          justifyContent="center"
+          alignItems="start"
+          className="gap-y-2 p-2 gap-4"
+        >
+          <Button
+            className="mb-4"
+            onClick={() => {
+              prefill("doordash");
+            }}
           >
-            <Button className="mb-4" onClick={() => { prefill("doordash") }} >
-              Doordash
-            </Button>
+            Doordash
+          </Button>
 
-            <Button className="mb-4" onClick={() => { prefill("insurance") }} >
-              Insurance
-            </Button>
-          </Flex>
+          <Button
+            className="mb-4"
+            onClick={() => {
+              prefill("insurance");
+            }}
+          >
+            Insurance
+          </Button>
+        </Flex>
       )}
 
       <Divider />
@@ -353,8 +361,11 @@ function ReportConfig({
               dateColumnType,
               metricColumn,
               groupByColumns,
-              baseDateRangeData.range,
-              comparisonDateRangeData.range,
+              {
+                baseDateRangeData,
+                comparisonDateRangeData,
+                rowCountByDateColumn,
+              },
               targetDirection,
               expectedValue ?? 0
             );

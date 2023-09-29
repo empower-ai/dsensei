@@ -2,10 +2,12 @@ import { Button, Flex, Text } from "@tremor/react";
 import { useRef, useState } from "react";
 import { Filter } from "../../common/types";
 import { Schema } from "../../types/data-source";
+import { DateRangeRelatedData } from "../../types/report-config";
 import {
   FiltersDropDown,
   FiltersDropDownHandler,
 } from "../common/FiltersDropdown";
+import DatePicker, { DateRangeData } from "../uploader/DatePicker";
 import MultiSelector, { MultiSelectorHandles } from "../uploader/MultiSelector";
 
 interface Props {
@@ -13,7 +15,14 @@ interface Props {
   schema: Schema;
   dimensions: string[];
   filters: Filter[];
-  onSubmit: (newFilters: Filter[], newDimensions: string[]) => void;
+  dateColumn: string;
+  dateRangeData: DateRangeRelatedData;
+  onSubmit: (
+    newFilters: Filter[],
+    newDimensions: string[],
+    newBaseDateRangeData: DateRangeData,
+    newComparisonDateRangeData: DateRangeData
+  ) => void;
 }
 
 export function SidebarReportConfig({
@@ -21,10 +30,16 @@ export function SidebarReportConfig({
   schema,
   dimensions,
   filters,
+  dateColumn,
+  dateRangeData,
   onSubmit,
 }: Props) {
   const [localFilters, setLocalFilters] = useState<Filter[]>(filters);
   const [localDimensions, setLocalDimensions] = useState<string[]>(dimensions);
+  const [localBaseDateRangeData, setLocalBaseDateRangeData] =
+    useState<DateRangeData>(dateRangeData.baseDateRangeData);
+  const [localComparisonDateRangeData, setLocalComparisonDateRangeData] =
+    useState<DateRangeData>(dateRangeData.comparisonDateRangeData);
 
   const dimensionSelectorRef = useRef<MultiSelectorHandles | null>(null);
   const filtersDropDownRef = useRef<FiltersDropDownHandler | null>(null);
@@ -48,7 +63,24 @@ export function SidebarReportConfig({
         )
       );
 
-    return hasChangeInDimensions || hasChangeInFilters;
+    const hasChangeInBaseDateRange =
+      dateRangeData.baseDateRangeData.range.from !==
+        localBaseDateRangeData.range.from ||
+      dateRangeData.baseDateRangeData.range.to !==
+        localBaseDateRangeData.range.to;
+
+    const hasChangeInComparisonDateRange =
+      dateRangeData.comparisonDateRangeData.range.from !==
+        localComparisonDateRangeData.range.from ||
+      dateRangeData.comparisonDateRangeData.range.to !==
+        localComparisonDateRangeData.range.to;
+
+    return (
+      hasChangeInDimensions ||
+      hasChangeInFilters ||
+      hasChangeInBaseDateRange ||
+      hasChangeInComparisonDateRange
+    );
   }
   return (
     <>
@@ -59,6 +91,23 @@ export function SidebarReportConfig({
         className="gap-y-2 p-2"
       >
         <p>Report Config</p>
+        <DatePicker
+          title={null}
+          countByDate={
+            dateRangeData.rowCountByDateColumn
+              ? dateRangeData.rowCountByDateColumn[dateColumn]
+              : {}
+          }
+          comparisonDateRangeData={localComparisonDateRangeData}
+          setComparisonDateRangeData={(dateRangeData) =>
+            setLocalComparisonDateRangeData(dateRangeData)
+          }
+          baseDateRangeData={localBaseDateRangeData}
+          setBaseDateRangeData={(dateRangeData) =>
+            setLocalBaseDateRangeData(dateRangeData)
+          }
+          isOnSideBar={true}
+        />
         <Text>Dimensions</Text>
         <MultiSelector
           includeSelectAll={true}
@@ -83,7 +132,14 @@ export function SidebarReportConfig({
         <Flex justifyContent="end" className="gap-1">
           <Button
             disabled={!hasLocalChange() || localDimensions.length === 0}
-            onClick={() => onSubmit(localFilters, localDimensions)}
+            onClick={() =>
+              onSubmit(
+                localFilters,
+                localDimensions,
+                localBaseDateRangeData,
+                localComparisonDateRangeData
+              )
+            }
           >
             Rerun
           </Button>
@@ -93,6 +149,10 @@ export function SidebarReportConfig({
             onClick={() => {
               setLocalDimensions(dimensions);
               setLocalFilters(filters);
+              setLocalBaseDateRangeData(dateRangeData.baseDateRangeData);
+              setLocalComparisonDateRangeData(
+                dateRangeData.comparisonDateRangeData
+              );
 
               dimensionSelectorRef.current?.reset(dimensions);
               filtersDropDownRef.current?.reset(filters);

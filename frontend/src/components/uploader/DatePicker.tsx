@@ -32,6 +32,7 @@ type DatePickerProps = {
   };
   defaultBaseDateRange?: DateRangePickerValue;
   defaultComparisonDateRange?: DateRangePickerValue;
+  isOnSideBar?: boolean;
 };
 
 type BaseDateMode = "previous" | "custom";
@@ -40,7 +41,6 @@ const oneDayMs = 24 * 60 * 60 * 1000;
 
 function DatePicker({
   title,
-
   comparisonDateRangeData,
   setComparisonDateRangeData,
   baseDateRangeData,
@@ -48,6 +48,7 @@ function DatePicker({
   countByDate,
   defaultBaseDateRange,
   defaultComparisonDateRange,
+  isOnSideBar,
 }: DatePickerProps) {
   useEffect(() => {
     if (defaultBaseDateRange) {
@@ -199,6 +200,36 @@ function DatePicker({
       (((comparisonDateRangeData.stats.numDays ?? 0) > 0 &&
         comparisonDateRangeData.stats.numRows) ??
         0) === 0
+    );
+  }
+
+  if (isOnSideBar) {
+    return (
+      <>
+        <Flex justifyContent="start">
+          <Text>Date Range</Text>
+        </Flex>
+        <DateRangePicker
+          className="max-w-full"
+          value={comparisonDateRangeData.range}
+          onValueChange={onComparisonDateRangeChange}
+          enableSelect={false}
+          minDate={minDate}
+          maxDate={maxDate}
+          placeholder={"Comparison Date range"}
+        />
+        <Flex justifyContent="start">
+          <Text>Comparison Date Range</Text>
+        </Flex>
+        <DateRangePicker
+          value={baseDateRangeData.range}
+          onValueChange={onBaseDateRangeChange}
+          enableSelect={false}
+          minDate={minDate}
+          maxDate={maxDate}
+          placeholder={"Base Date range"}
+        />
+      </>
     );
   }
 

@@ -1,4 +1,5 @@
 import { DateRangePickerValue } from "@tremor/react";
+import { DateRangeData } from "../components/uploader/DatePicker";
 import { FieldType } from "./data-source";
 
 export type ColumnType = "metric" | "supporting_metric" | "dimension" | "date";
@@ -54,4 +55,10 @@ export interface PrefillConfig {
   groupByColumns: string[];
   baseDateRange: DateRangePickerValue;
   comparisonDateRange: DateRangePickerValue;
+}
+
+export interface DateRangeRelatedData {
+  baseDateRangeData: DateRangeData;
+  comparisonDateRangeData: DateRangeData;
+  rowCountByDateColumn?: RowCountByDateAndColumn;
 }
