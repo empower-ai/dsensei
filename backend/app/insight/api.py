@@ -194,7 +194,7 @@ class InsightApi(BaseApi):
         try:
             logger.info('Reading file')
             df = pl.read_csv(f'/tmp/dsensei/{file_id}') \
-                .with_columns(pl.col(date_column).str.slice(0, 10).str.to_date().alias("date"))
+                .with_columns(pl.col(date_column).str.slice(0, 10).str.to_date(strict=False).alias("date"))
 
             logger.info('File loaded')
             insight_builder = DFBasedInsightBuilder(

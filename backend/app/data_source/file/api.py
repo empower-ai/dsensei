@@ -29,7 +29,7 @@ class FileSourceApi(BaseApi):
             md5 = file_processor.save_file_with_md5(file_data, output_dir)
 
             schema = FileSource(md5).load_schema()
-            return orjson.dumps(schema), 200
+            return orjson.dumps(schema, option=orjson.OPT_NON_STR_KEYS), 200
         except FileExistsError as e:
             return build_error_response(str(e)), 409
         except Exception as e:

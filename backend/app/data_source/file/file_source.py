@@ -77,7 +77,7 @@ class FileSource:
                     numDistinctValues=num_distinct_values,
                     minDate=min_date,
                     maxDate=max_date,
-                    numRowsByDate={row[column]: row["count"] for row in num_rows_by_date_df.rows(named=True)},
+                    numRowsByDate={row[column]: row["count"] for row in num_rows_by_date_df.rows(named=True) if row[column] is not None},
                     values=column_to_values[column]
                 ))
         return FileSchema(
