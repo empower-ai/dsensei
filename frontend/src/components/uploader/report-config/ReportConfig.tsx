@@ -5,14 +5,17 @@ import {
   Bold,
   Button,
   Card,
+  Col,
   Divider,
   Flex,
+  Grid,
   Text,
   Title,
 } from "@tremor/react";
 import { useEffect, useState } from "react";
 import { getServerData } from "../../../common/server-data/server-data-loader";
 import { useTracking } from "../../../common/tracking";
+import { Filter } from "../../../common/types";
 import { DataSourceType, Schema } from "../../../types/data-source";
 import {
   DateRangeRelatedData,
@@ -22,6 +25,7 @@ import {
   RowCountByDateAndColumn,
   TargetDirection,
 } from "../../../types/report-config";
+import { FiltersDropDown } from "../../common/FiltersDropdown";
 import DatePicker, { DateRangeData } from "../DatePicker";
 import { ExpectedChangeInput } from "../ExpectedChangeInput";
 import MultiSelector from "../MultiSelector";
@@ -43,7 +47,8 @@ type Props = {
     dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
     expectedValue: number,
-    maxNumDimensions: number
+    maxNumDimensions: number,
+    filters: Filter[]
   ) => Promise<void>;
 };
 
@@ -64,6 +69,8 @@ function ReportConfig({
   const [metricColumn, setMetricColumn] = useState<MetricColumn>();
   const [expectedValue, setExpectedValue] = useState<number>();
   const [maxNumDimensions, setMaxNumDimensions] = useState<number>(3);
+  const [filters, setFilters] = useState<Filter[]>([]);
+
   const debugMode = getServerData().settings.showDebugInfo;
 
   const [comparisonDateRangeData, setComparisonDateRangeData] =
@@ -334,6 +341,23 @@ function ReportConfig({
             </Text>
           }
         />
+        <Grid numItems={5}>
+          <Col className="flex items-center justify-end" numColSpan={2}>
+            <Text className="pr-4 text-black">
+              Select filters <Bold>[optional]</Bold>
+            </Text>
+          </Col>
+          <Col className="flex items-center" numColSpan={3}>
+            <FiltersDropDown
+              filters={filters}
+              dimensions={getValidDimensionColumns()}
+              schema={schema}
+              onFiltersChanged={(selectedFilters) =>
+                setFilters(selectedFilters)
+              }
+            />
+          </Col>
+        </Grid>
         <Divider className="my-2" />
         <Accordion className="border-0">
           <AccordionHeader>
@@ -391,7 +415,8 @@ function ReportConfig({
               },
               targetDirection,
               expectedValue ?? 0,
-              maxNumDimensions
+              maxNumDimensions,
+              filters
             );
           }}
           disabled={!canSubmit()}

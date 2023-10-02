@@ -205,7 +205,10 @@ export const FiltersDropDown = forwardRef(function FiltersDropDown(
                       disabled={!filter.column}
                     />
                   ) : (
-                    <Flex justifyContent="center">
+                    <Flex
+                      justifyContent="center"
+                      className="w-full min-w-[10rem]"
+                    >
                       <Text>N/A</Text>
                     </Flex>
                   )}

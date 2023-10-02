@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Filter } from "../../../common/types";
 import { createNewDateWithBrowserTimeZone } from "../../../common/utils";
 import { CSVSchema, DateField } from "../../../types/data-source";
 import {
@@ -189,7 +190,8 @@ export default function CSVBasedReportConfig({
     dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
     expectedValue: number,
-    maxNumDimensions: number
+    maxNumDimensions: number,
+    filters: Filter[]
   ) => {
     navigate("/dashboard", {
       state: {
@@ -204,7 +206,7 @@ export default function CSVBasedReportConfig({
         dateRangeData,
         targetDirection,
         expectedValue,
-        filters: [],
+        filters,
         maxNumDimensions,
       },
     });

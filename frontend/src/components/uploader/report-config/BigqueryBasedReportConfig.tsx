@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { Filter } from "../../../common/types";
 import { BigquerySchema } from "../../../types/data-source";
 import {
   DateRangeRelatedData,
@@ -26,7 +27,8 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
     dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
     expectedValue: number,
-    maxNumDimensions: number
+    maxNumDimensions: number,
+    filters: Filter[]
   ) => {
     navigate("/dashboard", {
       state: {
@@ -41,7 +43,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
         dateRangeData,
         targetDirection,
         expectedValue,
-        filters: [],
+        filters,
         maxNumDimensions,
       },
     });
