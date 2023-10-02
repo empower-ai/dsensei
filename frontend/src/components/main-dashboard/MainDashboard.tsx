@@ -75,6 +75,7 @@ interface RouterState {
   };
   filters: Filter[];
   expectedValue: number;
+  maxNumDimensions: number;
 }
 
 export default function MainDashboard() {
@@ -99,6 +100,7 @@ export default function MainDashboard() {
     schema,
     rowCountByColumn,
     filters,
+    maxNumDimensions,
   } = routerState as RouterState;
 
   const {
@@ -141,6 +143,7 @@ export default function MainDashboard() {
         groupByColumns,
         expectedValue,
         filters,
+        maxNumDimensions,
       });
 
       dispatch(updateMetrics(metricInsights));
@@ -266,6 +269,7 @@ export default function MainDashboard() {
                   targetDirection,
                   expectedValue,
                   filters: newFilters,
+                  maxNumDimensions,
                 },
               });
               navigate(0);
@@ -381,6 +385,7 @@ export default function MainDashboard() {
           targetDirection,
           expectedValue,
           filters: newFilters,
+          maxNumDimensions,
         },
       });
       navigate(0);

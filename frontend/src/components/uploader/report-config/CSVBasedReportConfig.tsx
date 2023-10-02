@@ -188,7 +188,8 @@ export default function CSVBasedReportConfig({
     groupByColumns: string[],
     dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
-    expectedValue: number
+    expectedValue: number,
+    maxNumDimensions: number
   ) => {
     navigate("/dashboard", {
       state: {
@@ -204,6 +205,7 @@ export default function CSVBasedReportConfig({
         targetDirection,
         expectedValue,
         filters: [],
+        maxNumDimensions,
       },
     });
   };

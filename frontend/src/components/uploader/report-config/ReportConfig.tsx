@@ -23,8 +23,8 @@ import {
   TargetDirection,
 } from "../../../types/report-config";
 import DatePicker, { DateRangeData } from "../DatePicker";
+import { ExpectedChangeInput } from "../ExpectedChangeInput";
 import MultiSelector from "../MultiSelector";
-import { ExpectedChangeInput } from "../NumberInput";
 import SingleSelector from "../SingleSelector";
 import MetricConfig from "./MetricConfig";
 
@@ -42,7 +42,8 @@ type Props = {
     groupByColumns: string[],
     dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
-    expectedValue: number
+    expectedValue: number,
+    maxNumDimensions: number
   ) => Promise<void>;
 };
 
@@ -62,6 +63,7 @@ function ReportConfig({
   const [groupByColumns, setGroupByColumns] = useState<string[]>([]);
   const [metricColumn, setMetricColumn] = useState<MetricColumn>();
   const [expectedValue, setExpectedValue] = useState<number>();
+  const [maxNumDimensions, setMaxNumDimensions] = useState<number>(3);
   const debugMode = getServerData().settings.showDebugInfo;
 
   const [comparisonDateRangeData, setComparisonDateRangeData] =
@@ -340,10 +342,31 @@ function ReportConfig({
             </Title>
           </AccordionHeader>
           <AccordionBody className="overflow-auto">
-            <ExpectedChangeInput
-              defaultValue={expectedValue}
-              onValueChange={(v) => setExpectedValue(parseFloat(v) / 100)}
-            />
+            <Flex flexDirection="col" className="gap-y-4">
+              <ExpectedChangeInput
+                defaultValue={expectedValue}
+                onValueChange={(v) => setExpectedValue(parseFloat(v) / 100)}
+              />
+              <SingleSelector
+                title={
+                  <Text className="pr-4 text-black">
+                    Max number of dimensions
+                  </Text>
+                }
+                labels={["1", "2", "3"]}
+                values={["1", "2", "3"]}
+                selectedValue={maxNumDimensions.toString()}
+                onValueChange={(value) => setMaxNumDimensions(parseInt(value))}
+                instruction={
+                  <Text>
+                    Date range comparison report compares between two date
+                    ranges on the selected metric and aggregated of the selected
+                    group by columns. Currently this is the only report type we
+                    support.
+                  </Text>
+                }
+              />
+            </Flex>
           </AccordionBody>
         </Accordion>
       </div>
@@ -367,7 +390,8 @@ function ReportConfig({
                 rowCountByDateColumn,
               },
               targetDirection,
-              expectedValue ?? 0
+              expectedValue ?? 0,
+              maxNumDimensions
             );
           }}
           disabled={!canSubmit()}

@@ -29,6 +29,7 @@ class DFBasedInsightBuilder(object):
                  metrics: List[Metric],
                  expected_value: float,
                  filters: list[Filter] = None,
+                 max_num_dimensions: int = 3
                  ):
         self.df = data
         self.group_by_columns = group_by_columns
@@ -65,8 +66,15 @@ class DFBasedInsightBuilder(object):
         self.aggregation_expressions = build_aggregation_expressions(self.metrics)
         self.overall_aggregated_df = self.gen_agg_df()
 
+        if max_num_dimensions > 3:
+            self.max_num_dimensions = 3
+        elif max_num_dimensions < 1:
+            self.max_num_dimensions = 1
+        else:
+            self.max_num_dimensions = max_num_dimensions
+
         column_combinations_list = []
-        for i in range(1, min(3, len(self.group_by_columns)) + 1):
+        for i in range(1, min(self.max_num_dimensions, len(self.group_by_columns)) + 1):
             column_combinations_list.extend(
                 combinations(self.group_by_columns, i))
 

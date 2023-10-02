@@ -45,9 +45,10 @@ class InsightApi(BaseApi):
         baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type = InsightApi.parse_date_info(data)
         group_by_columns = data['groupByColumns']
         filters = InsightApi.parse_filters(data)
+        num_max_dimensions = data['maxNumDimensions']
 
         return (
-            baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type, group_by_columns, filters
+            baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type, group_by_columns, filters, num_max_dimensions
         )
 
     @staticmethod
@@ -186,7 +187,8 @@ class InsightApi(BaseApi):
         data = request.get_json()
         file_id = data['fileId']
         expected_value = data['expectedValue']
-        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, filters) = self.parse_data(data)
+        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, filters,
+         max_num_dimensions) = self.parse_data(data)
 
         metric_column = data['metricColumn']
         metric = self.parse_metrics(metric_column)
@@ -204,7 +206,8 @@ class InsightApi(BaseApi):
                 group_by_columns,
                 [metric],
                 expected_value,
-                filters
+                filters,
+                max_num_dimensions
             )
             return insight_builder.build()
         except EmptyDataFrameError:

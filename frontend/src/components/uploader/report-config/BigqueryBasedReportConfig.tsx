@@ -25,7 +25,8 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
     groupByColumns: string[],
     dateRangeData: DateRangeRelatedData,
     targetDirection: TargetDirection,
-    expectedValue: number
+    expectedValue: number,
+    maxNumDimensions: number
   ) => {
     navigate("/dashboard", {
       state: {
@@ -41,6 +42,7 @@ export default function BigqueryBasedReportConfig({ schema }: Props) {
         targetDirection,
         expectedValue,
         filters: [],
+        maxNumDimensions,
       },
     });
   };
