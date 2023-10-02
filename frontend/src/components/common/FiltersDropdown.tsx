@@ -43,15 +43,7 @@ export const FiltersDropDown = forwardRef(function FiltersDropDown(
   }));
 
   function sanitizeFiltersAndCallOnFiltersChanged(filters: Filter[]) {
-    onFiltersChanged(
-      filters.filter(
-        (filter) =>
-          filter.column &&
-          filter.operator &&
-          filter.values &&
-          filter.values.length > 0
-      )
-    );
+    onFiltersChanged(filters.filter(isFilterValid));
   }
 
   function getColumns(filter: Filter) {
@@ -105,24 +97,27 @@ export const FiltersDropDown = forwardRef(function FiltersDropDown(
     return s1.toLowerCase().localeCompare(s2.toLowerCase());
   }
 
+  function isFilterValid(filter: Filter): boolean {
+    if (filter.operator === "eq" || filter.operator === "neq") {
+      return (
+        filter.column != null &&
+        filter.operator != null &&
+        filter.values != null &&
+        filter.values.length > 0
+      );
+    } else if (filter.operator === "empty" || filter.operator === "non_empty") {
+      return filter.column != null;
+    }
+    return false;
+  }
+
   return (
     <div className="dropdown w-full">
       <div
         tabIndex={0}
         className="flex cursor-pointer w-full outline-none text-left whitespace-nowrap truncate rounded-tremor-default focus:ring-2 transition duration-100 shadow-tremor-input focus:border-tremor-brand-subtle focus:ring-tremor-brand-muted dark:shadow-dark-tremor-input dark:focus:border-dark-tremor-brand-subtle dark:focus:ring-dark-tremor-brand-muted pl-4 pr-8 py-2 border bg-tremor-background dark:bg-dark-tremor-background hover:bg-tremor-background-muted dark:hover:bg-dark-tremor-background-muted text-tremor-content-emphasis dark:text-dark-tremor-content-emphasis border-tremor-border dark:border-dark-tremor-border"
       >
-        <Flex>
-          {
-            localFilters.filter(
-              (filter) =>
-                filter.column &&
-                filter.operator &&
-                filter.values &&
-                filter.values.length > 0
-            ).length
-          }{" "}
-          selected
-        </Flex>
+        <Flex>{localFilters.filter(isFilterValid).length} selected</Flex>
         <span className="absolute inset-y-0 right-0 flex items-center mr-2.5">
           <svg
             className="tremor-MultiSelect-arrowDownIcon flex-none text-tremor-content-subtle dark:text-dark-tremor-content-subtle h-4 w-4"
@@ -178,32 +173,42 @@ export const FiltersDropDown = forwardRef(function FiltersDropDown(
                 </TableCell>
                 <TableCell className="align-top">
                   <SingleSelector
-                    labels={["equal", "not equal"]}
-                    values={["eq", "neq"]}
+                    labels={["equal", "not equal", "is empty", "is not empty"]}
+                    values={["eq", "neq", "empty", "non_empty"]}
                     selectedValue={filter.operator ?? ""}
                     onValueChange={(value) =>
                       updateFilter(index, {
                         ...filter,
                         operator: value as FilterOperator,
+                        values:
+                          value === "eq" || value === "neq"
+                            ? filter.values
+                            : undefined,
                       })
                     }
                     disabled={!filter.column}
                   />
                 </TableCell>
                 <TableCell className="align-top">
-                  <MultiSelector
-                    includeSelectAll={true}
-                    labels={getValues(filter)}
-                    values={getValues(filter)}
-                    selectedValues={filter.values ?? []}
-                    onValueChange={(values) => {
-                      updateFilter(index, {
-                        ...filter,
-                        values,
-                      });
-                    }}
-                    disabled={!filter.column}
-                  />
+                  {filter.operator === "eq" || filter.operator === "neq" ? (
+                    <MultiSelector
+                      includeSelectAll={true}
+                      labels={getValues(filter)}
+                      values={getValues(filter)}
+                      selectedValues={filter.values ?? []}
+                      onValueChange={(values) => {
+                        updateFilter(index, {
+                          ...filter,
+                          values,
+                        });
+                      }}
+                      disabled={!filter.column}
+                    />
+                  ) : (
+                    <Flex justifyContent="center">
+                      <Text>N/A</Text>
+                    </Flex>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

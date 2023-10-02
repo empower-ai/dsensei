@@ -72,8 +72,12 @@ def get_filter_expression(filters: list[Filter]) -> Expr:
         expr = pl.col(filter.column).cast(pl.Utf8)
         if filter.operator == FilterOperator.EQ:
             expr = expr.is_in(filter.values)
-        else:
+        elif filter.operator == FilterOperator.NEQ:
             expr = expr.is_in(filter.values).is_not()
+        elif filter.operator == FilterOperator.EMPTY:
+            expr = expr.is_null() | expr.len().eq(0)
+        elif filter.operator == FilterOperator.NON_EMPTY:
+            expr = expr.is_not_null() & expr.len().gt(0)
 
         filter_expr = filter_expr & expr
 

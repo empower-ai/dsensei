@@ -61,7 +61,7 @@ export interface DimensionSliceInfo {
   confidence: number;
 }
 
-export type FilterOperator = "eq" | "neq";
+export type FilterOperator = "eq" | "neq" | "empty" | "non_empty";
 export interface Filter {
   values?: string[];
   operator?: FilterOperator;

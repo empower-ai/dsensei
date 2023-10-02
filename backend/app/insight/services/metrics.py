@@ -217,13 +217,15 @@ parallel_analysis_executor = ThreadPoolExecutor()
 class FilterOperator(StrEnum):
     EQ = "eq"
     NEQ = "neq"
+    EMPTY = "empty"
+    NON_EMPTY = "non_empty"
 
 
 @dataclass
 class Filter:
     column: str
     operator: FilterOperator
-    values: list[str | float | bool | date]
+    values: Optional[list[str | float | bool | date]] = None
 
 
 def build_polars_agg(name: str | Expr, method: AggregateMethod):
