@@ -13,6 +13,7 @@ from app.insight.datasource.bqMetrics import BqMetrics
 from app.insight.services.insight_builders import DFBasedInsightBuilder
 from app.insight.services.metrics import AggregateMethod, SingleColumnMetric, DualColumnMetric, CombineMethod, DimensionValuePair, Filter
 from app.insight.services.segment_insight_builder import get_related_segments, get_segment_insight
+from app.insight.services.utils import load_df_from_csv
 
 
 class InsightApi(BaseApi):
@@ -134,8 +135,8 @@ class InsightApi(BaseApi):
             filtering_clause = filtering_clause & (pl.col(
                 sub_key['dimension']).cast(str).eq(pl.lit(sub_key['value'])))
 
-        df = pl.read_csv(f'/tmp/dsensei/{file_id}') \
-            .with_columns(pl.col(date_column).str.slice(0, 10).str.to_date().alias("date")) \
+        df = load_df_from_csv(f'/tmp/dsensei/{file_id}') \
+            .with_columns(pl.col(date_column).cast(pl.Utf8).str.slice(0, 10).str.to_date().alias("date")) \
             .filter(filtering_clause)
 
         return orjson.dumps(
@@ -160,8 +161,8 @@ class InsightApi(BaseApi):
 
         file_id = data['fileId']
         logger.info('Reading file')
-        df = pl.read_csv(f'/tmp/dsensei/{file_id}') \
-            .with_columns(pl.col(date_column).str.slice(0, 10).str.to_date().alias("date"))
+        df = load_df_from_csv(f'/tmp/dsensei/{file_id}') \
+            .with_columns(pl.col(date_column).cast(pl.Utf8).str.slice(0, 10).str.to_date().alias("date"))
 
         return orjson.dumps(
             get_related_segments(
@@ -187,8 +188,8 @@ class InsightApi(BaseApi):
 
         try:
             logger.info('Reading file')
-            df = pl.read_csv(f'/tmp/dsensei/{file_id}') \
-                .with_columns(pl.col(date_column).str.slice(0, 10).str.to_date(strict=False).alias("date"))
+            df = load_df_from_csv(f'/tmp/dsensei/{file_id}') \
+                .with_columns(pl.col(date_column).cast(pl.Utf8).str.slice(0, 10).str.to_date(strict=False).alias("date"))
 
             logger.info('File loaded')
             insight_builder = DFBasedInsightBuilder(

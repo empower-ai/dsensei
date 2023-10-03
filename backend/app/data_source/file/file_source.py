@@ -3,6 +3,7 @@ from loguru import logger
 
 from app import app
 from app.data_source.models import Field, DateField, FileSchema
+from app.insight.services.utils import load_df_from_csv
 from config import ConfigKey
 
 
@@ -30,7 +31,7 @@ class FileSource:
 
     def load_schema(self) -> FileSchema:
         logger.info("Loading file")
-        df = pl.read_csv(f"{self.temp_file_path}/{self.file_name}", try_parse_dates=True)
+        df = load_df_from_csv(f"{self.temp_file_path}/{self.file_name}")
 
         logger.info("Calculating distinct values")
         column_to_num_distinct_values = df.select(

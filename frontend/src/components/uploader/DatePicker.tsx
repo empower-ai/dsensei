@@ -10,6 +10,7 @@ import {
 } from "@tremor/react";
 import moment from "moment";
 import { useEffect, useState } from "react";
+import { createNewDateWithBrowserTimeZone } from "../../common/utils";
 
 export interface DateRangeStats {
   numDays?: number;
@@ -63,13 +64,13 @@ function DatePicker({
   const [baseDateRangeMode, setBaseDateRangeMode] =
     useState<BaseDateMode>("previous");
 
-  let minDate, maxDate;
+  let minDate: Date | undefined, maxDate: Date | undefined;
   if (countByDate) {
     const dates = Object.keys(countByDate).sort(
       (d1, d2) => new Date(d1).getTime() - new Date(d2).getTime()
     );
-    minDate = new Date(dates[0]);
-    maxDate = new Date(dates[dates.length - 1]);
+    minDate = createNewDateWithBrowserTimeZone(dates[0]);
+    maxDate = createNewDateWithBrowserTimeZone(dates[dates.length - 1]);
   }
 
   function getComparisonDateRangePreviousPeriodDateRange(
@@ -85,9 +86,21 @@ function DatePicker({
       const previousPeriodToDate = new Date(fromDate);
       previousPeriodToDate.setDate(fromDate.getDate() - 1);
 
+      const sanitizedPreviousPeriodFromDate = moment(
+        previousPeriodFromDate
+      ).isBefore(moment(minDate))
+        ? minDate
+        : previousPeriodFromDate;
+
+      const sanitizedPreviousPeriodToDate = moment(
+        previousPeriodToDate
+      ).isBefore(moment(sanitizedPreviousPeriodFromDate))
+        ? sanitizedPreviousPeriodFromDate
+        : previousPeriodToDate;
+
       return {
-        from: previousPeriodFromDate,
-        to: previousPeriodToDate,
+        from: sanitizedPreviousPeriodFromDate,
+        to: sanitizedPreviousPeriodToDate,
       };
     }
 
@@ -119,7 +132,7 @@ function DatePicker({
       let numRows = 0;
       if (countByDate) {
         while (
-          moment(date).format("YYYY-MM-DD") !==
+          moment(date).format("YYYY-MM-DD") <=
           moment(toDate).format("YYYY-MM-DD")
         ) {
           numRows += countByDate[moment(date).format("YYYY-MM-DD")] ?? 0;
@@ -136,7 +149,7 @@ function DatePicker({
     return {};
   }
 
-  function updateBaseDateRangeToIfNecessary(
+  function updateBaseDateRangeIfNecessary(
     baseDateMode: BaseDateMode,
     comparisonDateRange: DateRangePickerValue
   ) {
@@ -148,6 +161,7 @@ function DatePicker({
       getComparisonDateRangePreviousPeriodDateRange(comparisonDateRange);
 
     if (previousPeriodDateRange.to && previousPeriodDateRange.from) {
+      console.log(previousPeriodDateRange);
       setBaseDateRangeData({
         range: previousPeriodDateRange,
         stats: getStatsForDateRange(previousPeriodDateRange),
@@ -160,7 +174,7 @@ function DatePicker({
       range: value,
       stats: getStatsForDateRange(value),
     });
-    updateBaseDateRangeToIfNecessary(baseDateRangeMode, value);
+    updateBaseDateRangeIfNecessary(baseDateRangeMode, value);
   }
 
   function onBaseDateRangeChange(value: DateRangePickerValue) {
@@ -186,7 +200,7 @@ function DatePicker({
 
   function onBaseDateModeChange(value: BaseDateMode) {
     setBaseDateRangeMode(value);
-    updateBaseDateRangeToIfNecessary(value, comparisonDateRangeData.range);
+    updateBaseDateRangeIfNecessary(value, comparisonDateRangeData.range);
   }
 
   function shouldDisplayWarning() {
