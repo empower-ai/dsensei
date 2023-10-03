@@ -48,10 +48,13 @@ const doorDashPrefills: PrefillConfig = {
       numerator: {
         aggregationMethod: "nunique",
         columnName: "order_id",
-        filter: {
-          column: "order_status",
-          value: "canceled",
-        },
+        filters: [
+          {
+            column: "order_status",
+            operator: "eq",
+            values: ["canceled"],
+          },
+        ],
       },
       denominator: {
         aggregationMethod: "nunique",

@@ -59,6 +59,7 @@ export interface DimensionSliceInfo {
   changePercentage: number;
   changeDev: number;
   confidence: number;
+  sortValue: number;
 }
 
 export type FilterOperator = "eq" | "neq" | "empty" | "non_empty";

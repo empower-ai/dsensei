@@ -378,7 +378,8 @@ class DFBasedInsightBuilder(object):
                 row['change'],
                 row['change_variance'],
                 row['absolute_contribution'],
-                float(p_value)
+                float(p_value),
+                row['sort']
             )
 
             return slice_info.serializedKey, slice_info

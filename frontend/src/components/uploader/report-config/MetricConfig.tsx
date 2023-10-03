@@ -1,16 +1,13 @@
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
-import {
-  Col,
-  Grid,
-  Text, TextInput
-} from "@tremor/react";
-import { useState } from "react";
+import { Col, Flex, Grid, Text, TextInput } from "@tremor/react";
+import { useEffect, useState } from "react";
+import { Schema } from "../../../types/data-source";
 import {
   AggregationType,
   MetricColumn,
-  TargetDirection
+  TargetDirection,
 } from "../../../types/report-config";
-import SelectorWithFilter from "../SelectorWithFilter";
+import { FiltersDropDown } from "../../common/FiltersDropdown";
 import SingleSelector from "../SingleSelector";
 
 type Props = {
@@ -19,26 +16,44 @@ type Props = {
   setMetricColumn: (metricColumn: MetricColumn) => void;
   targetDirection: TargetDirection;
   setTargetDirection: (direction: TargetDirection) => void;
-}
-
+  schema: Schema;
+};
 
 const MetricConfig = (props: Props) => {
-  const { getValidMetricColumns, metricColumn, setMetricColumn, targetDirection, setTargetDirection } = props;
+  const {
+    getValidMetricColumns,
+    metricColumn,
+    setMetricColumn,
+    targetDirection,
+    setTargetDirection,
+    schema,
+  } = props;
   const metricType = metricColumn?.aggregationOption;
   const singularMetric = metricColumn?.singularMetric;
   const ratioMetric = metricColumn?.ratioMetric;
 
-  const [numeratorHasFilter, setNumeratorHasFilter] = useState(false);
-  const [denominatorHasFilter, setDenominatorHasFilter] = useState(false);
+  const [numeratorHasFilter, setNumeratorHasFilter] = useState(
+    (metricColumn?.ratioMetric?.numerator?.filters?.length ?? 0) > 0
+  );
+  const [denominatorHasFilter, setDenominatorHasFilter] = useState(
+    (metricColumn?.ratioMetric?.denominator?.filters?.length ?? 0) > 0
+  );
+
+  useEffect(() => {
+    if ((metricColumn?.ratioMetric?.numerator?.filters?.length ?? 0) > 0) {
+      setNumeratorHasFilter(true);
+    }
+    if ((metricColumn?.ratioMetric?.denominator?.filters?.length ?? 0) > 0) {
+      setDenominatorHasFilter(true);
+    }
+  }, [metricColumn]);
 
   const singularMetrics = () => {
     return (
       <>
         <SingleSelector
           title={
-            <Text className="pr-4 text-black">
-              Select the metric column
-            </Text>
+            <Text className="pr-4 text-black">Select the metric column</Text>
           }
           labels={getValidMetricColumns()}
           values={getValidMetricColumns()}
@@ -49,8 +64,8 @@ const MetricConfig = (props: Props) => {
               singularMetric: {
                 ...singularMetric,
                 columnName: metric,
-              }
-            })
+              },
+            });
           }}
         />
       </>
@@ -66,8 +81,7 @@ const MetricConfig = (props: Props) => {
             <Text className="pr-4 text-black">Metric name</Text>
           </Col>
           <Col className="items-center" numColSpan={3}>
-
-          <TextInput
+            <TextInput
               title="Metric name"
               placeholder="Enter metric name"
               value={ratioMetric?.metricName || ""}
@@ -77,13 +91,12 @@ const MetricConfig = (props: Props) => {
                   ratioMetric: {
                     ...ratioMetric,
                     metricName: e.target.value,
-                  }
-                })
+                  },
+                });
               }}
             />
           </Col>
         </Grid>
-
         <SingleSelector
           title={
             <Text className="pr-4 text-black">
@@ -101,9 +114,9 @@ const MetricConfig = (props: Props) => {
                 numerator: {
                   ...ratioMetric?.numerator,
                   aggregationMethod: metric as AggregationType,
-                }
-              }
-            })
+                },
+              },
+            });
           }}
         />
         <SingleSelector
@@ -123,69 +136,46 @@ const MetricConfig = (props: Props) => {
                 numerator: {
                   ...ratioMetric?.numerator,
                   columnName: metric,
-                }
-              }
-            })
-          }}
-
-          filterCheckbox
-          onFilterChange={(value) => {
-            setMetricColumn({
-              ...metricColumn,
-              ratioMetric: {
-                ...ratioMetric,
-                numerator: {
-                  ...ratioMetric?.numerator,
-                  filter: undefined
-                }
-            }});
-            setNumeratorHasFilter(value)
+                },
+              },
+            });
           }}
         />
-        { numeratorHasFilter &&
-          <SelectorWithFilter
-            title={
-              <Text className="pr-4 text-black">
-                Select the numerator metric filter
-              </Text>
-            }
-            labels={getValidMetricColumns()}
-            values={getValidMetricColumns()}
-            selectedValue={ratioMetric?.numerator?.filter?.column || ""}
-            onColumnChange={(metric) => {
-              setMetricColumn({
-                ...metricColumn,
-                ratioMetric: {
-                  ...ratioMetric,
-                  numerator: {
-                    ...ratioMetric?.numerator,
-                    filter: {
-                      ...ratioMetric?.numerator?.filter,
-                      column: metric,
-                    }
+        <Grid numItems={5}>
+          <Col className="flex items-center justify-end" numColSpan={2} />
+          <Col className="flex items-center" numColSpan={3}>
+            <Flex justifyContent="start" className="gap-2">
+              <Text className="text-black block">Has filters: </Text>
+              <input
+                type="checkbox"
+                onChange={() => {
+                  setNumeratorHasFilter(!numeratorHasFilter);
+                }}
+                checked={numeratorHasFilter}
+              />
+              {numeratorHasFilter && (
+                <FiltersDropDown
+                  filters={ratioMetric?.numerator?.filters ?? []}
+                  dimensions={getValidMetricColumns()}
+                  schema={schema}
+                  onFiltersChanged={(selectedFilters) =>
+                    setMetricColumn({
+                      ...metricColumn,
+                      ratioMetric: {
+                        ...ratioMetric,
+                        numerator: {
+                          ...ratioMetric?.numerator,
+                          filters: selectedFilters,
+                        },
+                      },
+                    })
                   }
-                }
-              })
-            }}
-            onValueChange={(metric) => {
-              setMetricColumn({
-                ...metricColumn,
-                ratioMetric: {
-                  ...ratioMetric,
-                  numerator: {
-                    ...ratioMetric?.numerator,
-                    filter: {
-                      ...ratioMetric?.numerator?.filter,
-                      value: metric,
-                    }
-                  }
-                }
-              })
-            }}
-          />
-        }
-
-        {/* Demoninator config */}
+                />
+              )}
+            </Flex>
+          </Col>
+        </Grid>
+        {/* Denominator config */}
         <SingleSelector
           title={
             <Text className="pr-4 text-black">
@@ -203,9 +193,9 @@ const MetricConfig = (props: Props) => {
                 denominator: {
                   ...ratioMetric?.denominator,
                   aggregationMethod: metric as AggregationType,
-                }
-              }
-            })
+                },
+              },
+            });
           }}
         />
         <SingleSelector
@@ -225,68 +215,45 @@ const MetricConfig = (props: Props) => {
                 denominator: {
                   ...ratioMetric?.denominator,
                   columnName: metric,
-                }
-              }
-            })
-          }}
-          filterCheckbox
-          onFilterChange={(value) => {
-            setMetricColumn({
-              ...metricColumn,
-              ratioMetric: {
-                ...ratioMetric,
-                denominator: {
-                  ...ratioMetric?.denominator,
-                  filter: undefined
-                }
-            }});
-            setDenominatorHasFilter(value);
+                },
+              },
+            });
           }}
         />
-
-        { denominatorHasFilter &&
-          <SelectorWithFilter
-            title={
-              <Text className="pr-4 text-black">
-                Select the denominator metric filter
-              </Text>
-            }
-            labels={getValidMetricColumns()}
-            values={getValidMetricColumns()}
-            selectedValue={ratioMetric?.denominator?.filter?.column || ""}
-            onColumnChange={(metric) => {
-              setMetricColumn({
-                ...metricColumn,
-                ratioMetric: {
-                  ...ratioMetric,
-                  denominator: {
-                    ...ratioMetric?.denominator,
-                    filter: {
-                      ...ratioMetric?.denominator?.filter,
-                      column: metric,
-                    }
+        <Grid numItems={5}>
+          <Col className="flex items-center justify-end" numColSpan={2} />
+          <Col className="flex items-center" numColSpan={3}>
+            <Flex justifyContent="start" className="gap-2">
+              <Text className="text-black">Has filters: </Text>
+              <input
+                type="checkbox"
+                onChange={() => {
+                  setDenominatorHasFilter(!denominatorHasFilter);
+                }}
+                checked={denominatorHasFilter}
+              />
+              {denominatorHasFilter && (
+                <FiltersDropDown
+                  filters={ratioMetric?.denominator?.filters ?? []}
+                  dimensions={getValidMetricColumns()}
+                  schema={schema}
+                  onFiltersChanged={(selectedFilters) =>
+                    setMetricColumn({
+                      ...metricColumn,
+                      ratioMetric: {
+                        ...ratioMetric,
+                        denominator: {
+                          ...ratioMetric?.denominator,
+                          filters: selectedFilters,
+                        },
+                      },
+                    })
                   }
-                }
-              })
-            }
-            }
-            onValueChange={(metric) => {
-              setMetricColumn({
-                ...metricColumn,
-                ratioMetric: {
-                  ...ratioMetric,
-                  denominator: {
-                    ...ratioMetric?.denominator,
-                    filter: {
-                      ...ratioMetric?.denominator?.filter,
-                      value: metric,
-                    }
-                  }
-                }
-              })
-            }}
-          />
-        }
+                />
+              )}
+            </Flex>
+          </Col>
+        </Grid>
       </>
     );
   };
@@ -294,27 +261,21 @@ const MetricConfig = (props: Props) => {
   return (
     <>
       <SingleSelector
-        title={
-          <Text className="pr-4 text-black">
-            Select the metric type
-          </Text>
-        }
+        title={<Text className="pr-4 text-black">Select the metric type</Text>}
         labels={["Sum", "Count", "Distinct", "Ratio"]}
         values={["sum", "count", "nunique", "ratio"]}
         selectedValue={metricType ? metricType : ""}
         onValueChange={(metric) => {
           setMetricColumn({
             aggregationOption: metric as AggregationType,
-          })
+          });
         }}
       />
 
       {metricType === "ratio" ? complexMetrics() : singularMetrics()}
 
       <SingleSelector
-        title={
-          <Text className="pr-4 text-black">Target metric direction</Text>
-        }
+        title={<Text className="pr-4 text-black">Target metric direction</Text>}
         labels={["Increasing", "Decreasing"]}
         values={["increasing", "decreasing"]}
         icons={[ArrowUpIcon, ArrowDownIcon]}
@@ -330,6 +291,6 @@ const MetricConfig = (props: Props) => {
       />
     </>
   );
-}
+};
 
 export default MetricConfig;

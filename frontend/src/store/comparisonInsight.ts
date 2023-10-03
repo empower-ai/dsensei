@@ -294,7 +294,7 @@ function buildRowStatusMap(
       const segment1 = metric.dimensionSliceInfo[key1];
       const segment2 = metric.dimensionSliceInfo[key2];
 
-      return Math.abs(segment2.impact) - Math.abs(segment1.impact);
+      return Math.abs(segment2.sortValue) - Math.abs(segment1.sortValue);
     });
 
   if (!groupRows) {

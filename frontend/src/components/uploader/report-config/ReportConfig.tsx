@@ -322,6 +322,7 @@ function ReportConfig({
           setMetricColumn={setMetricColumn}
           targetDirection={targetDirection}
           setTargetDirection={setTargetDirection}
+          schema={schema}
         />
         {/* Dimension columns multi selector */}
         <MultiSelector

@@ -45,7 +45,7 @@ class InsightApi(BaseApi):
         baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type = InsightApi.parse_date_info(data)
         group_by_columns = data['groupByColumns']
         filters = InsightApi.parse_filters(data)
-        num_max_dimensions = data['maxNumDimensions']
+        num_max_dimensions = data['maxNumDimensions'] if 'maxNumDimensions' in data else 3
 
         return (
             baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type, group_by_columns, filters, num_max_dimensions
@@ -62,14 +62,9 @@ class InsightApi(BaseApi):
         if metric_column['aggregationOption'] == 'ratio':
             ratioMetric = metric_column['ratioMetric']
 
-            numerator_filter = {
-                ratioMetric['numerator']['filter']['column']: [
-                    ratioMetric['numerator']['filter']['value']]
-            } if 'filter' in ratioMetric['numerator'] else {}
-            denominator_filter = {
-                ratioMetric['denominator']['filter']['column']: [
-                    ratioMetric['denominator']['filter']['value']]
-            } if 'filter' in ratioMetric['denominator'] else {}
+            numerator_filters = InsightApi.parse_filters(ratioMetric['numerator']) if 'filters' in ratioMetric['numerator'] else {}
+            denominator_filters = InsightApi.parse_filters(ratioMetric['denominator']) if 'filters' in ratioMetric['denominator'] else {}
+
             numerator_agg_method = agg_method_map[ratioMetric['numerator']
             ['aggregationMethod']]
             denominator_agg_method = agg_method_map[ratioMetric['denominator']
@@ -79,13 +74,13 @@ class InsightApi(BaseApi):
                 None,
                 ratioMetric['numerator']['columnName'],
                 numerator_agg_method,
-                numerator_filter
+                numerator_filters
             )
             denominator_metric = SingleColumnMetric(
                 None,
                 ratioMetric['denominator']['columnName'],
                 denominator_agg_method,
-                denominator_filter
+                denominator_filters
             )
 
             metric = DualColumnMetric(
@@ -94,15 +89,11 @@ class InsightApi(BaseApi):
                 numerator_metric=numerator_metric,
                 denominator_metric=denominator_metric)
         else:
-            singular_filter = {
-                metric_column['singularMetric']['filter']['column']: [
-                    metric_column['singularMetric']['filter']['value']]
-            } if 'filter' in metric_column['singularMetric'] else {}
             metric = SingleColumnMetric(
                 None,
                 metric_column['singularMetric']['columnName'],
                 agg_method_map[metric_column['aggregationOption']],
-                singular_filter
+                []
             )
         return metric
 
@@ -133,7 +124,8 @@ class InsightApi(BaseApi):
     def get_segment_insight(self):
         data = request.get_json()
         file_id = data['fileId']
-        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, filters) = self.parse_data(data)
+        (baselineStart, baselineEnd, comparisonStart, comparisonEnd, date_column, date_column_type, group_by_columns, filters,
+         max_num_dimensions) = self.parse_data(data)
 
         metric = self.parse_metrics(data['metricColumn'])
         segment_key = data['segmentKey']

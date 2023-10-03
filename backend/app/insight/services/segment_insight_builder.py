@@ -111,5 +111,6 @@ def map_to_segment_info(row, baseline_count: int, comparison_count: int, metric:
         change,
         None,
         None,
+        None,
         None
     )

@@ -1,21 +1,16 @@
 import { DateRangePickerValue } from "@tremor/react";
+import { Filter } from "../common/types";
 import { DateRangeData } from "../components/uploader/DatePicker";
 import { FieldType } from "./data-source";
 
 export type ColumnType = "metric" | "supporting_metric" | "dimension" | "date";
 export type AggregationType = "sum" | "count" | "nunique" | "ratio";
 export type TargetDirection = "increasing" | "decreasing";
-export type FitleringOperator = "eq" | "neq" | "gt" | "gte" | "lt" | "lte";
-export interface FilteringConfig {
-  column?: string;
-  operator?: FitleringOperator;
-  value?: string;
-}
 
 export interface SingularMetric {
   columnName?: string;
   aggregationMethod?: AggregationType;
-  filter?: FilteringConfig;
+  filters?: Filter[];
 }
 
 export interface RatioMetric {

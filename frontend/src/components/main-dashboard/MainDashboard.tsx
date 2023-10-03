@@ -434,9 +434,7 @@ export default function MainDashboard() {
               <Card className="text-center flex flex-col gap-y-4">
                 <Flex justifyContent="center" className="gap-2">
                   <Title>Dimensions</Title>
-                  <Text>
-                    {Object.keys(analyzingMetrics.dimensions).length} in total
-                  </Text>
+                  <Text>{Object.keys(groupByColumns).length} in total</Text>
                 </Flex>
                 <Flex
                   className="h-[100%]"

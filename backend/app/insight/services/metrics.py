@@ -21,6 +21,20 @@ pl.Config.set_tbl_rows(30)
 pl.Config.set_tbl_cols(30)
 
 
+class FilterOperator(StrEnum):
+    EQ = "eq"
+    NEQ = "neq"
+    EMPTY = "empty"
+    NON_EMPTY = "non_empty"
+
+
+@dataclass
+class Filter:
+    column: str
+    operator: FilterOperator
+    values: Optional[list[str | float | bool | date]] = None
+
+
 @dataclass
 class Dimension:
     name: str
@@ -52,6 +66,7 @@ class SegmentInfo:
     changeDev: Optional[float] = None
     absoluteContribution: Optional[float] = None
     confidence: Optional[float] = None
+    sortValue: Optional[float] = None
 
 
 @dataclass
@@ -106,7 +121,7 @@ class SingleColumnMetric(Metric):
     name: Optional[str]
     column: str
     aggregate_method: AggregateMethod
-    filters: dict[str, any]
+    filters: list[Filter]
 
     def get_id(self):
         if self.name is not None:
@@ -129,13 +144,11 @@ class SingleColumnMetric(Metric):
         return f"{self.aggregate_method.name} {self.column}"
 
     def get_aggregation_exprs(self, agg_override: Optional[AggregateMethod] = None) -> Iterable[Expr]:
+        from app.insight.services.utils import get_filter_expression
+
         col = pl.col(self.column)
         if len(self.filters) > 0:
-            filtering_expr = pl.lit(True)
-            for column, values in self.filters.items():
-                filtering_expr = filtering_expr & (
-                    pl.col(column).is_in(pl.lit(values)))
-            col = pl.col(self.column).filter(filtering_expr)
+            col = pl.col(self.column).filter(get_filter_expression(self.filters))
         return [build_polars_agg(col, agg_override if agg_override is not None else self.aggregate_method).alias(self.get_id())]
 
     def get_metric_type(self):
@@ -212,20 +225,6 @@ class MetricInsight:
 
 
 parallel_analysis_executor = ThreadPoolExecutor()
-
-
-class FilterOperator(StrEnum):
-    EQ = "eq"
-    NEQ = "neq"
-    EMPTY = "empty"
-    NON_EMPTY = "non_empty"
-
-
-@dataclass
-class Filter:
-    column: str
-    operator: FilterOperator
-    values: Optional[list[str | float | bool | date]] = None
 
 
 def build_polars_agg(name: str | Expr, method: AggregateMethod):
