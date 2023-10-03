@@ -272,7 +272,7 @@ typing-extensions==4.7.1
     #   pydantic-core
 tzdata==2023.3
     # via pandas
-urllib3==1.26.16
+urllib3==1.26.17
     # via
     #   google-auth
     #   requests
