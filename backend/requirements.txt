@@ -180,7 +180,7 @@ pandas==2.0.3
     #   -r requirements.in
     #   db-dtypes
     #   polars
-pillow==10.0.0
+pillow==10.0.1
     # via matplotlib
 polars[adbc,all,cloudpickle,connectorx,deltalake,fsspec,matplotlib,numpy,pandas,pyarrow,pydantic,sqlalchemy,timezone,xlsx2csv,xlsxwriter]==0.18.15
     # via -r requirements.in
