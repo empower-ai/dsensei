@@ -260,9 +260,7 @@ class DFBasedInsightBuilder(object):
         ) for columns in column_combinations_list]
         wait(futures)
 
-        total_rows = self.overall_aggregated_df['count_baseline'].sum() + self.overall_aggregated_df['count'].sum()
-        multi_dimension_grouping_result = polars.concat([future.result() for future in futures]) \
-            .filter((polars.col("count") + polars.col("count_baseline")) / polars.lit(total_rows) > 0.01)
+        multi_dimension_grouping_result = polars.concat([future.result() for future in futures])
 
         dimension_info_df = multi_dimension_grouping_result.filter(polars.col("dimension_name").list.lengths() == 1) \
             .with_columns(polars.col("dimension_name").list.first()) \
@@ -317,7 +315,10 @@ class DFBasedInsightBuilder(object):
             return "|".join([f"{column}:{value}" for column, value in zip(row['dimension_name'], row['dimension_value'])])
 
         if len(self.key_dimensions) > 0:
+            total_rows = self.overall_aggregated_df['count_baseline'].sum() + self.overall_aggregated_df['count'].sum()
+
             top_segments_df = df.with_columns(polars.concat_list([polars.lit(dimension) for dimension in self.key_dimensions]).alias("key_dimensions")) \
+                .filter((polars.col("count") + polars.col("count_baseline")) / polars.lit(total_rows) > 0.01) \
                 .filter(polars.col("dimension_name").list.set_intersection("key_dimensions").list.lengths() == polars.col("dimension_name").list.lengths()) \
                 .limit(1000)
             top_segment_keys = [_build_serialized_key(row) for row in top_segments_df.rows(named=True)]
