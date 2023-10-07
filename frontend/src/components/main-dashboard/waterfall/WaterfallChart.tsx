@@ -54,7 +54,14 @@ const CustomizedGroupTick = (props: any) => {
   return (
     <g transform={`translate(${x},${y})`}>
       {rows.map((row, idx) => (
-        <text x={0} y={0} dy={18 * (idx + 1)} textAnchor="middle" fill="#666">
+        <text
+          x={0}
+          y={0}
+          dy={18 * (idx + 1)}
+          textAnchor="middle"
+          fill="#666"
+          key={row}
+        >
           {idx > 4 ? "..." : row}
         </text>
       ))}
@@ -92,14 +99,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               const result = [
                 <span
                   className="text-black border-2 bg-gray-100 p-1"
-                  key={`${label}-${component}`}
+                  key={`${label}-${component}-value`}
                 >
                   {component}
                 </span>,
               ];
 
               if (idx < (label as string).split(" AND ").length - 1) {
-                result.push(<span>AND</span>);
+                result.push(<span key={`${label}-${component}-and`}>AND</span>);
               }
               return result;
             })}
@@ -213,6 +220,7 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
               ]}
               stroke="gray"
               strokeDasharray="2 2"
+              key={data[idx].name}
             />
           );
         })}

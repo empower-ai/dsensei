@@ -215,7 +215,7 @@ export default function MainDashboard() {
               onClick={() => {
                 setReportingType(ReportingType.WATERFALL);
               }}
-              key="segments-by-dimensions"
+              key="waterfall-chart"
             />
           );
         }
@@ -476,9 +476,13 @@ export default function MainDashboard() {
                   flexDirection="col"
                 >
                   {filters.length > 0 ? (
-                    <Text>
+                    <div>
                       {filters.map((filter, idx) => (
-                        <Text>
+                        <Text
+                          key={`${filter.column}-${
+                            filter.operator
+                          }-${filter.values?.join("")}`}
+                        >
                           {idx > 0 ? <Bold>AND </Bold> : null}
                           {filter.column}{" "}
                           <Bold>
@@ -495,7 +499,7 @@ export default function MainDashboard() {
                           )}
                         </Text>
                       ))}
-                    </Text>
+                    </div>
                   ) : (
                     <Text>None</Text>
                   )}
