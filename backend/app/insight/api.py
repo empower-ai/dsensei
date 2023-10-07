@@ -214,7 +214,7 @@ class InsightApi(BaseApi):
 
         try:
             logger.info('Reading file')
-            df = load_df_from_csv(f'/tmp/dsensei/{file_id}') \
+            df = load_df_from_csv(f'/tmp/dsensei/{file_id}', date_column) \
                 .with_columns(pl.col(date_column).cast(pl.Utf8).str.slice(0, 10).str.to_date(strict=False).alias("date"))
 
             logger.info('File loaded')
