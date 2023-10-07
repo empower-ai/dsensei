@@ -131,24 +131,6 @@ export function WaterfallPanel({
 
   return (
     <>
-      <button
-        onClick={async () => {
-          apiManager.post<any>("/api/v1/insight/file/waterfall-insight", {
-            fileId,
-            baseDateRange,
-            comparisonDateRange,
-            dateColumn,
-            metricColumn,
-            segmentKeys: Object.keys(rowStatus).map((key) => {
-              const segment = metric.dimensionSliceInfo[key];
-              return segment.key;
-            }),
-            filters,
-          });
-        }}
-      >
-        test
-      </button>
       <Flex justifyContent="center" className="flex-col pb-8">
         {!isLoading && (
           <WaterfallChart

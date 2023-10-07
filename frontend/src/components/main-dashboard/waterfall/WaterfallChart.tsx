@@ -242,14 +242,13 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
             return <Cell key={index} fill="transparent" />;
           })}
         </Bar>
-        <Bar dataKey="change" stackId="a">
+        <Bar dataKey="change" stackId="a" isAnimationActive={false}>
           <LabelList
             dataKey="change"
             position="top"
             formatter={(num: number) => {
               const prefix = num > 0 ? "+ " : "";
               const result = prefix + formatNumber(num);
-
               if (result.length * 8 > width / (waterfallRows.length + 2)) {
                 return prefix + shortenNumber(num);
               }
