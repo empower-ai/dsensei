@@ -1,4 +1,5 @@
 import { Divider, Flex } from "@tremor/react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -54,12 +55,25 @@ const CustomizedGroupTick = (props: any) => {
     <g transform={`translate(${x},${y})`}>
       {rows.map((row, idx) => (
         <text x={0} y={0} dy={18 * (idx + 1)} textAnchor="middle" fill="#666">
-          {row}
+          {idx > 4 ? "..." : row}
         </text>
       ))}
     </g>
   );
 };
+
+function shortenNumber(value: number) {
+  const number = Math.abs(value);
+  if (number > 1000000000) {
+    return formatNumber(value / 1000000000) + "B";
+  } else if (number > 1000000) {
+    return formatNumber(value / 1000000) + "M";
+  } else if (number > 1000) {
+    return formatNumber(value / 1000) + "K";
+  } else {
+    return formatNumber(value);
+  }
+}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -73,21 +87,23 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         alignItems="start"
       >
         <Flex className="gap-2" justifyContent="start">
-          {(label as string).split(" AND ").map((component, idx) => {
-            return (
-              <>
+          <Flex className="gap-2">
+            {(label as string).split(" AND ").flatMap((component, idx) => {
+              const result = [
                 <span
                   className="text-black border-2 bg-gray-100 p-1"
-                  key={component}
+                  key={`${label}-${component}`}
                 >
                   {component}
-                </span>
-                {idx < (label as string).split(" AND ").length - 1 && (
-                  <span>AND</span>
-                )}
-              </>
-            );
-          })}
+                </span>,
+              ];
+
+              if (idx < (label as string).split(" AND ").length - 1) {
+                result.push(<span>AND</span>);
+              }
+              return result;
+            })}
+          </Flex>
         </Flex>
         <Divider className="my-3" />
         <p>Change: {formatNumber(change)}</p>
@@ -100,6 +116,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
+  const [width, setWidth] = useState<number>(0);
   let pv = 0;
   const data = Object.values(waterfallRows)
     .slice(0, 8)
@@ -142,8 +159,13 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
     overlap: 0,
     flipped: false,
   });
+
   return (
-    <ResponsiveContainer width="100%" height={450}>
+    <ResponsiveContainer
+      width="100%"
+      height={450}
+      onResize={(w) => setWidth(w)}
+    >
       <BarChart
         width={1650}
         height={450}
@@ -159,7 +181,9 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
           dataKey="name"
           tick={CustomizedGroupTick}
           height={120}
-          interval={0}
+          interval={
+            width === 0 ? 0 : Math.floor(waterfallRows.length / (width / 200))
+          }
           type="category"
         />
         <YAxis
@@ -167,18 +191,8 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
           padding={{
             bottom: 5,
           }}
-          tickFormatter={(tickValue) => {
-            const number = Math.abs(tickValue);
-            if (number > 1000000000) {
-              return (tickValue / 1000000000).toString() + "B";
-            } else if (number > 1000000) {
-              return (tickValue / 1000000).toString() + "M";
-            } else if (number > 1000) {
-              return (tickValue / 1000).toString() + "K";
-            } else {
-              return tickValue.toString();
-            }
-          }}
+          width={100}
+          tickFormatter={shortenNumber}
         />
         <Tooltip content={<CustomTooltip />} />
         {data.map((row, idx) => {
@@ -226,7 +240,12 @@ export default function WaterfallChart({ waterfallRows, totalImpact }: Props) {
             position="top"
             formatter={(num: number) => {
               const prefix = num > 0 ? "+ " : "";
-              return prefix + formatNumber(num);
+              const result = prefix + formatNumber(num);
+
+              if (result.length * 8 > width / (waterfallRows.length + 2)) {
+                return prefix + shortenNumber(num);
+              }
+              return result;
             }}
           />
           {data.map((item, index) => {
