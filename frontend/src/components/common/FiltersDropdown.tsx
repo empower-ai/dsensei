@@ -222,7 +222,7 @@ export const FiltersDropDown = forwardRef(function FiltersDropDown(
           <button onClick={() => setLocalFilters([...localFilters, {}])}>
             <Flex justifyContent="center" className="gap-2">
               <PlusCircleIcon height={24} />
-              <Text className="text-sky-800">Add</Text>
+              <Text className="text-sky-800">Add New</Text>
             </Flex>
           </button>
         </Flex>
