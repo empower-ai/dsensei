@@ -88,6 +88,44 @@ def get_related_segments(
         }
 
 
+def get_waterfall_insight(
+        df: pl.DataFrame,
+        baseline_date_range: Tuple[datetime.date, datetime.date],
+        comparison_date_range: Tuple[datetime.date, datetime.date],
+        segment_keys: list[list[DimensionValuePair]],
+        metric: Metric,
+        filters: list[Filter],
+):
+    df = df.filter(get_filter_expression(filters))
+
+    result = {}
+    for segment_key in segment_keys:
+        filtering_clause = pl.lit(True)
+        for sub_key in segment_key:
+            filtering_clause = filtering_clause & (pl.col(
+                sub_key.dimension).cast(str).eq(pl.lit(sub_key.value)))
+
+        current_df = df.filter(filtering_clause)
+
+        dimensions = [sub_key.dimension for sub_key in segment_key]
+        baseline_df = build_base_df(current_df, baseline_date_range, dimensions, [metric])
+        baseline_value = baseline_df.row(0, named=True)[metric.get_id()] if len(baseline_df.rows()) > 0 else 0
+
+        comparison_df = build_base_df(current_df, comparison_date_range, dimensions, [metric])
+        comparison_value = comparison_df.row(0, named=True)[metric.get_id()] if len(comparison_df.rows()) > 0 else 0
+
+        serialized_key = "|".join([
+            f"{sub_key.dimension}:{sub_key.value}" for sub_key in segment_key
+        ])
+        result[serialized_key] = {
+            "changeWithNoOverlap": comparison_value - baseline_value
+        }
+
+        df = df.filter(filtering_clause.is_not())
+
+    return result
+
+
 def map_to_segment_info(row, baseline_count: int, comparison_count: int, metric: Metric):
     values = row["dimension_value"]
     dimensions = row['dimension_name']

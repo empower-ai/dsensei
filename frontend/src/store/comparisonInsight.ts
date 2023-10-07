@@ -121,66 +121,28 @@ function buildWaterfall(metric: InsightMetric): {
   key: DimensionSliceKey;
   impact: number;
 }[] {
-  return [];
-  const topDriverSliceKeys = metric.topDriverSliceKeys;
-  const dimensionSliceInfo = metric.dimensionSliceInfo;
+  const [rows, _] = buildRowStatusMap(metric, true, "outlier", "medium", false);
 
-  const initialKey = topDriverSliceKeys[0];
-  const initialSlice = dimensionSliceInfo[initialKey];
-  const result = [
-    {
-      key: initialSlice.key,
-      impact: initialSlice.impact,
-    },
-  ];
-
-  const excludeKeys = [initialSlice.key];
-
-  const excludeValues: {
-    [key: string]: (number | string)[];
-  } = {};
-
-  initialSlice.key.forEach((keyPart) => {
-    if (!excludeValues[keyPart.dimension]) {
-      excludeValues[keyPart.dimension] = [];
+  const result = [];
+  for (const row of Object.values(rows)) {
+    if (
+      Object.keys(row.children).length <= 3 &&
+      Object.keys(row.children).length > 0
+    ) {
+      Object.values(row.children).forEach((child) => result.push(child));
+    } else {
+      result.push(row);
     }
-
-    excludeValues[keyPart.dimension].push(keyPart.value);
-  });
-
-  topDriverSliceKeys.forEach((key) => {
-    const sliceInfo = dimensionSliceInfo[key];
-
-    const shouldAdd = excludeKeys.every((excludeKey) => {
-      return (
-        excludeKey
-          .map((k) => k.dimension)
-          .every((d) => sliceInfo.key.map((k) => k.dimension).includes(d)) &&
-        excludeKey.find((k) =>
-          sliceInfo.key.find(
-            (kk) => kk.dimension === k.dimension && kk.value !== k.value
-          )
-        )
-      );
-    });
-
-    if (shouldAdd) {
-      sliceInfo.key.forEach((keyPart) => {
-        if (!excludeValues[keyPart.dimension]) {
-          excludeValues[keyPart.dimension] = [];
-        }
-        excludeValues[keyPart.dimension].push(keyPart.value);
-        excludeKeys.push(sliceInfo.key);
-      });
-
-      result.push({
-        key: sliceInfo.key,
-        impact: sliceInfo.impact,
-      });
-    }
-  });
-
-  return result;
+  }
+  return result
+    .map((res) => {
+      const segment = metric.dimensionSliceInfo[res.keyComponents.join("|")];
+      return {
+        key: segment.key,
+        impact: segment.impact,
+      };
+    })
+    .slice(0, 8);
 }
 
 function buildRowStatusMap(

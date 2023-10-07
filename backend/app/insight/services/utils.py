@@ -84,10 +84,13 @@ def get_filter_expression(filters: list[Filter]) -> Expr:
     return filter_expr
 
 
-def load_df_from_csv(path: str):
+def load_df_from_csv(path: str, date_column: str = None):
     df = pl.read_csv(path, try_parse_dates=True)
     for column_and_d_type in zip(df.columns, df.dtypes):
         [column, d_type] = column_and_d_type
+        if date_column is not None and column != date_column:
+            continue
+
         if d_type == pl.Utf8:
             non_null_count = df.filter(pl.col(column).str.lengths().gt(0) & pl.col(column).is_not_null()).select(pl.col(column).count()).row(0)[0]
             if non_null_count > 0:
@@ -96,6 +99,5 @@ def load_df_from_csv(path: str):
                         pl.col(column).str.to_date("%-m/%-d/%y %k:%M").alias(column)
                     )
                 except:
-                    print(column)
                     pass
     return df

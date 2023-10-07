@@ -52,11 +52,13 @@ import { MetricOverviewTable } from "./MetricOverviewTable";
 import { SidebarReportConfig } from "./SidebarReportConfig";
 import TopDimensionSlicesTable from "./TopDimensionSlicesTable";
 import { DimensionSliceDetailModal } from "./dimention-slice-detail-modal/DimentionSliceDetailModal";
+import { WaterfallPanel } from "./waterfall/WaterfallPanel";
 
 enum ReportingType {
   OVERVIEW,
   TOP_SEGMENTS,
   SEGMENTS_BY_DIMENSIONS,
+  WATERFALL,
 }
 
 interface RouterState {
@@ -111,8 +113,8 @@ export default function MainDashboard() {
     tableRowStatusByDimension,
     groupRows,
     isLoading,
-    error,
     waterfallRows,
+    error,
   } = useSelector((state: RootState) => state.comparisonInsight);
 
   const navigate = useNavigate();
@@ -204,6 +206,19 @@ export default function MainDashboard() {
             key="segments-by-dimensions"
           />,
         ];
+        if (!metricColumn.ratioMetric) {
+          reportMenuElements.push(
+            <SidebarElement
+              text="Waterfall Chart"
+              icon={Squares2X2Icon}
+              isSelected={reportingType === ReportingType.WATERFALL}
+              onClick={() => {
+                setReportingType(ReportingType.WATERFALL);
+              }}
+              key="segments-by-dimensions"
+            />
+          );
+        }
       }
     }
 
@@ -588,13 +603,29 @@ export default function MainDashboard() {
               showCalculationMode={true}
               targetDirection={targetDirection}
               onReRunOnSegment={onReRunOnSegment}
+              showSensitiveControl={true}
             />
           </Flex>
         )}
-        {/* <WaterfallPanel
-            waterfallRows={waterfallRows}
-            metric={analyzingMetrics}
-          /> */}
+        {reportingType === ReportingType.WATERFALL && (
+          <Flex className="gap-y-4 pt-10" flexDirection="col">
+            <Title>Waterfall View of Top Segments</Title>
+            <Divider />
+            <WaterfallPanel
+              waterfallRows={waterfallRows}
+              metric={analyzingMetrics}
+              targetDirection="increasing"
+              fileId={fileId!}
+              filters={filters}
+              dateColumn={dateColumn}
+              metricColumn={metricColumn}
+              baseDateRange={dateRangeData.baseDateRangeData.range}
+              comparisonDateRange={dateRangeData.comparisonDateRangeData.range}
+              dataSourceType={dataSourceType}
+              onReRunOnSegment={onReRunOnSegment}
+            />
+          </Flex>
+        )}
         {reportingType === ReportingType.SEGMENTS_BY_DIMENSIONS && (
           <Flex className="gap-y-4 pt-10" flexDirection="col">
             <Title>Top Segments by Dimension</Title>
@@ -610,6 +641,7 @@ export default function MainDashboard() {
                 maxDefaultRows={5}
                 showDimensionSelector={false}
                 showCalculationMode={false}
+                showSensitiveControl={false}
                 title={
                   <>
                     <Title>Dimension: {dimension.name}</Title>

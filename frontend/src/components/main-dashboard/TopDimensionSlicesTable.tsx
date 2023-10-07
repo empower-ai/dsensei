@@ -40,6 +40,7 @@ type Props = {
   showCalculationMode: boolean;
   targetDirection: TargetDirection;
   onReRunOnSegment: (key: DimensionSliceKey) => void;
+  showSensitiveControl: boolean;
 };
 
 export default function TopDimensionSlicesTable({
@@ -54,6 +55,7 @@ export default function TopDimensionSlicesTable({
   showCalculationMode,
   targetDirection,
   onReRunOnSegment,
+  showSensitiveControl,
 }: Props) {
   const dispatch = useDispatch();
   const [isCollapsed, setIsCollapse] = useState(true);
@@ -124,7 +126,7 @@ export default function TopDimensionSlicesTable({
               />
             </>
           )}
-          {mode === "outlier" && (
+          {mode === "outlier" && showSensitiveControl && (
             <>
               <Text>Sensitivity:</Text>
               <Select

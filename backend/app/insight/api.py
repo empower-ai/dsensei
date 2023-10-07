@@ -12,7 +12,7 @@ from app.common.request_utils import build_error_response
 from app.insight.datasource.bqMetrics import BqMetrics
 from app.insight.services.insight_builders import DFBasedInsightBuilder
 from app.insight.services.metrics import AggregateMethod, SingleColumnMetric, DualColumnMetric, CombineMethod, DimensionValuePair, Filter
-from app.insight.services.segment_insight_builder import get_related_segments, get_segment_insight
+from app.insight.services.segment_insight_builder import get_related_segments, get_segment_insight, get_waterfall_insight
 from app.insight.services.utils import load_df_from_csv
 
 
@@ -174,6 +174,32 @@ class InsightApi(BaseApi):
                 filters
             )
         )
+
+    @expose('file/waterfall-insight', methods=['POST'])
+    def get_waterfall_insight(self):
+        def _build_dimension_value_pair(segment_key):
+            return [DimensionValuePair(key_component['dimension'], key_component['value']) for key_component in segment_key]
+
+        data = request.get_json()
+
+        (baseline_start, baseline_end, comparison_start, comparison_end, date_column, date_column_type) = self.parse_date_info(data)
+        metric_column = data['metricColumn']
+        metric = self.parse_metrics(metric_column)
+        filters = self.parse_filters(data)
+
+        file_id = data['fileId']
+        logger.info('Reading file')
+        df = load_df_from_csv(f'/tmp/dsensei/{file_id}', date_column) \
+            .with_columns(pl.col(date_column).cast(pl.Utf8).str.slice(0, 10).str.to_date().alias("date"))
+
+        return orjson.dumps(get_waterfall_insight(
+            df,
+            (baseline_start, baseline_end),
+            (comparison_start, comparison_end),
+            [_build_dimension_value_pair(segment_key) for segment_key in data['segmentKeys']],
+            metric,
+            filters
+        ))
 
     @expose('file/metric', methods=['POST'])
     def get_insight(self):
