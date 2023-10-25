@@ -277,7 +277,7 @@ urllib3==1.26.16
     #   google-auth
     #   requests
     #   sentry-sdk
-werkzeug==2.3.6
+werkzeug==3.0.1
     # via
     #   flask
     #   flask-jwt-extended
