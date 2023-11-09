@@ -11,7 +11,9 @@ adbc-driver-sqlite==0.5.1
 annotated-types==0.5.0
     # via pydantic
 apispec[yaml]==6.3.0
-    # via flask-appbuilder
+    # via
+    #   apispec
+    #   flask-appbuilder
 attrs==23.1.0
     # via
     #   jsonschema
@@ -85,6 +87,7 @@ fsspec==2023.6.0
     # via polars
 google-api-core[grpc]==2.11.1
     # via
+    #   google-api-core
     #   google-cloud-bigquery
     #   google-cloud-core
 google-auth==2.22.0
@@ -183,7 +186,9 @@ pandas==2.0.3
 pillow==10.0.0
     # via matplotlib
 polars[adbc,all,cloudpickle,connectorx,deltalake,fsspec,matplotlib,numpy,pandas,pyarrow,pydantic,sqlalchemy,timezone,xlsx2csv,xlsxwriter]==0.18.15
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   polars
 prison==0.2.1
     # via flask-appbuilder
 proto-plus==1.22.3
@@ -195,7 +200,7 @@ protobuf==4.23.4
     #   googleapis-common-protos
     #   grpcio-status
     #   proto-plus
-pyarrow==12.0.1
+pyarrow==14.0.1
     # via
     #   db-dtypes
     #   deltalake
